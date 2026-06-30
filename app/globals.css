@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* =====================================================================
+   Mone Beauty — design tokens (from design_handoff/01-design-system.md)
+   Reproduce these values exactly. Do not hand-repeat hex codes elsewhere.
+   ===================================================================== */
+
+:root {
+  /* Runtime-switchable theme props (prototype exposes accent + radius) */
+  --accent: #97785a;
+  --radius: 16px;
+}
+
+@theme {
+  /* ---- Surfaces / backgrounds ---- */
+  --color-page: #fbf8f3; /* milky-white default */
+  --color-alt: #f5efe4; /* cream alternating section */
+  --color-card: #fcfaf6; /* card surface */
+  --color-cta: #2a2520; /* dark Online-Booking CTA band */
+  --color-footer: #221e1b; /* footer background */
+
+  /* ---- Accent (brand) ---- */
+  --color-accent: #97785a; /* soft brown (overridden inline below to var) */
+  --color-accent-taupe: #9c8c72;
+  --color-accent-warm: #b2925c;
+  --color-accent-sand: #a88a66;
+  --color-gold: #c8a879; /* gold eyebrow on dark */
+
+  /* ---- Text ---- */
+  --color-ink: #3a322b; /* primary (deep espresso, NOT black) */
+  --color-body: #6b6056; /* body paragraphs */
+  --color-muted: #8a7e70; /* secondary / descriptive */
+  --color-nav: #5a5048; /* nav links */
+  --color-eyebrow-subtle: #9b8e7b; /* "BEAUTY CLINIC" subtitle */
+
+  /* ---- Text on dark (CTA + footer) ---- */
+  --color-cta-heading: #f7f1e8;
+  --color-cta-body: #c3b8ab;
+  --color-footer-text: #cfc6ba;
+  --color-footer-logo: #f2ebe0;
+  --color-footer-para: #a99e90;
+  --color-footer-heading: #857a6c;
+  --color-footer-link: #c3b9ac;
+  --color-footer-copy: #8a7f71;
+
+  /* ---- Borders / hairlines ---- */
+  --color-line-header: #ece4d7;
+  --color-line-hair: #e7decf;
+  --color-line-card: #ece3d4;
+  --color-line-card-hover: #dccdb6;
+  --color-line-btn: #d8cdbb;
+  --color-line-btn-hover: #c7b89f;
+  --color-line-underline: #c9bba4;
+  --color-line-mobile: #f0e8da;
+  --color-line-footer: #38322c;
+  --color-line-social: #3d372f;
+
+  /* outline-button hover fill (light) */
+  --color-btn-fill: #f2eadc;
+
+  /* ---- Typography ---- */
+  --font-display: "Cormorant Garamond", serif;
+  --font-sans: "Jost", system-ui, sans-serif;
+
+  /* fluid type scales (exact clamp endpoints from spec) */
+  --text-h1: clamp(38px, 4.7vw, 74px);
+  --text-h2: clamp(32px, 4.4vw, 58px);
+  --text-h2-treat: clamp(30px, 3.6vw, 46px);
+  --text-h2-cta: clamp(30px, 3.8vw, 50px);
+  --text-h2-tech: clamp(26px, 3.2vw, 40px);
+  --text-tech: clamp(20px, 2.4vw, 28px);
+  --text-lead: clamp(14.5px, 1.3vw, 16px);
+
+  /* ---- Radii ---- */
+  --radius-soft: 16px;
+  --radius-btn: 4px;
+
+  /* ---- Shadows (warm brown-tinted only) ---- */
+  --shadow-card: 0 26px 46px -28px rgba(58, 42, 28, 0.42);
+  --shadow-fab: 0 14px 30px -12px rgba(58, 42, 28, 0.6);
+  --shadow-bubble: 0 16px 38px -20px rgba(58, 42, 28, 0.55);
+  --shadow-scroll: 0 8px 22px -12px rgba(58, 42, 28, 0.5);
+
+  /* ---- Breakpoint: prototype swaps nav at 900px ---- */
+  --breakpoint-nav: 900px;
+}
+
+/* Make accent + card radius follow the runtime CSS variables so the theme
+   stays switchable (prototype `accent` + `cornerStyle` props). */
+@theme inline {
+  --color-accent: var(--accent);
+  --radius-soft: var(--radius);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  ::selection {
+    background: #e7d9c4;
+    color: #3a322b;
+  }
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* Chat FAB gentle pulse (disabled under reduced-motion below) */
+@keyframes monePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

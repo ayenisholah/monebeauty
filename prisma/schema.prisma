@@ -1,0 +1,337 @@
+// Mone Beauty — Prisma schema.
+// Phase 0: schema authored; NO migration run yet (live DB deferred to Phase 2/3).
+// Covers marketing/CMS, e-commerce (AROSHA shop), booking, CRM, auth, chatbot.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+enum Role {
+  ADMIN
+  STAFF
+  CLIENT
+}
+
+enum Locale {
+  en
+  fi
+  ru
+}
+
+enum ServiceCategory {
+  FACE
+  BODY
+  HAIR
+  INJECTABLE
+  DEVICE
+  LASER
+  CONSULTATION
+}
+
+enum ProductCategory {
+  AROSHA_BODY
+  DIXIDOX_TRICHO
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELLED
+}
+
+// ----------------------------------------------------------------------------
+// Auth
+// ----------------------------------------------------------------------------
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String?
+  role         Role       @default(CLIENT)
+  name         String?
+  locale       Locale?
+  createdAt    DateTime   @default(now())
+  staff        StaffUser?
+  client       Client?
+}
+
+// ----------------------------------------------------------------------------
+// Services / treatments (CMS, i18n content)
+// ----------------------------------------------------------------------------
+model Service {
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  category      ServiceCategory
+  priceFrom     Decimal?
+  order         Int                @default(0)
+  published     Boolean            @default(true)
+  heroImageAlt  String?
+  createdAt     DateTime           @default(now())
+  contents      TreatmentContent[]
+  pricing       PricingItem[]
+  appointments  Appointment[]
+  practitioners Practitioner[]
+}
+
+model TreatmentContent {
+  id                String   @id @default(cuid())
+  service           Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId         String
+  locale            Locale
+  h1                String
+  shortDesc         String
+  whatItIs          String
+  suitableFor       String[]
+  benefits          String[]
+  processSteps      String[]
+  safety            String
+  preCare           String
+  postCare          String
+  contraindications String[]
+  sessions          String
+  results           String
+  faq               Json // [{ q, a }]
+  seoTitle          String
+  seoDescription    String
+  ogImage           String?
+
+  @@unique([serviceId, locale])
+}
+
+// ----------------------------------------------------------------------------
+// E-commerce (AROSHA shop)
+// ----------------------------------------------------------------------------
+model Product {
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  category  ProductCategory
+  size      String?
+  price     Decimal
+  currency  String           @default("EUR")
+  order     Int              @default(0)
+  published Boolean          @default(true)
+  images    String[]
+  createdAt DateTime         @default(now())
+  contents  ProductContent[]
+  cartItems CartItem[]
+  orderItems OrderItem[]
+}
+
+model ProductContent {
+  id          String  @id @default(cuid())
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  locale      Locale
+  name        String
+  description String
+
+  @@unique([productId, locale])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  sessionId String?
+  client    Client?    @relation(fields: [clientId], references: [id])
+  clientId  String?
+  createdAt DateTime   @default(now())
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  qty       Int     @default(1)
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  client      Client?     @relation(fields: [clientId], references: [id])
+  clientId    String?
+  status      OrderStatus @default(PENDING)
+  subtotal    Decimal
+  total       Decimal
+  currency    String      @default("EUR")
+  email       String
+  phone       String?
+  consentGdpr Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  name      String
+  unitPrice Decimal
+  qty       Int     @default(1)
+}
+
+// ----------------------------------------------------------------------------
+// Booking + staff scheduling
+// ----------------------------------------------------------------------------
+model Practitioner {
+  id             String         @id @default(cuid())
+  name           String
+  role           String
+  services       Service[]
+  staff          StaffUser?
+  availabilities Availability[]
+  appointments   Appointment[]
+}
+
+model StaffUser {
+  id             String        @id @default(cuid())
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String        @unique
+  practitioner   Practitioner? @relation(fields: [practitionerId], references: [id])
+  practitionerId String?       @unique
+  workingHours   Json?
+  daysOff        DateTime[]
+}
+
+model Availability {
+  id             String       @id @default(cuid())
+  practitioner   Practitioner @relation(fields: [practitionerId], references: [id], onDelete: Cascade)
+  practitionerId String
+  date           DateTime
+  slots          Json // [{ start, end, status }]
+
+  @@unique([practitionerId, date])
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  client         Client            @relation(fields: [clientId], references: [id])
+  clientId       String
+  practitioner   Practitioner      @relation(fields: [practitionerId], references: [id])
+  practitionerId String
+  service        Service           @relation(fields: [serviceId], references: [id])
+  serviceId      String
+  start          DateTime
+  end            DateTime
+  status         AppointmentStatus @default(BOOKED)
+  channel        String?
+  notes          String?
+  history        Json?
+  createdAt      DateTime          @default(now())
+}
+
+// ----------------------------------------------------------------------------
+// CRM
+// ----------------------------------------------------------------------------
+model Client {
+  id                String        @id @default(cuid())
+  user              User?         @relation(fields: [userId], references: [id])
+  userId            String?       @unique
+  fullName          String
+  phone             String
+  email             String
+  notes             String?
+  contraindications String? // special-category data — encrypt + RBAC + audit
+  consentGdpr       Boolean       @default(false)
+  consentMarketing  Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  appointments      Appointment[]
+  orders            Order[]
+  carts             Cart[]
+  chatSessions      ChatSession[]
+
+  @@index([phone])
+  @@index([email])
+}
+
+// ----------------------------------------------------------------------------
+// Blog / articles (CMS, i18n)
+// ----------------------------------------------------------------------------
+model Article {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  published   Boolean          @default(false)
+  publishedAt DateTime?
+  coverAlt    String?
+  createdAt   DateTime         @default(now())
+  contents    ArticleContent[]
+}
+
+model ArticleContent {
+  id             String  @id @default(cuid())
+  article        Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId      String
+  locale         Locale
+  title          String
+  excerpt        String?
+  body           String
+  seoTitle       String?
+  seoDescription String?
+
+  @@unique([articleId, locale])
+}
+
+// ----------------------------------------------------------------------------
+// Pricing
+// ----------------------------------------------------------------------------
+model PricingItem {
+  id        String           @id @default(cuid())
+  service   Service?         @relation(fields: [serviceId], references: [id])
+  serviceId String?
+  category  ServiceCategory?
+  label     String
+  price     Decimal
+  unit      String?
+  order     Int              @default(0)
+}
+
+// ----------------------------------------------------------------------------
+// Chatbot
+// ----------------------------------------------------------------------------
+model ChatSession {
+  id               String   @id @default(cuid())
+  locale           Locale
+  messages         Json
+  handoffRequested Boolean  @default(false)
+  client           Client?  @relation(fields: [clientId], references: [id])
+  clientId         String?
+  createdAt        DateTime @default(now())
+}
+
+// ----------------------------------------------------------------------------
+// GDPR / audit
+// ----------------------------------------------------------------------------
+model Consent {
+  id       String   @id @default(cuid())
+  clientId String?
+  type     String
+  granted  Boolean
+  at       DateTime @default(now())
+}
+
+model AuditLog {
+  id       String   @id @default(cuid())
+  actor    String
+  action   String
+  entity   String
+  entityId String?
+  at       DateTime @default(now())
+}
