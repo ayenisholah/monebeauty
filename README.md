@@ -38,17 +38,17 @@ black.
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js (App Router) + TypeScript |
-| Styling | Tailwind CSS (tokens from `01-design-system.md`) |
-| Fonts / Icons | `next/font` (Cormorant Garamond + Jost) · `@phosphor-icons/react` (thin) |
-| Database / ORM | PostgreSQL + **Prisma** |
-| i18n | `next-intl` (ru / fi / en) |
-| Auth | Role-based (admin / staff / client) |
-| AI | Anthropic Claude API |
-| Email / SMS | Resend or Postmark · Twilio or FI gateway |
-| Analytics / SEO | GA4 · Search Console · `next-sitemap` |
+| Layer           | Choice                                                                   |
+| --------------- | ------------------------------------------------------------------------ |
+| Framework       | Next.js (App Router) + TypeScript                                        |
+| Styling         | Tailwind CSS (tokens from `01-design-system.md`)                         |
+| Fonts / Icons   | `next/font` (Cormorant Garamond + Jost) · `@phosphor-icons/react` (thin) |
+| Database / ORM  | PostgreSQL + **Prisma**                                                  |
+| i18n            | `next-intl` (ru / fi / en)                                               |
+| Auth            | Role-based (admin / staff / client)                                      |
+| AI              | Anthropic Claude API                                                     |
+| Email / SMS     | Resend or Postmark · Twilio or FI gateway                                |
+| Analytics / SEO | GA4 · Search Console · `next-sitemap`                                    |
 
 > **Note:** the CMS/admin is **custom-built on Prisma** — Payload CMS (suggested in the design
 > handoff) is intentionally **not** used.
@@ -67,6 +67,7 @@ black.
     ├── assets/                       # 186 downloaded media files
     └── media-manifest.csv            # media inventory
 ```
+
 The Next.js app (`app/`, `components/`, `lib/`, `prisma/`, `messages/`) will be scaffolded in
 Phase 0 — see the implementation plan.
 
@@ -75,10 +76,12 @@ Phase 0 — see the implementation plan.
 > These steps describe the intended setup once the app is scaffolded (Phase 0).
 
 ### Prerequisites
+
 - Node.js 20+
 - PostgreSQL 15+ (EU region for GDPR)
 
 ### Setup
+
 ```bash
 git clone https://github.com/ayenisholah/monebeauty.git
 cd monebeauty
@@ -90,6 +93,7 @@ npm run dev                 # http://localhost:3000
 ```
 
 ### Environment variables
+
 ```ini
 DATABASE_URL=postgresql://user:pass@localhost:5432/monebeauty
 ANTHROPIC_API_KEY=sk-ant-...           # AI chatbot
@@ -100,13 +104,14 @@ NEXT_PUBLIC_GA_ID=G-...                # Google Analytics 4
 ```
 
 ### Scripts (planned)
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` / `npm run start` | Production build / serve |
-| `npm run lint` | ESLint |
-| `npm run db:seed` | Seed the database |
-| `npm run test` | Run tests (booking/availability logic) |
+
+| Script                            | Purpose                                |
+| --------------------------------- | -------------------------------------- |
+| `npm run dev`                     | Start the dev server                   |
+| `npm run build` / `npm run start` | Production build / serve               |
+| `npm run lint`                    | ESLint                                 |
+| `npm run db:seed`                 | Seed the database                      |
+| `npm run test`                    | Run tests (booking/availability logic) |
 
 ## Internationalization
 
@@ -124,28 +129,28 @@ components rather than re-styling per page. A `/styleguide` page showcases them.
 
 ## Documentation index
 
-| Document | Purpose |
-|---|---|
-| [`SCOPE.md`](./SCOPE.md) | Client brief — what to build |
-| [`REQUIREMENTS.md`](./REQUIREMENTS.md) | Binding, distilled requirements |
-| [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) | Phased build roadmap |
-| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | Design system, IA, specs, prototype |
-| [`scraped_content/`](./scraped_content/) | Real images & copy from the live site |
-| [`CLAUDE.md`](./CLAUDE.md) / [`AGENTS.md`](./AGENTS.md) | Guardrails for AI agents |
+| Document                                                                     | Purpose                               |
+| ---------------------------------------------------------------------------- | ------------------------------------- |
+| [`SCOPE.md`](./SCOPE.md)                                                     | Client brief — what to build          |
+| [`REQUIREMENTS.md`](./REQUIREMENTS.md)                                       | Binding, distilled requirements       |
+| [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)                         | Phased build roadmap                  |
+| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | Design system, IA, specs, prototype   |
+| [`scraped_content/`](./scraped_content/)                                     | Real images & copy from the live site |
+| [`CLAUDE.md`](./CLAUDE.md) / [`AGENTS.md`](./AGENTS.md)                      | Guardrails for AI agents              |
 
 ## Roadmap
 
-| Phase | Scope | |
-|---|---|---|
-| 0 | Scaffold + design tokens + Prisma + i18n | |
-| **1** | **UI primitives, layout, homepage, 9 service pages, marketing — MVP** | ⭐ |
-| 2 | E-commerce (AROSHA shop: catalog, cart, checkout) | |
-| 3 | Online booking (client wizard) | |
-| 4 | Staff schedule | |
-| 5 | CRM + custom admin + auth | |
-| 6 | Email/SMS notifications + reminders | |
-| 7 | AI chatbot | |
-| 8 | SEO + GDPR finalize | |
+| Phase | Scope                                                                 |     |
+| ----- | --------------------------------------------------------------------- | --- |
+| 0     | Scaffold + design tokens + Prisma + i18n                              |     |
+| **1** | **UI primitives, layout, homepage, 9 service pages, marketing — MVP** | ⭐  |
+| 2     | E-commerce (AROSHA shop: catalog, cart, checkout)                     |     |
+| 3     | Online booking (client wizard)                                        |     |
+| 4     | Staff schedule                                                        |     |
+| 5     | CRM + custom admin + auth                                             |     |
+| 6     | Email/SMS notifications + reminders                                   |     |
+| 7     | AI chatbot                                                            |     |
+| 8     | SEO + GDPR finalize                                                   |     |
 
 See [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for details and per-phase verification.
 

@@ -233,4 +233,3 @@ The overall experience should reflect a premium, modern, and medically credible 
 The design should avoid heavy black backgrounds and instead use a soft luxury beige color palette.
 The website must be fully responsive and mobile-first.
 The website must be fully prepared for long-term SEO growth.
-

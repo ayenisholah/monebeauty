@@ -1,0 +1,235 @@
+{
+  "_note": "[TODO: clinic review] Finnish strings are best-effort translations pending professional clinic review.",
+  "Nav": {
+    "about": "Tietoa meistä",
+    "services": "Palvelut",
+    "treatments": "Hoidot",
+    "pricing": "Hinnasto",
+    "blog": "Blogi",
+    "contact": "Yhteystiedot",
+    "bookOnline": "Varaa aika"
+  },
+  "Header": {
+    "openMenu": "Avaa valikko",
+    "closeMenu": "Sulje valikko",
+    "language": "Kieli"
+  },
+  "Footer": {
+    "brandDescription": "Uuden sukupolven esteettistä lääketiedettä — kauneutta, ihon terveyttä ja luonnollista harmoniaa.",
+    "navHeading": "Navigointi",
+    "treatmentsHeading": "Hoidot",
+    "contactsHeading": "Yhteystiedot",
+    "allTreatments": "Kaikki hoidot",
+    "rights": "Kaikki oikeudet pidätetään.",
+    "privacy": "Tietosuojaseloste",
+    "terms": "Käyttöehdot",
+    "cookies": "Evästekäytäntö"
+  },
+  "Chat": {
+    "title": "Tarvitsetko apua?",
+    "subtitle": "Olemme täällä sinua varten.",
+    "open": "Avaa chat"
+  },
+  "Common": {
+    "learnMore": "Lue lisää",
+    "readMore": "Lue lisää",
+    "bookOnline": "Varaa aika",
+    "ourServices": "Palvelumme",
+    "allTreatments": "Kaikki hoidot",
+    "allTechnologies": "Kaikki teknologiat",
+    "moreAboutUs": "Lisää meistä"
+  },
+  "Home": {
+    "metaTitle": "Uuden sukupolven esteettinen lääketiede Helsingissä",
+    "metaDescription": "Mone Beauty Clinic — luvanvarainen esteettisen lääketieteen klinikka Helsingissä, kokonaisvaltainen ja näyttöön perustuva lähestymistapa kasvojen, vartalon ja hiusten kauneuteen ja terveyteen.",
+    "hero": {
+      "eyebrow": "Esteettisen lääketieteen klinikka",
+      "titleLine1": "Esteettinen lääketiede",
+      "titleLine2": "Uusi sukupolvi",
+      "lead": "Kokonaisvaltainen lähestymistapa kauneuteen, ihon terveyteen ja kasvojen, vartalon ja hiusten luonnollisen harmonian palauttamiseen.",
+      "imageCaption": "Pääkuva"
+    },
+    "advantages": [
+      {
+        "title": "Lääketieteellinen lähestymistapa",
+        "description": "Näyttöön perustuva lääketiede"
+      },
+      {
+        "title": "Innovatiiviset teknologiat",
+        "description": "Edistyneet laitteet ja todistetut menetelmät"
+      },
+      {
+        "title": "Yksilölliset ohjelmat",
+        "description": "Henkilökohtaiset suunnitelmat näkyviin tuloksiin"
+      },
+      {
+        "title": "Luvanvarainen klinikka",
+        "description": "Virallinen lupa ja EU-standardit"
+      },
+      {
+        "title": "Turvalliset menetelmät",
+        "description": "Maksimaalinen turvallisuus ja mukavuus"
+      }
+    ],
+    "treatments": {
+      "eyebrow": "Suosituimmat hoitomme",
+      "heading": "Kohdennetut hoidot kasvoille, vartalolle ja hiuksille",
+      "cards": [
+        {
+          "number": "01",
+          "title": "Kasvohoidot",
+          "description": "Syväpuhdistus-, kosteutus- ja uudistushoidot säteilevälle iholle.",
+          "slug": "facial-treatments",
+          "imageCaption": "Kasvohoito"
+        },
+        {
+          "number": "02",
+          "title": "Injektiohoidot",
+          "description": "Botuliinihoidot, täyteaineet ja biorevitalisaatio lääketieteen asiantuntijoilta.",
+          "slug": "injectable-aesthetic-medicine",
+          "imageCaption": "Injektio"
+        },
+        {
+          "number": "03",
+          "title": "Laitehoidot",
+          "description": "Laser-, RF- ja laitekosmetologia todistetuilla teknologioilla.",
+          "slug": "aesthetic-device-treatments",
+          "imageCaption": "Laitekosmetologia"
+        },
+        {
+          "number": "04",
+          "title": "Vartalohoidot",
+          "description": "Endosfääri, muotoilu ja imunestehoidot koko vartalolle.",
+          "slug": "body-treatments",
+          "imageCaption": "Vartalohoito"
+        }
+      ]
+    },
+    "about": {
+      "eyebrow": "Tietoa klinikasta",
+      "headingLine1": "Tieteeseen perustuvaa kauneutta.",
+      "headingLine2": "Harmonia juuri sinulle.",
+      "paragraph1": "Mone Beauty Clinic yhdistää esteettisen lääketieteen, edistyneet teknologiat ja kokonaisvaltaisen lähestymistavan kauneuteen, ihon terveyteen, kasvojen nuorennukseen, vartalonhoitoon ja hiusten palautukseen.",
+      "paragraph2": "Olemme luvanvarainen lääketieteellinen klinikka — emme kauneussalonki — ja tarjoamme turvallisia, näyttöön perustuvia toimenpiteitä ja jokaiselle asiakkaalle räätälöityjä hoitosuunnitelmia.",
+      "imageCaption": "Klinikan sisätila"
+    },
+    "tech": {
+      "eyebrow": "Edistyneet teknologiat",
+      "heading": "Kauneutesi ja terveytesi puolesta",
+      "names": [
+        "Endospheres",
+        "Candela",
+        "Cutera",
+        "EMFACE",
+        "Nubea",
+        "Lumenis"
+      ]
+    },
+    "cta": {
+      "eyebrow": "Ajanvaraus",
+      "heading": "Yksilöllinen lähestymistapa kauneuteesi ja terveyteesi",
+      "body": "Varaa konsultaatio ja saat asiantuntijoiltamme henkilökohtaiset suositukset — luonnollisia, pitkäkestoisia tuloksia juuri sinulle.",
+      "button": "Varaa konsultaatio",
+      "imageCaption": "Konsultaatio"
+    },
+    "features": [
+      {
+        "title": "Helppo ajanvaraus",
+        "description": "Varaa konsultaatio milloin tahansa, 24/7."
+      },
+      {
+        "title": "Luottamuksellisuus ja tietosuoja",
+        "description": "Täysi yksityisyys ja GDPR-yhteensopiva turvallisuus."
+      },
+      {
+        "title": "Kokeneet asiantuntijat",
+        "description": "Korkea pätevyys ja jatkuva kouluttautuminen."
+      },
+      {
+        "title": "Premium-hoito",
+        "description": "Premium-palvelu ja henkilökohtainen lähestymistapa."
+      }
+    ]
+  },
+  "Services": {
+    "metaTitle": "Palvelut ja hoidot",
+    "metaDescription": "Tutustu Mone Beauty Clinicin esteettisen lääketieteen hoitoihin kasvoille, vartalolle ja hiuksille — jokaisella oma sivu.",
+    "eyebrow": "Hoitomme",
+    "heading": "Kokonaisvaltaista hoitoa kasvoille, vartalolle ja hiuksille",
+    "intro": "Jokaisella hoidolla on oma sivu, jossa on täydet tiedot, turvallisuusohjeet ja ajanvaraus."
+  },
+  "Service": {
+    "breadcrumbHome": "Etusivu",
+    "breadcrumbServices": "Palvelut",
+    "bookThis": "Varaa aika",
+    "whatItIs": "Mistä on kyse",
+    "suitableFor": "Kenelle sopii",
+    "benefits": "Hyödyt ja hoidettavat huolenaiheet",
+    "process": "Toimenpide",
+    "safety": "Miksi se on turvallista",
+    "preCare": "Ennen hoitoa",
+    "postCare": "Jälkihoito",
+    "contraindications": "Vasta-aiheet",
+    "sessions": "Suositellut hoitokerrat",
+    "results": "Odotetut tulokset",
+    "faq": "Usein kysytyt kysymykset",
+    "related": "Liittyvät hoidot",
+    "clinicToProvide": "Klinikka toimittaa tämän osion yksityiskohtaisen lääketieteellisen sisällön."
+  },
+  "Pricing": {
+    "metaTitle": "Hinnasto",
+    "metaDescription": "Läpinäkyvä hinnasto Mone Beauty Clinicin hoidoille Helsingissä.",
+    "eyebrow": "Hinnasto",
+    "heading": "Läpinäkyvä ja rehellinen hinnoittelu",
+    "intro": "Suuntaa-antavat hinnat. Lopullinen hinta vahvistetaan konsultaatiossa hoitosuunnitelmasi perusteella.",
+    "note": "Hinnat ovat suuntaa-antavia ja voivat muuttua. [CLINIC TO PROVIDE lopullinen hinnasto.]",
+    "treatment": "Hoito",
+    "price": "Hinta"
+  },
+  "Contact": {
+    "metaTitle": "Yhteystiedot",
+    "metaDescription": "Vieraile Mone Beauty Clinicissä Helsingissä. Osoite, puhelin, sähköposti ja aukioloajat.",
+    "eyebrow": "Yhteystiedot",
+    "heading": "Vieraile meillä Helsingissä",
+    "addressHeading": "Osoite",
+    "phoneHeading": "Puhelin",
+    "emailHeading": "Sähköposti",
+    "hoursHeading": "Aukioloajat",
+    "hours": "Ajanvarauksella",
+    "formHeading": "Lähetä meille viesti",
+    "name": "Nimesi",
+    "email": "Sähköposti",
+    "phone": "Puhelin",
+    "message": "Viesti",
+    "consent": "Hyväksyn henkilötietojeni käsittelyn tietosuojaselosteen mukaisesti.",
+    "send": "Lähetä viesti",
+    "formNote": "Tämä lomake on esikatselu; lähetys kytketään myöhemmässä vaiheessa."
+  },
+  "Blog": {
+    "metaTitle": "Blogi ja artikkelit",
+    "metaDescription": "Uutisia, oppaita ja artikkeleita Mone Beauty Cliniciltä.",
+    "eyebrow": "Blogi",
+    "heading": "Uutiset ja artikkelit",
+    "empty": "Artikkelit ovat tulossa pian. [CLINIC TO PROVIDE blogisisältö.]"
+  },
+  "Legal": {
+    "privacyTitle": "Tietosuojaseloste",
+    "termsTitle": "Käyttöehdot",
+    "cookiesTitle": "Evästekäytäntö",
+    "lastUpdated": "Päivitetty viimeksi",
+    "placeholder": "Tämä asiakirja on paikkamerkki. Klinikka toimittaa lopullisen, oikeudellisesti tarkistetun tekstin. [CLINIC TO PROVIDE]"
+  },
+  "Booking": {
+    "metaTitle": "Varaa aika",
+    "eyebrow": "Ajanvaraus",
+    "heading": "Varaa konsultaatio",
+    "body": "Verkkoajanvarauksemme avautuu pian. Sillä välin ota yhteyttä puhelimitse tai sähköpostitse, niin järjestämme mielellämme aikasi.",
+    "callUs": "Soita meille",
+    "emailUs": "Lähetä sähköpostia"
+  },
+  "NotFound": {
+    "title": "Sivua ei löytynyt",
+    "description": "Etsimääsi sivua ei ole olemassa.",
+    "home": "Takaisin etusivulle"
+  }
+}

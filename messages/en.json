@@ -1,0 +1,228 @@
+{
+  "Nav": {
+    "about": "About Clinic",
+    "services": "Services",
+    "treatments": "Treatments",
+    "pricing": "Pricing",
+    "blog": "Blog",
+    "contact": "Contacts",
+    "bookOnline": "Book Online"
+  },
+  "Header": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language"
+  },
+  "Footer": {
+    "brandDescription": "Aesthetic medicine of the next generation — beauty, skin health, and natural harmony.",
+    "navHeading": "Navigation",
+    "treatmentsHeading": "Treatments",
+    "contactsHeading": "Contacts",
+    "allTreatments": "All Treatments",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "cookies": "Cookies Policy"
+  },
+  "Chat": {
+    "title": "Need help?",
+    "subtitle": "We're here for you.",
+    "open": "Open chat"
+  },
+  "Common": {
+    "learnMore": "Learn More",
+    "readMore": "Read More",
+    "bookOnline": "Book Online",
+    "ourServices": "Our Services",
+    "allTreatments": "All Treatments",
+    "allTechnologies": "All Technologies",
+    "moreAboutUs": "More About Us"
+  },
+  "Home": {
+    "metaTitle": "Next-Generation Aesthetic Medicine in Helsinki",
+    "metaDescription": "Mone Beauty Clinic — a licensed aesthetic-medicine clinic in Helsinki offering a comprehensive, evidence-based approach to the beauty and health of face, body, and hair.",
+    "hero": {
+      "eyebrow": "Aesthetic Medicine Clinic",
+      "titleLine1": "Aesthetic Medicine",
+      "titleLine2": "Next Generation",
+      "lead": "A comprehensive approach to beauty, skin health, and restoring the natural harmony of the face, body, and hair.",
+      "imageCaption": "Hero Portrait"
+    },
+    "advantages": [
+      { "title": "Medical Approach", "description": "Evidence-based medicine" },
+      {
+        "title": "Innovative Technologies",
+        "description": "Advanced equipment & proven techniques"
+      },
+      {
+        "title": "Personalized Programs",
+        "description": "Individual plans for visible results"
+      },
+      {
+        "title": "Licensed Clinic",
+        "description": "Official license & EU standards"
+      },
+      { "title": "Safe Methods", "description": "Maximum safety and comfort" }
+    ],
+    "treatments": {
+      "eyebrow": "Our Popular Treatments",
+      "heading": "Targeted protocols for face, body & hair",
+      "cards": [
+        {
+          "number": "01",
+          "title": "Facial Treatments",
+          "description": "Deep cleansing, hydration & rejuvenation protocols for radiant skin.",
+          "slug": "facial-treatments",
+          "imageCaption": "Facial Care"
+        },
+        {
+          "number": "02",
+          "title": "Injectable Medicine",
+          "description": "Botulinum therapy, fillers & biorevitalization by medical experts.",
+          "slug": "injectable-aesthetic-medicine",
+          "imageCaption": "Injectable"
+        },
+        {
+          "number": "03",
+          "title": "Device Treatments",
+          "description": "Laser, RF & apparatus cosmetology with proven technologies.",
+          "slug": "aesthetic-device-treatments",
+          "imageCaption": "Device Cosmetology"
+        },
+        {
+          "number": "04",
+          "title": "Body Treatments",
+          "description": "Endospheres, contouring & lymphatic care for the whole body.",
+          "slug": "body-treatments",
+          "imageCaption": "Body Care"
+        }
+      ]
+    },
+    "about": {
+      "eyebrow": "About the Clinic",
+      "headingLine1": "Beauty backed by science.",
+      "headingLine2": "Harmony designed for you.",
+      "paragraph1": "Mone Beauty Clinic combines aesthetic medicine, advanced technologies, and a comprehensive approach to beauty, skin health, facial rejuvenation, body care, and hair restoration.",
+      "paragraph2": "We are a licensed medical clinic — not a beauty salon — offering safe, evidence-based procedures and personalized treatment plans tailored to each client.",
+      "imageCaption": "Clinic Interior"
+    },
+    "tech": {
+      "eyebrow": "Advanced Technologies",
+      "heading": "For your beauty and health",
+      "names": [
+        "Endospheres",
+        "Candela",
+        "Cutera",
+        "EMFACE",
+        "Nubea",
+        "Lumenis"
+      ]
+    },
+    "cta": {
+      "eyebrow": "Online Booking",
+      "heading": "Individual approach to your beauty and health",
+      "body": "Book your consultation and receive personalized recommendations from our specialists — natural, long-lasting results designed around you.",
+      "button": "Book a Consultation",
+      "imageCaption": "Consultation"
+    },
+    "features": [
+      {
+        "title": "Convenient Online Booking",
+        "description": "Book a consultation any time, 24/7."
+      },
+      {
+        "title": "Confidentiality & Data Protection",
+        "description": "Complete privacy and GDPR-compliant security."
+      },
+      {
+        "title": "Experienced Specialists",
+        "description": "High qualifications and ongoing training."
+      },
+      {
+        "title": "Premium Care",
+        "description": "Premium service and a personalized approach."
+      }
+    ]
+  },
+  "Services": {
+    "metaTitle": "Services & Treatments",
+    "metaDescription": "Explore Mone Beauty Clinic's aesthetic-medicine treatments for face, body, and hair — each with its own dedicated page.",
+    "eyebrow": "Our Treatments",
+    "heading": "Comprehensive care for face, body & hair",
+    "intro": "Every treatment has its own dedicated page with full details, safety information, and booking."
+  },
+  "Service": {
+    "breadcrumbHome": "Home",
+    "breadcrumbServices": "Services",
+    "bookThis": "Book Online",
+    "whatItIs": "What it is",
+    "suitableFor": "Who it's for",
+    "benefits": "Benefits & concerns addressed",
+    "process": "The procedure",
+    "safety": "Why it's safe",
+    "preCare": "Before your treatment",
+    "postCare": "Aftercare",
+    "contraindications": "Contraindications",
+    "sessions": "Recommended sessions",
+    "results": "Expected results",
+    "faq": "Frequently asked questions",
+    "related": "Related treatments",
+    "clinicToProvide": "Detailed medical content for this section will be provided by the clinic."
+  },
+  "Pricing": {
+    "metaTitle": "Pricing",
+    "metaDescription": "Transparent pricing for treatments at Mone Beauty Clinic, Helsinki.",
+    "eyebrow": "Pricing",
+    "heading": "Transparent, honest pricing",
+    "intro": "Indicative prices. Final pricing is confirmed at your consultation based on your individual plan.",
+    "note": "Prices are indicative and subject to change. [CLINIC TO PROVIDE final price list.]",
+    "treatment": "Treatment",
+    "price": "Price"
+  },
+  "Contact": {
+    "metaTitle": "Contact",
+    "metaDescription": "Visit Mone Beauty Clinic in Helsinki. Address, phone, email, and opening hours.",
+    "eyebrow": "Contacts",
+    "heading": "Visit us in Helsinki",
+    "addressHeading": "Address",
+    "phoneHeading": "Phone",
+    "emailHeading": "Email",
+    "hoursHeading": "Opening hours",
+    "hours": "By appointment",
+    "formHeading": "Send us a message",
+    "name": "Your name",
+    "email": "Email",
+    "phone": "Phone",
+    "message": "Message",
+    "consent": "I agree to the processing of my personal data in accordance with the Privacy Policy.",
+    "send": "Send message",
+    "formNote": "This form is a preview; submission is wired in a later phase."
+  },
+  "Blog": {
+    "metaTitle": "Blog & Articles",
+    "metaDescription": "News, guides, and articles from Mone Beauty Clinic.",
+    "eyebrow": "Blog",
+    "heading": "News & articles",
+    "empty": "Articles are coming soon. [CLINIC TO PROVIDE blog content.]"
+  },
+  "Legal": {
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Use",
+    "cookiesTitle": "Cookies Policy",
+    "lastUpdated": "Last updated",
+    "placeholder": "This document is a placeholder. The final, legally reviewed text will be provided by the clinic. [CLINIC TO PROVIDE]"
+  },
+  "Booking": {
+    "metaTitle": "Book Online",
+    "eyebrow": "Online Booking",
+    "heading": "Book your consultation",
+    "body": "Our online booking system is launching soon. In the meantime, please contact us by phone or email and we'll be glad to arrange your appointment.",
+    "callUs": "Call us",
+    "emailUs": "Email us"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist.",
+    "home": "Back to home"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+build
+package-lock.json
+lib/generated
+design_handoff_mone_beauty_clinic
+scraped_content

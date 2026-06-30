@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference material only (git-ignored, not part of the app build):
+    "design_handoff_mone_beauty_clinic/**",
+    "scraped_content/**",
   ]),
 ]);
 

@@ -1,0 +1,62 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { setRequestLocale, getTranslations } from "next-intl/server";
+import { cormorant, jost } from "@/lib/fonts";
+import { routing } from "@/i18n/routing";
+import { BRAND } from "@/content/site";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { ChatWidget } from "@/components/ui/ChatWidget";
+import "../globals.css";
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Home" });
+  return {
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    ),
+    title: {
+      default: `${BRAND.name} — ${t("metaTitle")}`,
+      template: `%s · ${BRAND.shortName}`,
+    },
+    description: t("metaDescription"),
+  };
+}
+
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
+  setRequestLocale(locale);
+
+  return (
+    <html
+      lang={locale}
+      className={`${cormorant.variable} ${jost.variable} h-full`}
+    >
+      <body className="flex min-h-full flex-col">
+        <NextIntlClientProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <ChatWidget />
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  );
+}

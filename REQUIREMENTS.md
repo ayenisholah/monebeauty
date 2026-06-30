@@ -9,16 +9,17 @@
 
 Three source documents feed this spec. On conflict, resolve in this order:
 
-| Source | Authoritative for | Strictness |
-|---|---|---|
-| [`SCOPE.md`](./SCOPE.md) | **What** to build (scope, features, priorities) | Binding |
-| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **How it looks/works** (design system, IA, page specs, templates) | Strictly followed |
-| [`scraped_content/`](./scraped_content/) | **Real assets & copy** (images, text, contact details, products) | Source of real content |
+| Source                                                                       | Authoritative for                                                 | Strictness             |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------- |
+| [`SCOPE.md`](./SCOPE.md)                                                     | **What** to build (scope, features, priorities)                   | Binding                |
+| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **How it looks/works** (design system, IA, page specs, templates) | Strictly followed      |
+| [`scraped_content/`](./scraped_content/)                                     | **Real assets & copy** (images, text, contact details, products)  | Source of real content |
 
 The user's explicit technical direction (Prisma + Postgres, full e-commerce) **overrides**
 any conflicting recommendation in the design handoff (e.g. the handoff's Payload CMS).
 
 ### Locked decisions
+
 - **E-commerce is IN scope** — build the clinic marketing site **and** a working AROSHA
   product shop (catalog, product pages, cart, checkout, orders).
 - **Custom admin on Prisma — no Payload CMS.** Wherever the handoff says "Payload,"
@@ -74,6 +75,7 @@ any conflicting recommendation in the design handoff (e.g. the handoff's Payload
 ## 4. Site map / pages
 
 **Marketing** (SSG/SSR):
+
 - `/` Home (long-form, per `03-homepage-spec.md`)
 - `/about` About the Clinic
 - `/services` Services index (grid of the 9 treatments)
@@ -97,6 +99,7 @@ JSON-LD). **No "Specialists" page** (explicitly excluded).
 
 Reproduce `01-design-system.md` **exactly**, expressed as design tokens — never hand-repeat
 hex values across components.
+
 - **Colors:** page `#FBF8F3`, alt `#F5EFE4`, card `#FCFAF6`, dark CTA `#2A2520`, footer
   `#221E1B`; accent `#97785A` (+ alt theme options); text primary `#3A322B` (never pure
   black), body `#6B6056`, muted `#8A7E70`; the full border/footer/dark palettes in the spec.
@@ -129,17 +132,17 @@ expected results → FAQ accordion → booking CTA band. Related-treatments grid
 **Content rule — no invented medical claims.** Seed copy from `scraped_content/` where it
 maps, as a **draft for clinic review**, and mark every gap `[CLINIC TO PROVIDE]`:
 
-| Treatment page | Seed source in `scraped_content/` |
-|---|---|
-| `endospheres-therapy` | `*/instrumental-endosphere.md` |
-| `laser-hair-removal` | `*/instrumental-laser.md`, `*/services-laser.md` |
-| `microneedling-rf` | `*/instrumental-mikroneulanrf.md`, `*/services-mikroneulanrf.md` |
-| `trichology` | `*/trichology.md`, `*/services-tricho.md` |
-| `facial-treatments` | `*/services-face.md` |
-| `body-treatments` | `*/services-body.md` |
-| `aesthetic-device-treatments` | umbrella — `instrumental-*` + `services-*` |
-| `injectable-aesthetic-medicine` | `[CLINIC TO PROVIDE]` (not on live site) |
-| `medical-consultation` | `[CLINIC TO PROVIDE]` |
+| Treatment page                  | Seed source in `scraped_content/`                                |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `endospheres-therapy`           | `*/instrumental-endosphere.md`                                   |
+| `laser-hair-removal`            | `*/instrumental-laser.md`, `*/services-laser.md`                 |
+| `microneedling-rf`              | `*/instrumental-mikroneulanrf.md`, `*/services-mikroneulanrf.md` |
+| `trichology`                    | `*/trichology.md`, `*/services-tricho.md`                        |
+| `facial-treatments`             | `*/services-face.md`                                             |
+| `body-treatments`               | `*/services-body.md`                                             |
+| `aesthetic-device-treatments`   | umbrella — `instrumental-*` + `services-*`                       |
+| `injectable-aesthetic-medicine` | `[CLINIC TO PROVIDE]` (not on live site)                         |
+| `medical-consultation`          | `[CLINIC TO PROVIDE]`                                            |
 
 ## 7. E-commerce — AROSHA shop
 

@@ -26,44 +26,47 @@ We are rebuilding the Mone Beauty website. Two reference sources sit in this rep
 ## Live Site Reference — monebeauty.fi (scraped 2026-06-30)
 
 ### Locales
+
 The site serves three locales off one domain, distinguished by URL prefix:
 
-| Locale | Base URL | Prefix | Scrape folder |
-|---|---|---|---|
-| Finnish (default) | `https://monebeauty.fi/` | _(none)_ | `scraped_content/fi/` |
-| English | `https://monebeauty.fi/EN/` | `EN/` | `scraped_content/en/` |
-| Russian | `https://monebeauty.fi/RU/` | `RU/` | `scraped_content/ru/` |
+| Locale            | Base URL                    | Prefix   | Scrape folder         |
+| ----------------- | --------------------------- | -------- | --------------------- |
+| Finnish (default) | `https://monebeauty.fi/`    | _(none)_ | `scraped_content/fi/` |
+| English           | `https://monebeauty.fi/EN/` | `EN/`    | `scraped_content/en/` |
+| Russian           | `https://monebeauty.fi/RU/` | `RU/`    | `scraped_content/ru/` |
 
 Every route below exists in **all three** locales (FI = no prefix, EN = `EN/…`, RU = `RU/…`).
 
 ### Routes → scraped Markdown files
+
 (Relative to each locale base; output file lives under `scraped_content/<locale>/`.)
 
-| Live path | Output file | Notes |
-|---|---|---|
-| `/` | `home.md` | Landing page: featured services + AROSHA product strip |
-| `/about/` | `about.md` | About the clinic |
-| `/instrumental/endosphere/` | `instrumental-endosphere.md` | Endospheres therapy |
-| `/instrumental/laser/` | `instrumental-laser.md` | Laser hair removal |
-| `/instrumental/mikroneulanrf/` | `instrumental-mikroneulanrf.md` | Microneedle RF lifting |
-| `/trichology/` | `trichology.md` | Trichology |
-| `/arosha/` | `arosha.md` | AROSHA brand/product line |
-| `/services/` | `services-index.md` | Services index |
-| `/services/face/` | `services-face.md` | Facial treatments |
-| `/services/body/` | `services-body.md` | Body treatments |
-| `/services/tricho/` | `services-tricho.md` | Trichology services |
-| `/services/laser/` | `services-laser.md` | Laser hair removal services |
-| `/services/mikroneulanrf/` | `services-mikroneulanrf.md` | Microneedle RF services |
-| `/services/eyebrows/` | `services-eyebrows.md` | Eyebrow & lash care |
-| `/services/packages/` | `services-packages.md` | Service packages |
-| `/services/gift-cards/` | `services-gift-cards.md` | Gift cards |
-| `/catalog/` | `catalog-index.md` | Product catalog (e-commerce) |
-| `/booking/` | `booking.md` | Online booking (app page) |
-| `/basket/` | `basket.md` | Shopping cart (app page) |
+| Live path                      | Output file                     | Notes                                                  |
+| ------------------------------ | ------------------------------- | ------------------------------------------------------ |
+| `/`                            | `home.md`                       | Landing page: featured services + AROSHA product strip |
+| `/about/`                      | `about.md`                      | About the clinic                                       |
+| `/instrumental/endosphere/`    | `instrumental-endosphere.md`    | Endospheres therapy                                    |
+| `/instrumental/laser/`         | `instrumental-laser.md`         | Laser hair removal                                     |
+| `/instrumental/mikroneulanrf/` | `instrumental-mikroneulanrf.md` | Microneedle RF lifting                                 |
+| `/trichology/`                 | `trichology.md`                 | Trichology                                             |
+| `/arosha/`                     | `arosha.md`                     | AROSHA brand/product line                              |
+| `/services/`                   | `services-index.md`             | Services index                                         |
+| `/services/face/`              | `services-face.md`              | Facial treatments                                      |
+| `/services/body/`              | `services-body.md`              | Body treatments                                        |
+| `/services/tricho/`            | `services-tricho.md`            | Trichology services                                    |
+| `/services/laser/`             | `services-laser.md`             | Laser hair removal services                            |
+| `/services/mikroneulanrf/`     | `services-mikroneulanrf.md`     | Microneedle RF services                                |
+| `/services/eyebrows/`          | `services-eyebrows.md`          | Eyebrow & lash care                                    |
+| `/services/packages/`          | `services-packages.md`          | Service packages                                       |
+| `/services/gift-cards/`        | `services-gift-cards.md`        | Gift cards                                             |
+| `/catalog/`                    | `catalog-index.md`              | Product catalog (e-commerce)                           |
+| `/booking/`                    | `booking.md`                    | Online booking (app page)                              |
+| `/basket/`                     | `basket.md`                     | Shopping cart (app page)                               |
 
 That's **19 routes × 3 locales = 57** content/route pages.
 
 ### Product detail pages (`/catalog/<slug>.html`)
+
 **31 products**, saved under `scraped_content/<locale>/catalog/<slug>.md` (slugs identical
 across locales → **31 × 3 = 93** product pages):
 
@@ -89,6 +92,7 @@ DIXIDOX / trichology line:
 **Grand total: 150 Markdown pages** (50 per locale).
 
 ### `scraped_content/` folder layout
+
 ```
 scraped_content/
   _raw/{fi,en,ru}/*.html          # verbatim HTML archive (source of truth)
@@ -99,11 +103,13 @@ scraped_content/
   assets/<original url path>/...  # 186 downloaded media files (~59 MB)
   media-manifest.csv              # media URL -> local asset path -> referencing pages
 ```
+
 Each `.md` has YAML front-matter (`source_url`, `locale`, `route`, `scraped`, `title`),
 the page content, and a trailing `## Media` section listing that page's images/media with
 both their live URL and local `assets/…` path.
 
 ### Media
+
 - **187** unique media references; **186** downloaded into `scraped_content/assets/`
   (images, fonts `.woff2`, one `.mp4` hero video). Paths mirror the live URL structure
   (`assets/files/land/…`, `assets/images/photo/…`, `assets/fonts/…`, `assets/i/logo.svg`).
@@ -112,6 +118,7 @@ both their live URL and local `assets/…` path.
 - Full inventory: **`scraped_content/media-manifest.csv`**.
 
 ### Brand / contact facts (from the live site)
+
 - **Name:** Mone Beauty Club — instrumental cosmetology / beauty & wellness, Helsinki.
 - **Address:** Solvikinkatu 5, 00990 Helsinki, Finland.
 - **Phone:** +358 40 129 3800 · **Email:** info@monebeauty.fi
@@ -124,19 +131,21 @@ both their live URL and local `assets/…` path.
 
 The build is governed by three binding docs. **Read them before any build work**, and do
 not deviate without updating them first:
+
 - `SCOPE.md` — what to build (client brief).
 - `REQUIREMENTS.md` — distilled, authoritative requirements.
 - `IMPLEMENTATION_PLAN.md` — phased build roadmap (MVP flagged).
 
-**Source-of-truth hierarchy:** `SCOPE.md` wins for *what*; `design_handoff_mone_beauty_clinic/`
-wins for *how it looks* (design system/templates — strictly followed); `scraped_content/` wins
-for *real images, copy & contact details*. The user's explicit stack & scope override any
+**Source-of-truth hierarchy:** `SCOPE.md` wins for _what_; `design_handoff_mone_beauty_clinic/`
+wins for _how it looks_ (design system/templates — strictly followed); `scraped_content/` wins
+for _real images, copy & contact details_. The user's explicit stack & scope override any
 conflicting handoff recommendation.
 
 **Locked decisions:**
+
 - **Stack is locked:** Next.js (App Router) + TypeScript + Tailwind + **Prisma** + PostgreSQL
-  + `next-intl` (ru/fi/en) + `@phosphor-icons/react` (thin) + `next/font` (Cormorant Garamond
-  + Jost) + Anthropic Claude API.
+  - `next-intl` (ru/fi/en) + `@phosphor-icons/react` (thin) + `next/font` (Cormorant Garamond
+  - Jost) + Anthropic Claude API.
 - **No Payload CMS.** The admin/CMS/CRM is **custom-built on Prisma**. Wherever the handoff
   (esp. `07-claude-code-prompts.md` prompts 5/6/9/11) says "Payload," substitute custom Prisma
   models + custom admin UI.
@@ -150,6 +159,7 @@ conflicting handoff recommendation.
 **mobile-first — verify at 390px first**; warm shadows only; honor `prefers-reduced-motion`.
 
 **Content & data rules:**
+
 - **No invented medical claims.** Seed treatment copy from `scraped_content/` where it maps
   (as draft for clinic review); mark every gap `[CLINIC TO PROVIDE]`.
 - Use the **real NAP** from `scraped_content` (Solvikinkatu 5, 00990 Helsinki · +358 40 129
