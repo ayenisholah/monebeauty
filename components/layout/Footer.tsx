@@ -1,4 +1,4 @@
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import {
   InstagramLogo,
   FacebookLogo,
@@ -6,15 +6,11 @@ import {
   Phone,
   EnvelopeSimple,
   MapPin,
-  ArrowRight,
+  Clock,
 } from "@phosphor-icons/react/ssr";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { BRAND, CONTACT, SOCIALS, NAV, LEGAL_NAV } from "@/content/site";
-import {
-  FOOTER_TREATMENT_SLUGS,
-  getTreatment,
-  type AppLocale,
-} from "@/content/treatments";
+import { BRAND, CONTACT, SOCIALS, FOOTER_NAV, LEGAL_NAV } from "@/content/site";
 
 const socials = [
   { href: SOCIALS.instagram, Icon: InstagramLogo, label: "Instagram" },
@@ -24,7 +20,6 @@ const socials = [
 
 export async function Footer() {
   const t = await getTranslations();
-  const locale = (await getLocale()) as AppLocale;
 
   const colHeading =
     "mb-[18px] font-sans text-[11px] font-medium uppercase tracking-[.2em] text-footer-heading";
@@ -33,16 +28,18 @@ export async function Footer() {
 
   return (
     <footer className="bg-footer">
-      <div className="mx-auto w-full max-w-[1280px] px-[clamp(20px,5vw,56px)] py-[clamp(60px,7vw,96px)]">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-[clamp(34px,4vw,56px)] border-b border-line-footer pb-[clamp(40px,5vw,64px)]">
+      <div className="mx-auto w-full max-w-[1280px] px-[clamp(20px,5vw,56px)] py-[clamp(56px,7vw,88px)]">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-[clamp(34px,4vw,56px)] border-b border-line-footer pb-[clamp(40px,5vw,56px)]">
           {/* Brand */}
           <div className="flex flex-col gap-[20px]">
-            <span className="font-display text-[22px] font-semibold tracking-[.04em] text-footer-logo">
-              {BRAND.wordmark.line1}
-            </span>
-            <p className="max-w-[260px] font-sans text-[13.5px] leading-[1.7] font-light text-footer-para">
-              {t("Footer.brandDescription")}
-            </p>
+            <Image
+              src={BRAND.logo}
+              alt={BRAND.name}
+              width={150}
+              height={77}
+              unoptimized
+              className="h-[56px] w-auto brightness-0 invert"
+            />
             <div className="flex gap-[12px]">
               {socials.map(({ href, Icon, label }) => (
                 <a
@@ -63,36 +60,13 @@ export async function Footer() {
           <div>
             <h4 className={colHeading}>{t("Footer.navHeading")}</h4>
             <ul className="flex flex-col gap-[12px]">
-              {NAV.map((n) => (
+              {FOOTER_NAV.map((n) => (
                 <li key={n.href}>
                   <Link href={n.href} className={linkCls}>
                     {t(`Nav.${n.key}`)}
                   </Link>
                 </li>
               ))}
-            </ul>
-          </div>
-
-          {/* Treatments */}
-          <div>
-            <h4 className={colHeading}>{t("Footer.treatmentsHeading")}</h4>
-            <ul className="flex flex-col gap-[12px]">
-              {FOOTER_TREATMENT_SLUGS.map((slug) => {
-                const tr = getTreatment(slug);
-                if (!tr) return null;
-                return (
-                  <li key={slug}>
-                    <Link href={`/services/${slug}`} className={linkCls}>
-                      {tr.content[locale].title}
-                    </Link>
-                  </li>
-                );
-              })}
-              <li>
-                <Link href="/services" className={linkCls}>
-                  {t("Footer.allTreatments")}
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -135,13 +109,19 @@ export async function Footer() {
                 </span>
               </li>
             </ul>
-            <Link
-              href="/booking"
-              className="mt-[20px] inline-flex items-center gap-[9px] rounded-[4px] bg-accent px-[22px] py-[12px] font-sans text-[11px] font-medium tracking-[.16em] text-page uppercase transition-colors hover:[background:color-mix(in_srgb,var(--accent)_84%,#fff)]"
-            >
-              {t("Nav.bookOnline")}
-              <ArrowRight size={15} weight="thin" />
-            </Link>
+          </div>
+
+          {/* Opening hours */}
+          <div>
+            <h4 className={colHeading}>{t("Footer.openingHours")}</h4>
+            <p className="inline-flex items-start gap-[10px] font-sans text-[13.5px] font-light text-footer-link">
+              <Clock
+                size={16}
+                weight="thin"
+                className="mt-[2px] shrink-0 text-accent"
+              />
+              {t("Footer.hours")}
+            </p>
           </div>
         </div>
 

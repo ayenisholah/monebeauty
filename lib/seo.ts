@@ -1,6 +1,19 @@
 import { routing } from "@/i18n/routing";
 import { BRAND, CONTACT } from "@/content/site";
 
+/** Plain-text excerpt from markdown for meta descriptions. */
+export function excerpt(markdown: string, max = 160): string {
+  const text = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // links -> text
+    .replace(/[#>*_`|-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max
+    ? text.slice(0, max).replace(/\s+\S*$/, "") + "…"
+    : text;
+}
+
 /** hreflang + canonical for a locale-agnostic path (e.g. "/services/x"). */
 export function localeAlternates(path: string, locale: string) {
   const languages: Record<string, string> = {};

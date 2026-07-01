@@ -1,13 +1,23 @@
 {
-  "_note": "[TODO: clinic review] Finnish strings are best-effort translations pending professional clinic review.",
   "Nav": {
     "about": "Tietoa meistä",
+    "instrumental": "Instrumentaalinen kosmetologia",
+    "endospheres": "Endospheres-terapia",
+    "laser": "Laserkarvanpoisto",
+    "rf": "Mikroneulan RF-lifting",
+    "trichology": "Trikologia",
+    "arosha": "Arosha",
     "services": "Palvelut",
-    "treatments": "Hoidot",
-    "pricing": "Hinnasto",
-    "blog": "Blogi",
-    "contact": "Yhteystiedot",
-    "bookOnline": "Varaa aika"
+    "face": "Kasvohoidot",
+    "body": "Vartalohoidot",
+    "serviceTricho": "Trikologia",
+    "serviceLaser": "Laserkarvanpoisto",
+    "serviceRf": "Mikroneulan RF",
+    "eyebrows": "Kulmat & ripset",
+    "packages": "Paketit",
+    "giftCards": "Lahjakortit",
+    "catalog": "Katalogi",
+    "bookTime": "Varaa aika"
   },
   "Header": {
     "openMenu": "Avaa valikko",
@@ -15,217 +25,85 @@
     "language": "Kieli"
   },
   "Footer": {
-    "brandDescription": "Uuden sukupolven esteettistä lääketiedettä — kauneutta, ihon terveyttä ja luonnollista harmoniaa.",
     "navHeading": "Navigointi",
-    "treatmentsHeading": "Hoidot",
     "contactsHeading": "Yhteystiedot",
-    "allTreatments": "Kaikki hoidot",
+    "openingHours": "Aukioloajat",
+    "hours": "Ma–Su: Sopimuksen mukaan",
     "rights": "Kaikki oikeudet pidätetään.",
     "privacy": "Tietosuojaseloste",
     "terms": "Käyttöehdot",
     "cookies": "Evästekäytäntö"
+  },
+  "Common": {
+    "readMore": "Katso lisää",
+    "seeMore": "Katso lisää",
+    "allServices": "Katso lisää palveluita",
+    "backToCatalog": "Takaisin katalogiin",
+    "bookTime": "Varaa aika"
   },
   "Chat": {
     "title": "Tarvitsetko apua?",
     "subtitle": "Olemme täällä sinua varten.",
     "open": "Avaa chat"
   },
-  "Common": {
-    "learnMore": "Lue lisää",
-    "readMore": "Lue lisää",
-    "bookOnline": "Varaa aika",
-    "ourServices": "Palvelumme",
-    "allTreatments": "Kaikki hoidot",
-    "allTechnologies": "Kaikki teknologiat",
-    "moreAboutUs": "Lisää meistä"
-  },
   "Home": {
-    "metaTitle": "Uuden sukupolven esteettinen lääketiede Helsingissä",
-    "metaDescription": "Mone Beauty Clinic — luvanvarainen esteettisen lääketieteen klinikka Helsingissä, kokonaisvaltainen ja näyttöön perustuva lähestymistapa kasvojen, vartalon ja hiusten kauneuteen ja terveyteen.",
-    "hero": {
-      "eyebrow": "Esteettisen lääketieteen klinikka",
-      "titleLine1": "Esteettinen lääketiede",
-      "titleLine2": "Uusi sukupolvi",
-      "lead": "Kokonaisvaltainen lähestymistapa kauneuteen, ihon terveyteen ja kasvojen, vartalon ja hiusten luonnollisen harmonian palauttamiseen.",
-      "imageCaption": "Pääkuva"
-    },
-    "advantages": [
-      {
-        "title": "Lääketieteellinen lähestymistapa",
-        "description": "Näyttöön perustuva lääketiede"
+    "metaTitle": "Instrumentaalinen kosmetologia ja kauneudenhoito Helsingissä",
+    "metaDescription": "Mone Beauty Club — moderni kauneuden ja hyvinvoinnin keskus Helsingissä: endospheres-terapia, laser, RF-lifting, trikologia, kasvo- ja vartalohoidot sekä AROSHA-tuotteet.",
+    "servicesEyebrow": "Palvelut",
+    "servicesHeading": "Palvelumme",
+    "featured": {
+      "endospheres": {
+        "title": "Endospheres therapy",
+        "description": "Innovatiivinen toimenpide, jossa käytetään ainutlaatuista radiofrekvenssiin ja tyhjiötekniikkaan perustuvaa laitetta. Tämä hoito auttaa parantamaan ihoa, vähentämään selluliittia, lisäämään ihon kiinteyttä ja sävyä sekä edistämään mikroverenkiertoa."
       },
-      {
-        "title": "Innovatiiviset teknologiat",
-        "description": "Edistyneet laitteet ja todistetut menetelmät"
+      "arosha": {
+        "title": "Arosha Boost",
+        "description": "AROSHA on kehittänyt intensiivisiä tuotteita ja ohjelmia, jotka vastaavat jokaisen asiakkaan tarpeisiin. Halutun tuloksen mukaan asiantuntija valitsee sopivan protokollan."
       },
-      {
-        "title": "Yksilölliset ohjelmat",
-        "description": "Henkilökohtaiset suunnitelmat näkyviin tuloksiin"
-      },
-      {
-        "title": "Luvanvarainen klinikka",
-        "description": "Virallinen lupa ja EU-standardit"
-      },
-      {
-        "title": "Turvalliset menetelmät",
-        "description": "Maksimaalinen turvallisuus ja mukavuus"
+      "facial": {
+        "title": "Kasvojen hoitomenetelmät",
+        "description": "Salongissamme käytämme tehokkaimpia laite- ja kosmeettisia menetelmiä kasvoille korostaaksemme luonnollista kauneuttasi ja antaaksemme ihollesi terveen, hehkuvan ulkonäön."
       }
-    ],
-    "treatments": {
-      "eyebrow": "Suosituimmat hoitomme",
-      "heading": "Kohdennetut hoidot kasvoille, vartalolle ja hiuksille",
-      "cards": [
-        {
-          "number": "01",
-          "title": "Kasvohoidot",
-          "description": "Syväpuhdistus-, kosteutus- ja uudistushoidot säteilevälle iholle.",
-          "slug": "facial-treatments",
-          "imageCaption": "Kasvohoito"
-        },
-        {
-          "number": "02",
-          "title": "Injektiohoidot",
-          "description": "Botuliinihoidot, täyteaineet ja biorevitalisaatio lääketieteen asiantuntijoilta.",
-          "slug": "injectable-aesthetic-medicine",
-          "imageCaption": "Injektio"
-        },
-        {
-          "number": "03",
-          "title": "Laitehoidot",
-          "description": "Laser-, RF- ja laitekosmetologia todistetuilla teknologioilla.",
-          "slug": "aesthetic-device-treatments",
-          "imageCaption": "Laitekosmetologia"
-        },
-        {
-          "number": "04",
-          "title": "Vartalohoidot",
-          "description": "Endosfääri, muotoilu ja imunestehoidot koko vartalolle.",
-          "slug": "body-treatments",
-          "imageCaption": "Vartalohoito"
-        }
-      ]
     },
-    "about": {
-      "eyebrow": "Tietoa klinikasta",
-      "headingLine1": "Tieteeseen perustuvaa kauneutta.",
-      "headingLine2": "Harmonia juuri sinulle.",
-      "paragraph1": "Mone Beauty Clinic yhdistää esteettisen lääketieteen, edistyneet teknologiat ja kokonaisvaltaisen lähestymistavan kauneuteen, ihon terveyteen, kasvojen nuorennukseen, vartalonhoitoon ja hiusten palautukseen.",
-      "paragraph2": "Olemme luvanvarainen lääketieteellinen klinikka — emme kauneussalonki — ja tarjoamme turvallisia, näyttöön perustuvia toimenpiteitä ja jokaiselle asiakkaalle räätälöityjä hoitosuunnitelmia.",
-      "imageCaption": "Klinikan sisätila"
-    },
-    "tech": {
-      "eyebrow": "Edistyneet teknologiat",
-      "heading": "Kauneutesi ja terveytesi puolesta",
-      "names": [
-        "Endospheres",
-        "Candela",
-        "Cutera",
-        "EMFACE",
-        "Nubea",
-        "Lumenis"
-      ]
-    },
-    "cta": {
-      "eyebrow": "Ajanvaraus",
-      "heading": "Yksilöllinen lähestymistapa kauneuteesi ja terveyteesi",
-      "body": "Varaa konsultaatio ja saat asiantuntijoiltamme henkilökohtaiset suositukset — luonnollisia, pitkäkestoisia tuloksia juuri sinulle.",
-      "button": "Varaa konsultaatio",
-      "imageCaption": "Konsultaatio"
-    },
-    "features": [
-      {
-        "title": "Helppo ajanvaraus",
-        "description": "Varaa konsultaatio milloin tahansa, 24/7."
-      },
-      {
-        "title": "Luottamuksellisuus ja tietosuoja",
-        "description": "Täysi yksityisyys ja GDPR-yhteensopiva turvallisuus."
-      },
-      {
-        "title": "Kokeneet asiantuntijat",
-        "description": "Korkea pätevyys ja jatkuva kouluttautuminen."
-      },
-      {
-        "title": "Premium-hoito",
-        "description": "Premium-palvelu ja henkilökohtainen lähestymistapa."
-      }
-    ]
+    "aroshaEyebrow": "Arosha",
+    "aroshaHeading": "AROSHA",
+    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use."
   },
-  "Services": {
-    "metaTitle": "Palvelut ja hoidot",
-    "metaDescription": "Tutustu Mone Beauty Clinicin esteettisen lääketieteen hoitoihin kasvoille, vartalolle ja hiuksille — jokaisella oma sivu.",
-    "eyebrow": "Hoitomme",
-    "heading": "Kokonaisvaltaista hoitoa kasvoille, vartalolle ja hiuksille",
-    "intro": "Jokaisella hoidolla on oma sivu, jossa on täydet tiedot, turvallisuusohjeet ja ajanvaraus."
+  "Catalog": {
+    "metaTitle": "Katalogi",
+    "metaDescription": "Ammattilaisten AROSHA- ja DIXIDOX De Luxe -tuotteet Mone Beauty Clubilla, Helsingissä.",
+    "title": "Katalogi",
+    "intro": "Ammattilaisten AROSHA-vartalotuotteet ja DIXIDOX De Luxe -trikologiasarja.",
+    "intoBasket": "Lisää ostoskoriin",
+    "categoryBody": "AROSHA vartalo",
+    "categoryTricho": "DIXIDOX trikologia"
   },
-  "Service": {
-    "breadcrumbHome": "Etusivu",
-    "breadcrumbServices": "Palvelut",
-    "bookThis": "Varaa aika",
-    "whatItIs": "Mistä on kyse",
-    "suitableFor": "Kenelle sopii",
-    "benefits": "Hyödyt ja hoidettavat huolenaiheet",
-    "process": "Toimenpide",
-    "safety": "Miksi se on turvallista",
-    "preCare": "Ennen hoitoa",
-    "postCare": "Jälkihoito",
-    "contraindications": "Vasta-aiheet",
-    "sessions": "Suositellut hoitokerrat",
-    "results": "Odotetut tulokset",
-    "faq": "Usein kysytyt kysymykset",
-    "related": "Liittyvät hoidot",
-    "clinicToProvide": "Klinikka toimittaa tämän osion yksityiskohtaisen lääketieteellisen sisällön."
+  "Product": {
+    "description": "Kuvaus",
+    "seeAlso": "Katso myös",
+    "backToCatalog": "Takaisin katalogiin",
+    "intoBasket": "Lisää ostoskoriin"
   },
-  "Pricing": {
-    "metaTitle": "Hinnasto",
-    "metaDescription": "Läpinäkyvä hinnasto Mone Beauty Clinicin hoidoille Helsingissä.",
-    "eyebrow": "Hinnasto",
-    "heading": "Läpinäkyvä ja rehellinen hinnoittelu",
-    "intro": "Suuntaa-antavat hinnat. Lopullinen hinta vahvistetaan konsultaatiossa hoitosuunnitelmasi perusteella.",
-    "note": "Hinnat ovat suuntaa-antavia ja voivat muuttua. [CLINIC TO PROVIDE lopullinen hinnasto.]",
-    "treatment": "Hoito",
-    "price": "Hinta"
+  "Booking": {
+    "metaTitle": "Varaa aika",
+    "eyebrow": "Ajanvaraus",
+    "heading": "Varaa aikasi",
+    "body": "Verkkoajanvarauksemme avautuu pian. Sillä välin ota yhteyttä puhelimitse tai sähköpostitse, niin järjestämme mielellämme käyntisi.",
+    "callUs": "Soita meille",
+    "emailUs": "Lähetä sähköpostia"
   },
-  "Contact": {
-    "metaTitle": "Yhteystiedot",
-    "metaDescription": "Vieraile Mone Beauty Clinicissä Helsingissä. Osoite, puhelin, sähköposti ja aukioloajat.",
-    "eyebrow": "Yhteystiedot",
-    "heading": "Vieraile meillä Helsingissä",
-    "addressHeading": "Osoite",
-    "phoneHeading": "Puhelin",
-    "emailHeading": "Sähköposti",
-    "hoursHeading": "Aukioloajat",
-    "hours": "Ajanvarauksella",
-    "formHeading": "Lähetä meille viesti",
-    "name": "Nimesi",
-    "email": "Sähköposti",
-    "phone": "Puhelin",
-    "message": "Viesti",
-    "consent": "Hyväksyn henkilötietojeni käsittelyn tietosuojaselosteen mukaisesti.",
-    "send": "Lähetä viesti",
-    "formNote": "Tämä lomake on esikatselu; lähetys kytketään myöhemmässä vaiheessa."
-  },
-  "Blog": {
-    "metaTitle": "Blogi ja artikkelit",
-    "metaDescription": "Uutisia, oppaita ja artikkeleita Mone Beauty Cliniciltä.",
-    "eyebrow": "Blogi",
-    "heading": "Uutiset ja artikkelit",
-    "empty": "Artikkelit ovat tulossa pian. [CLINIC TO PROVIDE blogisisältö.]"
+  "Basket": {
+    "metaTitle": "Ostoskori",
+    "heading": "Ostoskorisi",
+    "empty": "Ostoskorisi on tyhjä. Verkkokassa avautuu pian.",
+    "browse": "Selaa katalogia"
   },
   "Legal": {
     "privacyTitle": "Tietosuojaseloste",
     "termsTitle": "Käyttöehdot",
     "cookiesTitle": "Evästekäytäntö",
     "lastUpdated": "Päivitetty viimeksi",
-    "placeholder": "Tämä asiakirja on paikkamerkki. Klinikka toimittaa lopullisen, oikeudellisesti tarkistetun tekstin. [CLINIC TO PROVIDE]"
-  },
-  "Booking": {
-    "metaTitle": "Varaa aika",
-    "eyebrow": "Ajanvaraus",
-    "heading": "Varaa konsultaatio",
-    "body": "Verkkoajanvarauksemme avautuu pian. Sillä välin ota yhteyttä puhelimitse tai sähköpostitse, niin järjestämme mielellämme aikasi.",
-    "callUs": "Soita meille",
-    "emailUs": "Lähetä sähköpostia"
+    "placeholder": "Tämä asiakirja on paikkamerkki. Klinikka toimittaa lopullisen, oikeudellisesti tarkistetun tekstin."
   },
   "NotFound": {
     "title": "Sivua ei löytynyt",

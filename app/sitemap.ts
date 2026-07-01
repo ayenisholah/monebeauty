@@ -1,16 +1,17 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
-import { TREATMENT_SLUGS } from "@/content/treatments";
+import { childSlugs } from "@/content/pages";
+import { PRODUCT_SLUGS } from "@/content/products";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 const STATIC_PATHS = [
   "",
   "/about",
+  "/trichology",
+  "/arosha",
   "/services",
-  "/pricing",
-  "/blog",
-  "/contact",
+  "/catalog",
   "/booking",
   "/privacy-policy",
   "/terms-of-use",
@@ -20,7 +21,9 @@ const STATIC_PATHS = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     ...STATIC_PATHS,
-    ...TREATMENT_SLUGS.map((slug) => `/services/${slug}`),
+    ...childSlugs("instrumental").map((s) => `/instrumental/${s}`),
+    ...childSlugs("services").map((s) => `/services/${s}`),
+    ...PRODUCT_SLUGS.map((s) => `/catalog/${s}`),
   ];
 
   return paths.flatMap((path) =>

@@ -7,36 +7,41 @@
 
 ## 0. Source-of-truth hierarchy
 
-Three source documents feed this spec. On conflict, resolve in this order:
+The app **mirrors the live site** (`monebeauty.fi` = Mone Beauty Club). On conflict, resolve:
 
-| Source                                                                       | Authoritative for                                                 | Strictness             |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------- |
-| [`SCOPE.md`](./SCOPE.md)                                                     | **What** to build (scope, features, priorities)                   | Binding                |
-| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **How it looks/works** (design system, IA, page specs, templates) | Strictly followed      |
-| [`scraped_content/`](./scraped_content/)                                     | **Real assets & copy** (images, text, contact details, products)  | Source of real content |
+| Source                                                                       | Authoritative for                                                                 | Strictness        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------- |
+| [`scraped_content/`](./scraped_content/)                                     | **IA, pages, links, copy, images, video, brand, logo, favicon** (live, 3 locales) | Mirrored          |
+| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **Visual design system ONLY** (tokens, type, spacing, radii, shadows, components) | Strictly followed |
+| [`SCOPE.md`](./SCOPE.md)                                                     | **Product features** (booking, CRM, admin, chatbot, e-commerce, GDPR)             | Binding           |
 
-The user's explicit technical direction (Prisma + Postgres, full e-commerce) **overrides**
-any conflicting recommendation in the design handoff (e.g. the handoff's Payload CMS).
+The user's explicit technical direction (Prisma + Postgres) **overrides** any conflicting
+handoff recommendation (e.g. the handoff's Payload CMS).
+
+### Content-sourcing rule (binding)
+
+- **All copy, images, and video come from `scraped_content/`** — mirror the live IA, pages,
+  links, logo, and favicon. **No invented copy; no gradient placeholders where real media exists.**
+- Content is baked into committed registries by `scripts/gen-content.mjs`
+  (`content/generated/*.json`); media by `scripts/copy-media.mjs` (`public/media/**`).
+  `scraped_content/` stays git-ignored — re-run both scripts to refresh.
 
 ### Locked decisions
 
-- **E-commerce is IN scope** — build the clinic marketing site **and** a working AROSHA
-  product shop (catalog, product pages, cart, checkout, orders).
-- **Custom admin on Prisma — no Payload CMS.** Wherever the handoff says "Payload,"
-  substitute custom Prisma models + a custom admin UI.
-- **Full roadmap, MVP flagged** (see implementation plan).
+- **Brand: Mone Beauty Club** — real `public/logo.svg` + `app/favicon.ico`.
+- **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`, `/basket`);
+  cart/checkout are Phase 2.
+- **Custom admin on Prisma — no Payload CMS.**
 - **Stack is locked** (§2).
 
 ---
 
 ## 1. Overview & brand
 
-- **Name:** Mone Beauty Clinic (primary brand per SCOPE/handoff). The live site currently
-  brands as "Mone Beauty **Club**." Use the **Clinic** positioning; keep the display name in
-  a single config constant — **final name to be confirmed by the client.**
-- **Positioning:** Next-Generation Aesthetic Medicine — a medically credible, comprehensive
-  approach to the beauty and health of face, body, and hair. A licensed **medical clinic**,
-  not a beauty salon.
+- **Name:** **Mone Beauty Club** (matches the live site). Kept in a single config constant
+  (`content/site.ts`); the header/footer render the real `logo.svg`.
+- **Positioning:** a modern beauty & health center in Helsinki — instrumental cosmetology
+  (endospheres, laser, RF lifting), trichology, facial & body care, and AROSHA products.
 - **Visual language:** luxury minimalism / Scandinavian medical-beauty. Milky-white, cream,
   beige, sand, taupe, soft-brown surfaces with subtle-gold accents; editorial serif
   (Cormorant Garamond) + clean grotesque sans (Jost).
@@ -72,28 +77,27 @@ any conflicting recommendation in the design handoff (e.g. the handoff's Payload
 - Content authored **per-locale** in the admin — **do not auto-translate** medical or legal
   copy; each language is clinic-approved. `scraped_content/{fi,en,ru}/` provides starting copy.
 
-## 4. Site map / pages
+## 4. Site map / pages (mirrors the live site, locale-prefixed en/fi/ru)
 
-**Marketing** (SSG/SSR):
+**Content pages** (real copy from `scraped_content`, rendered via `react-markdown`):
 
-- `/` Home (long-form, per `03-homepage-spec.md`)
-- `/about` About the Clinic
-- `/services` Services index (grid of the 9 treatments)
-- `/services/[slug]` — the **9 treatment pages** (§6)
-- `/pricing` Pricing (admin-editable table per category)
-- `/blog`, `/blog/[slug]` Blog / articles
-- `/contact` Contact (form + map + hours + GDPR consent)
-- `/privacy-policy`, `/terms-of-use`, `/cookies-policy` Legal
+- `/` Home — real hero video + serif brand heading, 3 featured services, AROSHA product grid
+- `/about` About Us (incl. real Club Rules / cancellation / return copy)
+- `/instrumental/endosphere`, `/instrumental/laser`, `/instrumental/mikroneulanrf`
+- `/trichology`, `/arosha`
+- `/services` (index) + `/services/{face,body,tricho,laser,mikroneulanrf,eyebrows,packages,gift-cards}`
 
-**Shop** (§7): `/shop` (catalog), `/shop/[category]`, `/shop/product/[slug]`, `/cart`,
-`/checkout`, `/order/[id]` confirmation.
+**Shop:** `/catalog` (31 AROSHA/DIXIDOX products, grouped by category), `/catalog/[slug]`
+(product detail: image, price, size, real description, related), `/basket` (cart — Phase 2).
 
-**App / authenticated:** `/booking` (client wizard), `/account` (client: appointments,
-order history, profile), `/staff` (staff schedule), `/admin` (CMS + CRM).
+**App / authenticated (later phases):** `/booking` ("Book time" — placeholder now), `/account`,
+`/staff`, `/admin`.
 
-**Global elements on every public page:** sticky blurred header w/ language switcher; footer;
-AI chatbot FAB; cookie-consent banner; consistent SEO `<head>` (title, meta, OG, hreflang,
-JSON-LD). **No "Specialists" page** (explicitly excluded).
+**Legal (footer):** `/privacy-policy`, `/terms-of-use`, `/cookies-policy`.
+
+**Global elements:** sticky blurred header (real logo, dropdown nav for Instrumental &
+Services, cart, language switcher, Book time); footer (nav + contacts + opening hours "By
+agreement" + socials); chat FAB; SEO `<head>` (title, meta, OG, hreflang, JSON-LD).
 
 ## 5. Design system requirements
 
@@ -114,35 +118,21 @@ hex values across components.
   (`next/image`), Header/Navbar, MobileMenu, Footer, CTABand, ChatWidget FAB,
   LanguageSwitcher. Build a `/styleguide` page demonstrating all of them.
 
-## 6. The 9 treatment pages (most important SEO requirement)
+## 6. Service & content pages (SEO)
 
-Each treatment gets its **own** SEO page at `/services/[slug]`. All 9 share **one template**
-(from `04-service-page-template.md`) with these 13 blocks in order: hero (h1 + breadcrumb +
-sticky Book Online) → what it is → who it's for → benefits/concerns → procedure steps → why
-it's safe → pre-care → post-care → contraindications → recommended sessions (stat block) →
-expected results → FAQ accordion → booking CTA band. Related-treatments grid at the bottom.
+Service/content pages mirror the live site and render **real per-locale copy** from
+`scraped_content` via a shared `ContentPage` + `react-markdown` (title + markdown body,
+images resolved from `public/media/**`). No invented content.
 
-**Treatments (slugs):** `aesthetic-device-treatments`, `laser-hair-removal`,
-`endospheres-therapy`, `microneedling-rf`, `facial-treatments`, `body-treatments`,
-`injectable-aesthetic-medicine`, `trichology`, `medical-consultation`.
+**Instrumental cosmetology:** `/instrumental/endosphere`, `/instrumental/laser`,
+`/instrumental/mikroneulanrf`.
+**Services:** `/services` index + `/services/{face, body, tricho, laser, mikroneulanrf,
+eyebrows, packages, gift-cards}`.
+**Standalone:** `/trichology`, `/arosha`.
 
-**SEO per page:** `title`, `metaDescription`, `h1`, `ogImage`, per-image `alt`; JSON-LD
-(`MedicalProcedure`/`Service` + `FAQPage` + `BreadcrumbList`); `hreflang` for ru/fi/en.
-
-**Content rule — no invented medical claims.** Seed copy from `scraped_content/` where it
-maps, as a **draft for clinic review**, and mark every gap `[CLINIC TO PROVIDE]`:
-
-| Treatment page                  | Seed source in `scraped_content/`                                |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `endospheres-therapy`           | `*/instrumental-endosphere.md`                                   |
-| `laser-hair-removal`            | `*/instrumental-laser.md`, `*/services-laser.md`                 |
-| `microneedling-rf`              | `*/instrumental-mikroneulanrf.md`, `*/services-mikroneulanrf.md` |
-| `trichology`                    | `*/trichology.md`, `*/services-tricho.md`                        |
-| `facial-treatments`             | `*/services-face.md`                                             |
-| `body-treatments`               | `*/services-body.md`                                             |
-| `aesthetic-device-treatments`   | umbrella — `instrumental-*` + `services-*`                       |
-| `injectable-aesthetic-medicine` | `[CLINIC TO PROVIDE]` (not on live site)                         |
-| `medical-consultation`          | `[CLINIC TO PROVIDE]`                                            |
+Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by slug × locale.
+**SEO per page:** `title` + `metaDescription` (excerpt) + `hreflang`. Product pages also emit
+`MedicalProcedure`/`Service` JSON-LD; the homepage emits `MedicalClinic` JSON-LD (Helsinki NAP).
 
 ## 7. E-commerce — AROSHA shop
 

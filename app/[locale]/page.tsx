@@ -1,10 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
-import { Hero } from "@/components/marketing/Hero";
-import { TreatmentsGrid } from "@/components/marketing/TreatmentsGrid";
-import { AboutBlock } from "@/components/marketing/AboutBlock";
-import { TechWall } from "@/components/marketing/TechWall";
-import { CTABand } from "@/components/marketing/CTABand";
-import { FeaturesStrip } from "@/components/marketing/FeaturesStrip";
+import { HomeHero } from "@/components/home/HomeHero";
+import { FeaturedServices } from "@/components/home/FeaturedServices";
+import { AroshaShowcase } from "@/components/home/AroshaShowcase";
 import { JsonLd } from "@/components/JsonLd";
 import { medicalClinicJsonLd } from "@/lib/seo";
 
@@ -19,12 +16,9 @@ export default async function HomePage({
   return (
     <>
       <JsonLd data={medicalClinicJsonLd()} />
-      <Hero />
-      <TreatmentsGrid />
-      <AboutBlock />
-      <TechWall />
-      <CTABand />
-      <FeaturesStrip />
+      <HomeHero />
+      <FeaturedServices />
+      <AroshaShowcase />
     </>
   );
 }

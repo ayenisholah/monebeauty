@@ -1,9 +1,19 @@
 # Implementation Plan — Mone Beauty
 
 > Binding build roadmap. Pairs with [`REQUIREMENTS.md`](./REQUIREMENTS.md). Phases run in
-> order; each builds on the last. **Commit after each phase.** This plan supersedes the
-> handoff's `07-claude-code-prompts.md` where they differ — most importantly: **Prisma +
-> custom admin instead of Payload CMS**, and **e-commerce is in scope**.
+> order; each builds on the last. **Commit after each phase.** Key direction: the app
+> **mirrors the live site** (Mone Beauty Club) — **all copy, images, and video come from
+> `scraped_content/`**; the design handoff supplies visual styling only. **Prisma + custom
+> admin (no Payload)**; **e-commerce is in scope**.
+
+## Content & media pipeline (from the live site)
+
+- `scripts/gen-content.mjs` parses `scraped_content/{en,fi,ru}/*.md` → committed
+  `content/generated/{pages,products,assets}.json` (image srcs rewritten to `/media/...`).
+- `scripts/copy-media.mjs` copies referenced assets + hero video + logo + favicon into
+  committed `public/media/**`, `public/logo.svg`, `app/favicon.ico`.
+- Page bodies render via `components/Markdown.tsx` (`react-markdown` + `remark-gfm`).
+- `scraped_content/` stays git-ignored; re-run both scripts to refresh content/media.
 
 ## Stack (locked)
 
@@ -17,9 +27,10 @@ gateway (SMS) · GA4 + Search Console + `next-sitemap`.
 ```
 app/
   [locale]/
-    (marketing)/  page.tsx (home), about, services, services/[slug], pricing,
-                  blog, blog/[slug], contact, privacy-policy, terms-of-use, cookies-policy
-    (shop)/       shop, shop/[category], shop/product/[slug], cart, checkout, order/[id]
+    page.tsx (home), about, instrumental/[slug], trichology, arosha,
+    services, services/[slug], catalog, catalog/[slug], basket, booking,
+    privacy-policy, terms-of-use, cookies-policy
+    (later)     shop cart/checkout/order, account, staff
     (account)/    account            # client: appointments, orders, profile
     (staff)/      staff              # staff schedule
   admin/                            # custom Prisma-backed admin + CRM

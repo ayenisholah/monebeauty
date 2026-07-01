@@ -129,43 +129,51 @@ both their live URL and local `assets/…` path.
 
 ## Project Guardrails — do not deviate
 
-The build is governed by three binding docs. **Read them before any build work**, and do
+The build is governed by these binding docs. **Read them before any build work**, and do
 not deviate without updating them first:
 
-- `SCOPE.md` — what to build (client brief).
+- `SCOPE.md` — product scope/features (booking, CRM, admin, chatbot, e-commerce, GDPR).
 - `REQUIREMENTS.md` — distilled, authoritative requirements.
-- `IMPLEMENTATION_PLAN.md` — phased build roadmap (MVP flagged).
+- `IMPLEMENTATION_PLAN.md` — phased build roadmap.
 
-**Source-of-truth hierarchy:** `SCOPE.md` wins for _what_; `design_handoff_mone_beauty_clinic/`
-wins for _how it looks_ (design system/templates — strictly followed); `scraped_content/` wins
-for _real images, copy & contact details_. The user's explicit stack & scope override any
-conflicting handoff recommendation.
+**Source-of-truth hierarchy:**
+
+- **`scraped_content/` is authoritative for IA, pages, links, copy, images, video, brand,
+  logo, and favicon** — the app **mirrors the live site** (`monebeauty.fi` = Mone Beauty Club),
+  all three locales.
+- **`design_handoff_mone_beauty_clinic/` is the visual design system ONLY** (color tokens,
+  type scale, spacing, radii, shadows, component styling). Not the IA or content.
+- `SCOPE.md` governs product features; the user's explicit stack governs tech.
+
+**Content-sourcing rule (do not violate):**
+
+- **All copy, images, and video come from `scraped_content/`** (the live site, all 3 locales).
+  Mirror the live IA, pages, links, logo, and favicon. **No invented copy; no gradient
+  placeholders where real media exists.**
+- Content is baked into committed registries by `scripts/gen-content.mjs`
+  (`content/generated/*.json`) and media by `scripts/copy-media.mjs` (`public/media/**`);
+  `scraped_content/` itself stays git-ignored. Re-run both scripts to refresh content/media.
+- Brand is **Mone Beauty Club** (real `public/logo.svg` + `app/favicon.ico`); real NAP
+  (Solvikinkatu 5, 00990 Helsinki · +358 40 129 3800 · info@monebeauty.fi); hours "By agreement".
 
 **Locked decisions:**
 
 - **Stack is locked:** Next.js (App Router) + TypeScript + Tailwind + **Prisma** + PostgreSQL
-  - `next-intl` (ru/fi/en) + `@phosphor-icons/react` (thin) + `next/font` (Cormorant Garamond
-  - Jost) + Anthropic Claude API.
-- **No Payload CMS.** The admin/CMS/CRM is **custom-built on Prisma**. Wherever the handoff
-  (esp. `07-claude-code-prompts.md` prompts 5/6/9/11) says "Payload," substitute custom Prisma
-  models + custom admin UI.
-- **E-commerce AND clinic are both in scope** — clinic marketing + 9 SEO treatment pages +
-  the AROSHA shop (catalog/cart/checkout/orders).
-- **Three locales** (RU/FI/EN), header language switcher, `hreflang`; never auto-translate
-  medical/legal copy.
+  - `next-intl` (en/fi/ru) + `@phosphor-icons/react` (thin) + `next/font` (Cormorant Garamond
+  - Jost) + `react-markdown` + Anthropic Claude API.
+- **No Payload CMS.** The admin/CMS/CRM is **custom-built on Prisma**.
+- **E-commerce is in scope** — the AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`,
+  `/basket`); cart/checkout are Phase 2.
+- **Live IA** (mirrors `monebeauty.fi`): `/`, `/about`, `/instrumental/{endosphere,laser,
+mikroneulanrf}`, `/trichology`, `/arosha`, `/services` (+ 8 subpages), `/catalog` (+ products),
+  `/booking`, `/basket`. Legal pages kept for GDPR.
+- **Three locales** (EN/FI/RU), header language switcher, `hreflang`.
 
 **Design fidelity:** reproduce `design_handoff_mone_beauty_clinic/01-design-system.md` tokens
-**exactly** as design tokens; reuse the shared component inventory (do not re-style per page);
-**mobile-first — verify at 390px first**; warm shadows only; honor `prefers-reduced-motion`.
+**exactly** as design tokens; **mobile-first — verify at 390px first**; warm shadows only;
+honor `prefers-reduced-motion`.
 
-**Content & data rules:**
-
-- **No invented medical claims.** Seed treatment copy from `scraped_content/` where it maps
-  (as draft for clinic review); mark every gap `[CLINIC TO PROVIDE]`.
-- Use the **real NAP** from `scraped_content` (Solvikinkatu 5, 00990 Helsinki · +358 40 129
-  3800 · info@monebeauty.fi). Keep the brand name (Clinic vs Club — to be confirmed) in a
-  single config constant.
-- **GDPR/EU**, accessibility (WCAG AA), and SSG/SSR performance are required throughout;
-  medical fields are special-category data (encryption + RBAC + audit).
+**Other:** GDPR/EU, accessibility (WCAG AA), and SSG/SSR performance are required throughout;
+medical/personal data is special-category (encryption + RBAC + audit).
 
 Keep `CLAUDE.md` and `AGENTS.md` byte-identical below line 1.

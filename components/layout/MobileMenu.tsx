@@ -5,20 +5,23 @@ import { List, X } from "@phosphor-icons/react";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 
-type NavLink = { label: string; href: string };
+type Item = {
+  label: string;
+  href?: string;
+  children?: { label: string; href: string }[];
+};
 
 export function MobileMenu({
-  links,
-  bookOnline,
+  tree,
+  bookTime,
   openLabel,
 }: {
-  links: NavLink[];
-  bookOnline: string;
+  tree: Item[];
+  bookTime: string;
   openLabel: string;
 }) {
   const [open, setOpen] = useState(false);
 
-  // Lock scroll while the panel is open.
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -26,8 +29,10 @@ export function MobileMenu({
     };
   }, [open]);
 
+  const close = () => setOpen(false);
+
   return (
-    <div className="flex items-center gap-[14px]">
+    <div className="flex items-center gap-[12px]">
       <LanguageSwitcher />
       <button
         type="button"
@@ -44,24 +49,45 @@ export function MobileMenu({
       </button>
 
       {open ? (
-        <div className="absolute top-full right-0 left-0 border-t border-line-header bg-page px-[clamp(20px,5vw,56px)] pt-[14px] pb-[24px]">
+        <div className="absolute top-full right-0 left-0 max-h-[80vh] overflow-y-auto border-t border-line-header bg-page px-[clamp(20px,5vw,56px)] pt-[10px] pb-[24px]">
           <nav className="flex flex-col">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="border-b border-line-mobile px-[4px] py-[13px] font-sans text-[14px] tracking-[.08em] text-ink uppercase"
-              >
-                {l.label}
-              </Link>
-            ))}
+            {tree.map((item) =>
+              item.children ? (
+                <div
+                  key={item.label}
+                  className="border-b border-line-mobile py-[10px]"
+                >
+                  <div className="px-[4px] py-[6px] font-sans text-[12px] tracking-[.14em] text-muted uppercase">
+                    {item.label}
+                  </div>
+                  {item.children.map((c) => (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      onClick={close}
+                      className="block px-[14px] py-[9px] font-sans text-[14px] text-ink"
+                    >
+                      {c.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href!}
+                  onClick={close}
+                  className="border-b border-line-mobile px-[4px] py-[13px] font-sans text-[14px] tracking-[.08em] text-ink uppercase"
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
             <Link
               href="/booking"
-              onClick={() => setOpen(false)}
+              onClick={close}
               className="mt-[14px] rounded-[4px] bg-accent px-[15px] py-[15px] text-center font-sans text-[12px] tracking-[.16em] text-page uppercase"
             >
-              {bookOnline}
+              {bookTime}
             </Link>
           </nav>
         </div>

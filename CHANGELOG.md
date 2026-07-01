@@ -8,6 +8,30 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Live-site mirror — real content, media & IA
+
+- **Reoriented the app to mirror the live site** (`monebeauty.fi` = Mone Beauty Club):
+  brand, IA, pages, links, logo, and favicon now come from `scraped_content/`.
+- **Content pipeline:** `scripts/gen-content.mjs` bakes real per-locale copy (15 content
+  pages + 31 products, EN/FI/RU) into committed `content/generated/*.json`;
+  `scripts/copy-media.mjs` copies referenced images, the hero video, `logo.svg`, and
+  `favicon.ico` into `public/media/**`. Page bodies render via `react-markdown`.
+- **Real media everywhere** — replaced gradient placeholders with real photos/video
+  (homepage hero video, featured-service images, product photos).
+- **Live IA & nav:** header with dropdowns (Instrumental cosmetology, Services), cart,
+  "Book time"; footer with opening hours "By agreement". New routes: `/instrumental/[slug]`,
+  `/trichology`, `/arosha`, `/services` + 8 subpages, `/catalog` (+ 31 product pages),
+  `/basket`. Retired the clinic-only pages (9 treatments, pricing, blog, contact).
+- **Homepage** rebuilt: serif brand hero over the real treatment video, 3 featured services,
+  and the AROSHA product grid (8) → "See more" → `/catalog`.
+- Brand switched to **Mone Beauty Club** (real `logo.svg` + `favicon.ico`); i18n messages
+  trimmed to UI chrome (real translations, no `[TODO]`). Sitemap updated to the live routes.
+- Updated governance docs (`REQUIREMENTS`, `IMPLEMENTATION_PLAN`, `CLAUDE`, `AGENTS`): new
+  source-of-truth hierarchy (scraped = IA+content+media; handoff = visual design only) and a
+  binding content-sourcing rule.
+- Verified: `next build` (all live routes prerender across 3 locales — 93 product pages),
+  `next lint`, and a production smoke test (real logo/hero video, dropdowns, catalog, FI/RU).
+
 ### Phase 0 — Scaffold
 
 - Scaffolded Next.js 16 (App Router) + TypeScript + Tailwind v4 + ESLint via

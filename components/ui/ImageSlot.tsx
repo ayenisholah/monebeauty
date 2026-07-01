@@ -8,13 +8,15 @@ const DARK_GRADIENT =
   "repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 17px),linear-gradient(155deg,#4A4338,#2E2A23)";
 
 /**
- * Image placeholder (the prototype's beige pinstripe gradient + caption).
- * Drops in a real photo via `src`; otherwise renders the placeholder so the
- * layout is final and only the imagery is swapped later.
+ * Media slot. Renders (in priority order): a looping muted `videoSrc`, a real
+ * `src` image, else the beige pinstripe placeholder. Layout stays final; only
+ * the imagery is swapped.
  */
 export function ImageSlot({
   caption,
   src,
+  videoSrc,
+  poster,
   alt,
   minHeight = 480,
   tone = "light",
@@ -24,7 +26,9 @@ export function ImageSlot({
   priority = false,
 }: {
   caption?: string;
-  src?: string;
+  src?: string | null;
+  videoSrc?: string | null;
+  poster?: string | null;
   alt?: string;
   minHeight?: number;
   tone?: "light" | "dark";
@@ -33,6 +37,7 @@ export function ImageSlot({
   className?: string;
   priority?: boolean;
 }) {
+  const hasMedia = Boolean(videoSrc || src);
   return (
     <div
       className={cn(
@@ -42,14 +47,25 @@ export function ImageSlot({
       )}
       style={{
         minHeight,
-        backgroundImage: src
+        backgroundImage: hasMedia
           ? undefined
           : tone === "dark"
             ? DARK_GRADIENT
             : LIGHT_GRADIENT,
       }}
     >
-      {src ? (
+      {videoSrc ? (
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={poster ?? undefined}
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </video>
+      ) : src ? (
         <Image
           src={src}
           alt={alt ?? caption ?? ""}
