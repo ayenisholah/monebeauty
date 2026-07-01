@@ -14,11 +14,24 @@ export function excerpt(markdown: string, max = 160): string {
     : text;
 }
 
+export function localizedPath(path: string, locale: string) {
+  const cleanPath = path === "/" ? "" : path;
+  return locale === routing.defaultLocale
+    ? cleanPath || "/"
+    : `/${locale}${cleanPath}`;
+}
+
+export function absoluteLocalizedUrl(site: string, path: string, locale: string) {
+  const base = site.replace(/\/$/, "");
+  return `${base}${localizedPath(path, locale)}`;
+}
+
 /** hreflang + canonical for a locale-agnostic path (e.g. "/services/x"). */
 export function localeAlternates(path: string, locale: string) {
   const languages: Record<string, string> = {};
-  for (const l of routing.locales) languages[l] = `/${l}${path}`;
-  return { canonical: `/${locale}${path}`, languages };
+  for (const l of routing.locales) languages[l] = localizedPath(path, l);
+  languages["x-default"] = localizedPath(path, routing.defaultLocale);
+  return { canonical: localizedPath(path, locale), languages };
 }
 
 /** LocalBusiness / MedicalClinic JSON-LD with Helsinki NAP (local SEO). */

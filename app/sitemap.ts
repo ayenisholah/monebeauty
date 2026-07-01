@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { childSlugs } from "@/content/pages";
 import { PRODUCT_SLUGS } from "@/content/products";
+import { absoluteLocalizedUrl } from "@/lib/seo";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -28,11 +29,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return paths.flatMap((path) =>
     routing.locales.map((locale) => ({
-      url: `${SITE}/${locale}${path}`,
+      url: absoluteLocalizedUrl(SITE, path || "/", locale),
       lastModified: new Date(),
       alternates: {
         languages: Object.fromEntries(
-          routing.locales.map((l) => [l, `${SITE}/${l}${path}`]),
+          [
+            ...routing.locales.map((l) => [
+              l,
+              absoluteLocalizedUrl(SITE, path || "/", l),
+            ]),
+            [
+              "x-default",
+              absoluteLocalizedUrl(SITE, path || "/", routing.defaultLocale),
+            ],
+          ],
         ),
       },
     })),

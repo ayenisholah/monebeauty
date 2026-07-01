@@ -13,7 +13,11 @@ import {
   getProduct,
   formatPrice,
 } from "@/content/products";
-import { localeAlternates, serviceJsonLd } from "@/lib/seo";
+import {
+  absoluteLocalizedUrl,
+  localeAlternates,
+  serviceJsonLd,
+} from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { routing, type Locale } from "@/i18n/routing";
 
@@ -64,7 +68,7 @@ export default async function ProductPage({
           data={serviceJsonLd(
             c.name,
             c.description?.slice(0, 300) ?? c.name,
-            `${SITE}/${locale}/catalog/${slug}`,
+            absoluteLocalizedUrl(SITE, `/catalog/${slug}`, locale),
           )}
         />
         <Link
