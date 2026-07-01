@@ -42,6 +42,18 @@ function readMd(file) {
   return fs.readFileSync(file, "utf8");
 }
 
+// SCOPE.md: brand renamed "Mone Beauty Club" -> "Mone Beauty Clinic". Applied to all
+// generated copy. Finnish inflected forms present in the scrape (Clubiin/Clubin) are
+// mapped first so the bare "Club" rule doesn't mangle them.
+function renameBrand(text) {
+  if (!text) return text;
+  return text
+    .replace(/Beauty Clubiin/g, "Beauty Cliniciin")
+    .replace(/Beauty Clubin/g, "Beauty Clinicin")
+    .replace(/Beauty Clubilla/g, "Beauty Clinicillä")
+    .replace(/Beauty Club/g, "Beauty Clinic");
+}
+
 function parseFrontmatter(md) {
   const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
   const fm = {};
@@ -97,9 +109,9 @@ for (const { slug, file } of PAGES) {
     if (!fs.existsSync(p)) continue;
     const { fm, body: raw } = parseFrontmatter(readMd(p));
     collectAssets(raw.split("\n## Media")[0]);
-    const body = rewriteImages(cleanBody(raw, fm.title));
+    const body = rewriteImages(renameBrand(cleanBody(raw, fm.title)));
     pages[slug][loc] = {
-      title: fm.title ?? "",
+      title: renameBrand(fm.title ?? ""),
       hero: firstImage(body),
       body,
     };
@@ -155,7 +167,10 @@ for (const slug of productFiles) {
       const nl = block.indexOf("\n");
       desc = (nl === -1 ? "" : block.slice(nl + 1)).trim();
     }
-    entry.i18n[loc] = { name: fm.title ?? slug, description: desc };
+    entry.i18n[loc] = {
+      name: renameBrand(fm.title ?? slug),
+      description: renameBrand(desc),
+    };
   }
   products.push(entry);
 }

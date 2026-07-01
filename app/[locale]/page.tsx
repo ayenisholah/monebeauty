@@ -1,6 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
 import { HomeHero } from "@/components/home/HomeHero";
-import { FeaturedServices } from "@/components/home/FeaturedServices";
+import { ChooseService } from "@/components/home/ChooseService";
 import { HomeContentSections } from "@/components/home/HomeSections";
 import { AroshaShowcase } from "@/components/home/AroshaShowcase";
 import { JsonLd } from "@/components/JsonLd";
@@ -18,7 +18,7 @@ export default async function HomePage({
     <>
       <JsonLd data={medicalClinicJsonLd()} />
       <HomeHero />
-      <FeaturedServices />
+      <ChooseService />
       <AroshaShowcase />
       <HomeContentSections />
     </>

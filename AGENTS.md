@@ -119,7 +119,10 @@ both their live URL and local `assets/…` path.
 
 ### Brand / contact facts (from the live site)
 
-- **Name:** Mone Beauty Club — instrumental cosmetology / beauty & wellness, Helsinki.
+- **Name:** Mone Beauty Clinic — aesthetic-medicine clinic, Helsinki. Positioning:
+  "Next-Generation Aesthetic Medicine — a comprehensive approach to beauty, skin health,
+  and the natural harmony of face, body, and hair." (The prior live site branded itself
+  "Mone Beauty Club" / instrumental cosmetology; per `SCOPE.md` the brand is now **Clinic**.)
 - **Address:** Solvikinkatu 5, 00990 Helsinki, Finland.
 - **Phone:** +358 40 129 3800 · **Email:** info@monebeauty.fi
 - **Hours:** by appointment (FI: "Ma–Su: Sopimuksen mukaan").
@@ -138,26 +141,41 @@ not deviate without updating them first:
 
 **Source-of-truth hierarchy:**
 
-- **`scraped_content/` is authoritative for IA, pages, links, copy, images, video, brand,
-  logo, and favicon** — the app **mirrors the live site** (`monebeauty.fi` = Mone Beauty Club),
-  all three locales.
-- **`design_handoff_mone_beauty_clinic/` is the visual design system ONLY** (color tokens,
-  type scale, spacing, radii, shadows, component styling). Not the IA or content.
-- `SCOPE.md` governs product features; the user's explicit stack governs tech.
+- **`SCOPE.md` is the authoritative client brief** — it governs **brand, positioning, IA
+  structure, and product features**. Where it conflicts with `scraped_content/` (e.g. brand
+  name, aesthetic-medicine positioning, homepage structure), **`SCOPE.md` wins**.
+- **`design_handoff_mone_beauty_clinic/` is the visual design system** (color tokens, type
+  scale, spacing, radii, shadows, component styling) — and the reference for page structure.
+- **`scraped_content/` supplies the existing per-locale copy, images, and video** for pages
+  that already exist (services, products, about) and the real NAP/media — but no longer
+  dictates brand or IA where `SCOPE.md` says otherwise.
+- The user's explicit stack governs tech.
 
 **Content-sourcing rule (do not violate):**
 
-- **All copy, images, and video come from `scraped_content/`** (the live site, all 3 locales).
-  Mirror the live IA, pages, links, logo, and favicon. **No invented copy; no gradient
-  placeholders where real media exists.**
+- **Brand, positioning, and IA/structure come from `SCOPE.md`.** Existing-page **copy,
+  images, and video come from `scraped_content/`** (all 3 locales) — reuse real media; **no
+  gradient placeholders where real media exists.**
+- **No invented medical claims.** Where `SCOPE.md` calls for services or copy not in
+  `scraped_content` (e.g. Injectable Aesthetic Medicine, Medical Consultation), stub them as
+  `[CLINIC TO PROVIDE]` for clinic review — never fabricate procedure/medical text.
 - Content is baked into committed registries by `scripts/gen-content.mjs`
   (`content/generated/*.json`) and media by `scripts/copy-media.mjs` (`public/media/**`);
   `scraped_content/` itself stays git-ignored. Re-run both scripts to refresh content/media.
-- Brand is **Mone Beauty Club** (real `public/logo.svg` + `app/favicon.ico`); real NAP
+- Brand is **Mone Beauty Clinic** (real `public/logo.svg` + `app/favicon.ico`); real NAP
   (Solvikinkatu 5, 00990 Helsinki · +358 40 129 3800 · info@monebeauty.fi); hours "By agreement".
 
 **Locked decisions:**
 
+- **Brand: Mone Beauty Clinic** (renamed from "Club"), aesthetic-medicine positioning per
+  `SCOPE.md`.
+- **Next step: lean service booking** — one-click service selection → simplest possible flow
+  (service picker → date/time → details + GDPR consent → on-screen confirmation, Prisma-
+  persisted). Email/SMS, reminders, practitioner selection, reschedule/cancel are the full
+  Phase 3 completion.
+- **UX priority (SCOPE.md):** a visitor should select a service in **one click** and book
+  with minimal friction; keep the homepage focused (avoid over-long pages) with an obvious
+  "select a service" + **Book Online** path.
 - **Stack is locked:** Next.js (App Router) + TypeScript + Tailwind + **Prisma** + PostgreSQL
   - `next-intl` (en/fi/ru) + `@phosphor-icons/react` (thin) + `next/font` (Cormorant Garamond
   - Jost) + `react-markdown` + Anthropic Claude API.

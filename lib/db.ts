@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
 // Singleton Prisma client (avoids exhausting connections during dev HMR).
-// NOTE: no live database is provisioned yet (Phase 0). The client is generated
-// for type-safety; queries begin in Phase 2/3 once DATABASE_URL points at a DB.
+// Connects to the DATABASE_URL Postgres and backs live writes — e.g. the booking API
+// (app/api/booking) persists Appointment/Client/Consent rows through this client.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =

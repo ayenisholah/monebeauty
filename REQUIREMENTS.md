@@ -7,28 +7,34 @@
 
 ## 0. Source-of-truth hierarchy
 
-The app **mirrors the live site** (`monebeauty.fi` = Mone Beauty Club). On conflict, resolve:
+The app realizes the **client brief** (`SCOPE.md` = **Mone Beauty Clinic**), an
+aesthetic-medicine clinic. On conflict, resolve:
 
-| Source                                                                       | Authoritative for                                                                 | Strictness        |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------- |
-| [`scraped_content/`](./scraped_content/)                                     | **IA, pages, links, copy, images, video, brand, logo, favicon** (live, 3 locales) | Mirrored          |
-| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **Visual design system ONLY** (tokens, type, spacing, radii, shadows, components) | Strictly followed |
-| [`SCOPE.md`](./SCOPE.md)                                                     | **Product features** (booking, CRM, admin, chatbot, e-commerce, GDPR)             | Binding           |
+| Source                                                                       | Authoritative for                                                                            | Strictness        |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------- |
+| [`SCOPE.md`](./SCOPE.md)                                                     | **Brand, positioning, IA/structure, product features** (booking, CRM, admin, chatbot, shop, GDPR) | Binding — wins    |
+| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **Visual design system** (tokens, type, spacing, radii, shadows, components) + page structure | Strictly followed |
+| [`scraped_content/`](./scraped_content/)                                     | **Existing-page copy, images, video, real NAP/media** (3 locales)                            | Reused as content |
 
-The user's explicit technical direction (Prisma + Postgres) **overrides** any conflicting
-handoff recommendation (e.g. the handoff's Payload CMS).
+Where `SCOPE.md` conflicts with `scraped_content/` (brand name, positioning, homepage
+structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma + Postgres)
+**overrides** any conflicting handoff recommendation (e.g. the handoff's Payload CMS).
 
 ### Content-sourcing rule (binding)
 
-- **All copy, images, and video come from `scraped_content/`** — mirror the live IA, pages,
-  links, logo, and favicon. **No invented copy; no gradient placeholders where real media exists.**
+- **Brand, positioning, and IA/structure come from `SCOPE.md`.** Existing-page **copy,
+  images, and video come from `scraped_content/`** — reuse real media; **no gradient
+  placeholders where real media exists.**
+- **No invented medical claims.** Services/copy called for by `SCOPE.md` but absent from
+  `scraped_content` (e.g. Injectable Aesthetic Medicine, Medical Consultation) are stubbed
+  `[CLINIC TO PROVIDE]` for clinic review.
 - Content is baked into committed registries by `scripts/gen-content.mjs`
   (`content/generated/*.json`); media by `scripts/copy-media.mjs` (`public/media/**`).
   `scraped_content/` stays git-ignored — re-run both scripts to refresh.
 
 ### Locked decisions
 
-- **Brand: Mone Beauty Club** — real `public/logo.svg` + `app/favicon.ico`.
+- **Brand: Mone Beauty Clinic** — real `public/logo.svg` + `app/favicon.ico`.
 - **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`, `/basket`);
   cart/checkout are Phase 2.
 - **Custom admin on Prisma — no Payload CMS.**
@@ -38,10 +44,12 @@ handoff recommendation (e.g. the handoff's Payload CMS).
 
 ## 1. Overview & brand
 
-- **Name:** **Mone Beauty Club** (matches the live site). Kept in a single config constant
-  (`content/site.ts`); the header/footer render the real `logo.svg`.
-- **Positioning:** a modern beauty & health center in Helsinki — instrumental cosmetology
-  (endospheres, laser, RF lifting), trichology, facial & body care, and AROSHA products.
+- **Name:** **Mone Beauty Clinic** (per `SCOPE.md`; renamed from the old "Club"). Kept in a
+  single config constant (`content/site.ts`); the header/footer render the real `logo.svg`.
+- **Positioning:** an aesthetic-medicine clinic in Helsinki — "Next-Generation Aesthetic
+  Medicine; a comprehensive approach to beauty, skin health, and the natural harmony of face,
+  body, and hair." Real services (endospheres, laser, RF lifting, trichology, facial & body
+  care) plus AROSHA products; SCOPE's additional medical services are `[CLINIC TO PROVIDE]`.
 - **Visual language:** luxury minimalism / Scandinavian medical-beauty. Milky-white, cream,
   beige, sand, taupe, soft-brown surfaces with subtle-gold accents; editorial serif
   (Cormorant Garamond) + clean grotesque sans (Jost).
@@ -146,6 +154,15 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 - Built with the **same design system**; mobile-first.
 
 ## 8. Online booking
+
+> **First iteration (lean) — the immediate next step.** Ship a friction-free, one-click
+> booking: a 3-step wizard **Service → Time → You** where tapping a service selects it and
+> advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
+> pick date/time (open slots only, single shared default practitioner) → client details
+> (create/match CRM `Client`) → **GDPR consent** → **on-screen confirmation**, persisted via
+> Prisma (`Appointment` + `Consent`). Deferred to the full spec below: email/SMS
+> confirmation + reminders, practitioner selection + per-practitioner availability,
+> reschedule/cancel. Mobile-first; 44px+ tap targets; clear progress indicator.
 
 **Client wizard (24/7):** select treatment → select practitioner (or "no preference",
 name + role only, no public bio) → choose date/time (only open slots) → client details

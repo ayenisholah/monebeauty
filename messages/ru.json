@@ -39,7 +39,11 @@
     "seeMore": "Смотреть больше",
     "allServices": "Посмотреть больше услуг",
     "backToCatalog": "Назад в каталог",
-    "bookTime": "Записаться"
+    "bookTime": "Записаться",
+    "book": "Записаться",
+    "bookThis": "Записаться на процедуру",
+    "chooseServiceEyebrow": "Онлайн-запись",
+    "chooseServiceHeading": "Выберите услугу для записи"
   },
   "Chat": {
     "title": "Нужна помощь?",
@@ -48,7 +52,7 @@
   },
   "Home": {
     "metaTitle": "Аппаратная косметология и уход за красотой в Хельсинки",
-    "metaDescription": "Mone Beauty Club — современный центр красоты и здоровья в Хельсинки: эндосферотерапия, лазер, RF-лифтинг, трихология, уход за лицом и телом и продукты AROSHA.",
+    "metaDescription": "Mone Beauty Clinic — клиника эстетической медицины в Хельсинки: эндосферотерапия, лазер, RF-лифтинг, трихология, уход за лицом и телом и продукты AROSHA.",
     "servicesEyebrow": "Услуги",
     "servicesHeading": "Наши услуги",
     "featured": {
@@ -67,11 +71,32 @@
     },
     "aroshaEyebrow": "Arosha",
     "aroshaHeading": "AROSHA",
-    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use."
+    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use.",
+    "heroEyebrow": "Клиника эстетической медицины · Хельсинки",
+    "heroBookCta": "Записаться онлайн",
+    "heroServicesCta": "Наши услуги",
+    "heroTrust": {
+      "byAppointment": {
+        "title": "По записи",
+        "desc": "Выберите удобное время — пн–вс по договорённости."
+      },
+      "location": {
+        "title": "Хельсинки",
+        "desc": "Solvikinkatu 5, 00990 Helsinki."
+      },
+      "instrumental": {
+        "title": "Аппаратная косметология",
+        "desc": "Эндосферотерапия, лазер, RF-лифтинг и трихология."
+      },
+      "products": {
+        "title": "AROSHA и DIXIDOX",
+        "desc": "Профессиональные средства для тела и волос."
+      }
+    }
   },
   "Catalog": {
     "metaTitle": "Каталог",
-    "metaDescription": "Профессиональные продукты AROSHA и DIXIDOX De Luxe в Mone Beauty Club, Хельсинки.",
+    "metaDescription": "Профессиональные продукты AROSHA и DIXIDOX De Luxe в Mone Beauty Clinic, Хельсинки.",
     "title": "Каталог",
     "intro": "Профессиональные продукты для тела AROSHA и трихологическая линия DIXIDOX De Luxe.",
     "intoBasket": "В корзину",
@@ -87,10 +112,45 @@
   "Booking": {
     "metaTitle": "Записаться",
     "eyebrow": "Запись",
-    "heading": "Запишитесь на приём",
-    "body": "Онлайн-запись скоро заработает. А пока свяжитесь с нами по телефону или email — мы с радостью подберём для вас время.",
-    "callUs": "Позвоните нам",
-    "emailUs": "Напишите нам"
+    "heading": "Запись на приём",
+    "intro": "Выберите услугу, время и подтвердите — это займёт меньше минуты.",
+    "steps": { "service": "Услуга", "time": "Время", "you": "Данные" },
+    "services": {
+      "facial": "Уход за лицом",
+      "body": "Уход за телом",
+      "endospheres": "Эндосферотерапия",
+      "laser": "Лазерная эпиляция",
+      "rf": "Микроигольчатый RF",
+      "trichology": "Трихология",
+      "brows": "Брови и ресницы",
+      "packages": "Пакеты процедур"
+    },
+    "pickDate": "Выберите дату",
+    "pickTime": "Выберите время",
+    "pickDateFirst": "Выберите дату, чтобы увидеть свободное время.",
+    "loading": "Загрузка свободного времени…",
+    "noTimes": "На этот день нет свободного времени — выберите другую дату.",
+    "fields": {
+      "name": "Имя и фамилия",
+      "phone": "Телефон",
+      "email": "Эл. почта",
+      "notes": "Примечания (необязательно)",
+      "consent": "Я согласен(на) на хранение моих данных клиникой Mone Beauty Clinic для оформления этой записи в соответствии с Политикой конфиденциальности."
+    },
+    "submit": "Подтвердить запись",
+    "submitting": "Запись…",
+    "summary": { "service": "Услуга", "time": "Время", "reference": "Номер" },
+    "confirmed": {
+      "title": "Вы записаны",
+      "body": "Мы зарезервировали ваше время и свяжемся с вами для подтверждения деталей.",
+      "again": "Записаться ещё"
+    },
+    "errors": {
+      "slotTaken": "К сожалению, это время только что заняли. Пожалуйста, выберите другое.",
+      "unavailable": "Онлайн-запись временно недоступна. Позвоните или напишите нам, и мы организуем ваш визит.",
+      "generic": "Проверьте форму и попробуйте снова."
+    },
+    "fallback": "Предпочитаете записаться напрямую? Свяжитесь с нами, и мы организуем ваш визит."
   },
   "Basket": {
     "metaTitle": "Корзина",

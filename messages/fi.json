@@ -39,7 +39,11 @@
     "seeMore": "Katso lisää",
     "allServices": "Katso lisää palveluita",
     "backToCatalog": "Takaisin katalogiin",
-    "bookTime": "Varaa aika"
+    "bookTime": "Varaa aika",
+    "book": "Varaa",
+    "bookThis": "Varaa tämä hoito",
+    "chooseServiceEyebrow": "Varaa verkossa",
+    "chooseServiceHeading": "Valitse varattava palvelu"
   },
   "Chat": {
     "title": "Tarvitsetko apua?",
@@ -48,7 +52,7 @@
   },
   "Home": {
     "metaTitle": "Instrumentaalinen kosmetologia ja kauneudenhoito Helsingissä",
-    "metaDescription": "Mone Beauty Club — moderni kauneuden ja hyvinvoinnin keskus Helsingissä: endospheres-terapia, laser, RF-lifting, trikologia, kasvo- ja vartalohoidot sekä AROSHA-tuotteet.",
+    "metaDescription": "Mone Beauty Clinic — esteettisen lääketieteen klinikka Helsingissä: endospheres-terapia, laser, RF-lifting, trikologia, kasvo- ja vartalohoidot sekä AROSHA-tuotteet.",
     "servicesEyebrow": "Palvelut",
     "servicesHeading": "Palvelumme",
     "featured": {
@@ -67,11 +71,32 @@
     },
     "aroshaEyebrow": "Arosha",
     "aroshaHeading": "AROSHA",
-    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use."
+    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use.",
+    "heroEyebrow": "Esteettisen lääketieteen klinikka · Helsinki",
+    "heroBookCta": "Varaa aika",
+    "heroServicesCta": "Palvelut",
+    "heroTrust": {
+      "byAppointment": {
+        "title": "Ajanvarauksella",
+        "desc": "Varaa sinulle sopiva aika — ma–su sopimuksen mukaan."
+      },
+      "location": {
+        "title": "Helsinki",
+        "desc": "Solvikinkatu 5, 00990 Helsinki."
+      },
+      "instrumental": {
+        "title": "Laitekosmetologia",
+        "desc": "Endosferahoito, laser, RF-kohotus ja trikologia."
+      },
+      "products": {
+        "title": "AROSHA & DIXIDOX",
+        "desc": "Ammattilaisten vartalo- ja hiustenhoitotuotteet."
+      }
+    }
   },
   "Catalog": {
     "metaTitle": "Katalogi",
-    "metaDescription": "Ammattilaisten AROSHA- ja DIXIDOX De Luxe -tuotteet Mone Beauty Clubilla, Helsingissä.",
+    "metaDescription": "Ammattilaisten AROSHA- ja DIXIDOX De Luxe -tuotteet Mone Beauty Clinicillä, Helsingissä.",
     "title": "Katalogi",
     "intro": "Ammattilaisten AROSHA-vartalotuotteet ja DIXIDOX De Luxe -trikologiasarja.",
     "intoBasket": "Lisää ostoskoriin",
@@ -87,10 +112,45 @@
   "Booking": {
     "metaTitle": "Varaa aika",
     "eyebrow": "Ajanvaraus",
-    "heading": "Varaa aikasi",
-    "body": "Verkkoajanvarauksemme avautuu pian. Sillä välin ota yhteyttä puhelimitse tai sähköpostitse, niin järjestämme mielellämme käyntisi.",
-    "callUs": "Soita meille",
-    "emailUs": "Lähetä sähköpostia"
+    "heading": "Varaa aika",
+    "intro": "Valitse hoito, valitse aika ja vahvista — se vie alle minuutin.",
+    "steps": { "service": "Hoito", "time": "Aika", "you": "Tiedot" },
+    "services": {
+      "facial": "Kasvohoidot",
+      "body": "Vartalohoidot",
+      "endospheres": "Endospheres-terapia",
+      "laser": "Laserkarvanpoisto",
+      "rf": "Mikroneula-RF",
+      "trichology": "Trikologia",
+      "brows": "Kulmat ja ripset",
+      "packages": "Hoitopaketit"
+    },
+    "pickDate": "Valitse päivä",
+    "pickTime": "Valitse aika",
+    "pickDateFirst": "Valitse päivä nähdäksesi vapaat ajat.",
+    "loading": "Ladataan vapaita aikoja…",
+    "noTimes": "Tälle päivälle ei ole vapaita aikoja — valitse toinen päivä.",
+    "fields": {
+      "name": "Koko nimi",
+      "phone": "Puhelin",
+      "email": "Sähköposti",
+      "notes": "Lisätiedot (valinnainen)",
+      "consent": "Hyväksyn, että Mone Beauty Clinic tallentaa tietoni tämän ajanvarauksen hoitamiseksi tietosuojaselosteen mukaisesti."
+    },
+    "submit": "Vahvista varaus",
+    "submitting": "Varataan…",
+    "summary": { "service": "Hoito", "time": "Aika", "reference": "Viite" },
+    "confirmed": {
+      "title": "Aikasi on varattu",
+      "body": "Olemme varanneet aikasi ja olemme yhteydessä vahvistaaksemme tiedot.",
+      "again": "Varaa uusi aika"
+    },
+    "errors": {
+      "slotTaken": "Valitettavasti aika ehdittiin juuri varata. Valitse toinen aika.",
+      "unavailable": "Verkkovaraus on tilapäisesti pois käytöstä. Soita tai lähetä sähköpostia, niin järjestämme käyntisi.",
+      "generic": "Tarkista lomake ja yritä uudelleen."
+    },
+    "fallback": "Varaatko mieluummin suoraan? Ota yhteyttä, niin järjestämme käyntisi."
   },
   "Basket": {
     "metaTitle": "Ostoskori",

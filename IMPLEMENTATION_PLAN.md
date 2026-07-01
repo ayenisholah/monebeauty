@@ -2,9 +2,11 @@
 
 > Binding build roadmap. Pairs with [`REQUIREMENTS.md`](./REQUIREMENTS.md). Phases run in
 > order; each builds on the last. **Commit after each phase.** Key direction: the app
-> **mirrors the live site** (Mone Beauty Club) — **all copy, images, and video come from
-> `scraped_content/`**; the design handoff supplies visual styling only. **Prisma + custom
-> admin (no Payload)**; **e-commerce is in scope**.
+> realizes the **client brief** (`SCOPE.md` = **Mone Beauty Clinic**, aesthetic medicine);
+> `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
+> styling + structure, and **existing-page copy, images, and video come from
+> `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
+> **Immediate next step: the "Next — Lean Booking" milestone below.**
 
 ## Content & media pipeline (from the live site)
 
@@ -114,6 +116,26 @@ Prisma `Product`/`ProductCategory`; `/shop`, `/shop/[category]`, `/shop/product/
 `/cart`, `/checkout`, `/order/[id]`. Seed **31 products** + images from `scraped_content`.
 Cart state, GDPR checkout (consent), order creation + email confirmation. **Verify:** browse →
 add to cart → checkout → order persists + confirmation email; mobile layout at 390px.
+
+## Next — Lean Booking (one-click) ⭐ immediate
+
+**Goal:** the SCOPE.md priority — open the site, **select a service in one click, book fast**.
+Ships ahead of the full Phase 3, reusing that data model at reduced scope.
+
+- **Bookable-services registry** (`content/booking-services.ts`) derived from the existing
+  real service pages; SCOPE extras (Injectable, Consultation) as `[CLINIC TO PROVIDE]` stubs.
+- **DB**: run `prisma migrate` against `DATABASE_URL`; `prisma/seed.ts` seeds one default
+  `Practitioner` + `Service` rows from the registry.
+- **Slots** (`lib/booking.ts`): simple business-hours slot generation minus already-booked
+  `Appointment` starts (no per-practitioner `Availability` yet).
+- **API**: `POST /api/booking` (upsert `Client`, create `Appointment` + `Consent`, reject
+  double-book) and `GET /api/booking/slots`.
+- **Wizard** (`components/booking/BookingWizard.tsx`): **Service → Time → You**, one-tap
+  select-and-advance, `?service=<key>` preselect, GDPR consent, on-screen confirmation.
+- **One-click entry points**: `Book` buttons on `/services/[slug]` + a home "Choose a
+  service" selectable grid deep-linking `/booking?service=<key>`; trim homepage length.
+- **Deferred to Phase 3**: email/SMS + reminders, practitioner selection + `Availability`,
+  reschedule/cancel. **Verify:** e2e a booking persists; double-book rejected; 390px first.
 
 ## Phase 3 — Booking (client wizard)
 

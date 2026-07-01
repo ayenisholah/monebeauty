@@ -1,5 +1,7 @@
 // Mone Beauty — Prisma schema.
-// Phase 0: schema authored; NO migration run yet (live DB deferred to Phase 2/3).
+// Applied to the DATABASE_URL Postgres; baseline migration in prisma/migrations/0_init.
+// Booking + CRM are live (POST /api/booking persists Appointment/Client/Consent); the
+// shop/auth/chatbot models are wired in later phases.
 // Covers marketing/CMS, e-commerce (AROSHA shop), booking, CRM, auth, chatbot.
 
 generator client {

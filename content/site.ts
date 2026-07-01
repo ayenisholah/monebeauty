@@ -1,11 +1,11 @@
 /**
- * Brand + global site constants — mirrors the live site (Mone Beauty Club).
+ * Brand + global site constants — Mone Beauty Clinic (per SCOPE.md; aesthetic medicine).
  * Real NAP, nav, and hours from scraped_content. Logo/favicon are the real assets.
  */
 
 export const BRAND = {
-  name: "Mone Beauty Club",
-  shortName: "Mone Beauty Club",
+  name: "Mone Beauty Clinic",
+  shortName: "Mone Beauty Clinic",
   logo: "/logo.svg",
   domain: "monebeauty.fi",
   url: "https://monebeauty.fi",

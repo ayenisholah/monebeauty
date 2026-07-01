@@ -39,7 +39,11 @@
     "seeMore": "See more",
     "allServices": "See more services",
     "backToCatalog": "Back to catalog",
-    "bookTime": "Book time"
+    "bookTime": "Book time",
+    "book": "Book",
+    "bookThis": "Book this treatment",
+    "chooseServiceEyebrow": "Book online",
+    "chooseServiceHeading": "Select a service to book"
   },
   "Chat": {
     "title": "Need help?",
@@ -48,7 +52,7 @@
   },
   "Home": {
     "metaTitle": "Instrumental cosmetology & beauty care in Helsinki",
-    "metaDescription": "Mone Beauty Club — a modern beauty and health center in Helsinki: endospheres therapy, laser, RF lifting, trichology, facial & body care, and AROSHA products.",
+    "metaDescription": "Mone Beauty Clinic — an aesthetic-medicine clinic in Helsinki: endospheres therapy, laser, RF lifting, trichology, facial & body care, and AROSHA products.",
     "servicesEyebrow": "Services",
     "servicesHeading": "Our services",
     "featured": {
@@ -67,11 +71,32 @@
     },
     "aroshaEyebrow": "Arosha",
     "aroshaHeading": "AROSHA",
-    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use."
+    "aroshaIntro": "AROSHA is the European leader in the worldwide number of body products sold in the area. The AROSHA brand is characterized by traditionally high Italian quality, ease of use and solves the most complex problems, with results that are visible after a short period of use.",
+    "heroEyebrow": "Aesthetic Medicine Clinic · Helsinki",
+    "heroBookCta": "Book online",
+    "heroServicesCta": "Our services",
+    "heroTrust": {
+      "byAppointment": {
+        "title": "By appointment",
+        "desc": "Book a time that suits you — Mon–Sun by agreement."
+      },
+      "location": {
+        "title": "Helsinki",
+        "desc": "Solvikinkatu 5, 00990 Helsinki."
+      },
+      "instrumental": {
+        "title": "Instrumental cosmetology",
+        "desc": "Endospheres, laser, RF lifting & trichology."
+      },
+      "products": {
+        "title": "AROSHA & DIXIDOX",
+        "desc": "Professional body & hair-care product lines."
+      }
+    }
   },
   "Catalog": {
     "metaTitle": "Catalog",
-    "metaDescription": "AROSHA and DIXIDOX De Luxe professional products at Mone Beauty Club, Helsinki.",
+    "metaDescription": "AROSHA and DIXIDOX De Luxe professional products at Mone Beauty Clinic, Helsinki.",
     "title": "Catalog",
     "intro": "Professional AROSHA body products and DIXIDOX De Luxe trichology line.",
     "intoBasket": "Into a basket",
@@ -85,12 +110,51 @@
     "intoBasket": "Into a basket"
   },
   "Booking": {
-    "metaTitle": "Book time",
+    "metaTitle": "Book an appointment",
     "eyebrow": "Booking",
-    "heading": "Book your appointment",
-    "body": "Our online booking is launching soon. In the meantime, please contact us by phone or email and we'll be glad to arrange your visit.",
-    "callUs": "Call us",
-    "emailUs": "Email us"
+    "heading": "Book an appointment",
+    "intro": "Choose a treatment, pick a time, and confirm — it takes under a minute.",
+    "steps": { "service": "Service", "time": "Time", "you": "You" },
+    "services": {
+      "facial": "Facial treatments",
+      "body": "Body treatments",
+      "endospheres": "Endospheres therapy",
+      "laser": "Laser hair removal",
+      "rf": "Microneedle RF",
+      "trichology": "Trichology",
+      "brows": "Brows & lashes",
+      "packages": "Treatment packages"
+    },
+    "pickDate": "Choose a date",
+    "pickTime": "Choose a time",
+    "pickDateFirst": "Select a date to see available times.",
+    "loading": "Loading available times…",
+    "noTimes": "No open times on this day — please pick another date.",
+    "fields": {
+      "name": "Full name",
+      "phone": "Phone",
+      "email": "Email",
+      "notes": "Notes (optional)",
+      "consent": "I agree to Mone Beauty Clinic storing my details to manage this appointment, in line with the Privacy Policy."
+    },
+    "submit": "Confirm booking",
+    "submitting": "Booking…",
+    "summary": {
+      "service": "Treatment",
+      "time": "Time",
+      "reference": "Reference"
+    },
+    "confirmed": {
+      "title": "Your appointment is booked",
+      "body": "We've reserved your time and will be in touch to confirm the details.",
+      "again": "Book another"
+    },
+    "errors": {
+      "slotTaken": "Sorry, that time was just taken. Please choose another.",
+      "unavailable": "Online booking is temporarily unavailable. Please call or email us and we'll arrange your visit.",
+      "generic": "Please check the form and try again."
+    },
+    "fallback": "Prefer to book directly? Reach us and we'll be glad to arrange your visit."
   },
   "Basket": {
     "metaTitle": "Basket",
