@@ -210,7 +210,7 @@ export function BookingWizard({
   const stepLabels = [t("steps.service"), t("steps.time"), t("steps.you")];
 
   return (
-    <div className="mt-[clamp(24px,3vw,40px)]">
+    <div>
       {/* Progress */}
       <ol className="flex flex-wrap items-center gap-[8px] font-sans text-[12px] tracking-[.06em] uppercase">
         {stepLabels.map((label, i) => {
@@ -263,7 +263,7 @@ export function BookingWizard({
 
       {/* Step 1 — Service */}
       {step === 1 && (
-        <div className="mt-[clamp(20px,3vw,32px)] grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[12px]">
+        <div className="mt-[clamp(20px,3vw,32px)] grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-[14px]">
           {services.map((s) => (
             <button
               key={s.key}
@@ -272,7 +272,7 @@ export function BookingWizard({
               className="group flex min-h-[44px] flex-col overflow-hidden rounded-[var(--radius)] border border-line-card bg-card text-left transition-all hover:-translate-y-[3px] hover:border-line-card-hover hover:shadow-card"
             >
               {s.image && (
-                <span className="relative block h-[92px] w-full overflow-hidden">
+                <span className="relative block h-[128px] w-full overflow-hidden">
                   <Image
                     src={s.image}
                     alt=""
@@ -282,7 +282,7 @@ export function BookingWizard({
                   />
                 </span>
               )}
-              <span className="flex flex-1 items-center justify-between gap-[8px] px-[14px] py-[12px] font-sans text-[13px] font-medium text-ink">
+              <span className="flex min-h-[70px] flex-1 items-center justify-between gap-[12px] px-[16px] py-[14px] font-sans text-[14px] leading-[1.35] font-medium text-ink">
                 {t(`services.${s.key}`)}
                 <ArrowRight size={15} weight="thin" className="text-accent" />
               </span>
