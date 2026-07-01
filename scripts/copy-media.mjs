@@ -42,6 +42,8 @@ const extras = {
     "media/home/endospheres.jpg",
   "files/land/78/d2d5d9bdcae3b92882c32941b469903e.jpg": "media/home/arosha.jpg",
   "files/land/78/bd7697985615481212167cc81f101683.jpg": "media/home/facial.jpg",
+  "files/land/78/09456e2d273094879f93f51d60f2ac6c.jpg":
+    "media/home/about.jpg",
 };
 for (const [from, to] of Object.entries(extras)) if (copy(from, to)) n++;
 
