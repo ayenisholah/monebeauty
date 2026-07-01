@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { ContentPage } from "@/components/ContentPage";
-import { BookServiceCta } from "@/components/booking/BookServiceCta";
+import { ServiceDetailPage } from "@/components/services/ServiceDetailPage";
 import { getPageContent, childSlugs } from "@/content/pages";
 import { localeAlternates, excerpt } from "@/lib/seo";
 import { routing, type Locale } from "@/i18n/routing";
@@ -34,10 +33,5 @@ export default async function Page({
   if (!routing.locales.includes(locale as Locale)) notFound();
   if (!getPageContent(`services/${slug}`, locale as Locale)) notFound();
   setRequestLocale(locale);
-  return (
-    <>
-      <ContentPage slug={`services/${slug}`} locale={locale as Locale} />
-      <BookServiceCta contentSlug={`services/${slug}`} />
-    </>
-  );
+  return <ServiceDetailPage slug={`services/${slug}`} locale={locale as Locale} />;
 }

@@ -79,7 +79,7 @@ export default async function Page({
   const page = getPageContent("services", l);
 
   return (
-    <section className="bg-page py-[clamp(52px,7vw,104px)]">
+    <section className="bg-alt py-[clamp(52px,7vw,104px)]">
       <Container>
         <div className="mb-[clamp(32px,4vw,56px)] max-w-[700px]">
           <Eyebrow className="mb-[16px]">{page?.title}</Eyebrow>
@@ -92,6 +92,7 @@ export default async function Page({
           {SERVICES.map((item, index) => {
             const content = getPageContent(item.slug, l);
             if (!content) return null;
+            const title = displayServiceTitle(content.title);
 
             return (
               <article
@@ -107,7 +108,7 @@ export default async function Page({
                   </span>
                   <Image
                     src={item.image}
-                    alt={content.title}
+                    alt={title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     sizes="(max-width: 900px) 100vw, 33vw"
@@ -115,28 +116,27 @@ export default async function Page({
                 </Link>
                 <div className="flex flex-1 flex-col p-[clamp(22px,2.4vw,30px)]">
                   <h2 className="font-display text-[26px] leading-[1.1] font-semibold text-ink">
-                    {content.title}
+                    {title}
                   </h2>
                   <p className="mt-[14px] flex-1 font-sans text-[13px] leading-[1.7] font-light text-body">
-                    {excerpt(content.body, 150)}
+                    {excerpt(content.body, 115)}
                   </p>
-                  <div className="mt-[22px] flex flex-wrap gap-[14px]">
+                  <div className="mt-[22px] flex items-center gap-[14px] whitespace-nowrap">
+                    <Button
+                      href={{
+                        pathname: "/booking",
+                        query: { service: bookingKeyForSlug(item.slug) },
+                      }}
+                      iconRight={ArrowRight}
+                    >
+                      {tc("book")}
+                    </Button>
                     <Button
                       href={item.href}
                       variant="textLink"
                       iconRight={ArrowUpRight}
                     >
                       {tc("readMore")}
-                    </Button>
-                    <Button
-                      href={{
-                        pathname: "/booking",
-                        query: { service: bookingKeyForSlug(item.slug) },
-                      }}
-                      variant="textLink"
-                      iconRight={ArrowRight}
-                    >
-                      {tc("book")}
                     </Button>
                   </div>
                 </div>
@@ -147,6 +147,10 @@ export default async function Page({
       </Container>
     </section>
   );
+}
+
+function displayServiceTitle(title: string) {
+  return title.replace(/\s+in\s+Helsinki$/i, "");
 }
 
 function bookingKeyForSlug(slug: string) {
