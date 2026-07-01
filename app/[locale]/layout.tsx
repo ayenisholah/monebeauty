@@ -5,6 +5,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { cormorant, jost } from "@/lib/fonts";
 import { routing } from "@/i18n/routing";
 import { BRAND } from "@/content/site";
+import { siteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/ui/ChatWidget";
@@ -22,9 +23,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Home" });
   return {
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-    ),
+    metadataBase: new URL(siteUrl()),
     title: {
       default: `${BRAND.name} — ${t("metaTitle")}`,
       template: `%s · ${BRAND.shortName}`,

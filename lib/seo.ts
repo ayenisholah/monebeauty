@@ -1,6 +1,18 @@
 import { routing } from "@/i18n/routing";
 import { BRAND, CONTACT } from "@/content/site";
 
+export function siteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // Fall back to the canonical live domain if deploy env is malformed.
+    }
+  }
+  return BRAND.url;
+}
+
 /** Plain-text excerpt from markdown for meta descriptions. */
 export function excerpt(markdown: string, max = 160): string {
   const text = markdown

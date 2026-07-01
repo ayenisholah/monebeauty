@@ -17,11 +17,12 @@ import {
   absoluteLocalizedUrl,
   localeAlternates,
   serviceJsonLd,
+  siteUrl,
 } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { routing, type Locale } from "@/i18n/routing";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE = siteUrl();
 
 export function generateStaticParams() {
   return PRODUCT_SLUGS.map((slug) => ({ slug }));

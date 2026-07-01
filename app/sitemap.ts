@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { childSlugs } from "@/content/pages";
 import { PRODUCT_SLUGS } from "@/content/products";
-import { absoluteLocalizedUrl } from "@/lib/seo";
+import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE = siteUrl();
 
 const STATIC_PATHS = [
   "",
