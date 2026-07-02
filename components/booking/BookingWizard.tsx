@@ -169,6 +169,7 @@ export function BookingWizard({
           service,
           practitionerId: practitioner,
           start: slot.start,
+          locale,
           fullName: form.fullName,
           phone: form.phone,
           email: form.email,

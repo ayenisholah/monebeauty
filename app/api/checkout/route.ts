@@ -4,6 +4,7 @@ import type { Product } from "@/content/products";
 import { getLiveProduct } from "@/lib/live-content";
 import { normalizeQty } from "@/lib/cart";
 import { routing, type Locale } from "@/i18n/routing";
+import { notifyOrderConfirmation } from "@/lib/notifications";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
         consentGdpr: true,
         items: { create: orderItems },
       },
-      select: { id: true },
+      include: { items: true },
     });
 
     await prisma.consent.create({
@@ -133,6 +134,19 @@ export async function POST(req: NextRequest) {
         data: {
           actor: email,
           action: "checkout_note_received",
+          entity: "Order",
+          entityId: order.id,
+        },
+      });
+    }
+
+    try {
+      await notifyOrderConfirmation(order, locale);
+    } catch {
+      await prisma.auditLog.create({
+        data: {
+          actor: "system",
+          action: "order_confirmation_unhandled_error",
           entity: "Order",
           entityId: order.id,
         },

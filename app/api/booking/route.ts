@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getBookingService } from "@/content/booking-services";
 import { getServiceId, openSlots } from "@/lib/booking";
+import { notifyAppointmentConfirmation } from "@/lib/notifications";
+import { routing, type Locale } from "@/i18n/routing";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,6 +27,9 @@ export async function POST(req: NextRequest) {
   const email = String(payload.email ?? "").trim();
   const practitioner = String(payload.practitionerId ?? "any");
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
+  const locale = routing.locales.includes(payload.locale as Locale)
+    ? (payload.locale as Locale)
+    : routing.defaultLocale;
   const consentGdpr = payload.consentGdpr === true;
 
   const svc = getBookingService(service);
@@ -90,11 +95,29 @@ export async function POST(req: NextRequest) {
         channel: "web",
         notes,
       },
+      include: {
+        client: { select: { fullName: true, email: true, phone: true } },
+        practitioner: { select: { name: true, role: true } },
+        service: { select: { slug: true } },
+      },
     });
 
     await prisma.consent.create({
       data: { clientId: client.id, type: "gdpr_booking", granted: true },
     });
+
+    try {
+      await notifyAppointmentConfirmation(appointment, locale);
+    } catch {
+      await prisma.auditLog.create({
+        data: {
+          actor: "system",
+          action: "booking_confirmation_unhandled_error",
+          entity: "Appointment",
+          entityId: appointment.id,
+        },
+      });
+    }
 
     return NextResponse.json({
       id: appointment.id,

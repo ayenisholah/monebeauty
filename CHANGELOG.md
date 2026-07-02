@@ -8,6 +8,17 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Phase 6 â€” Notifications + reminders
+
+- Added `lib/notifications.ts` with Resend/Postmark email support, Twilio or generic
+  webhook SMS support, staff recipients, and safe skipped/failed audit logging.
+- Booking creation now sends customer email/SMS confirmations and staff booking alerts after
+  persistence without blocking the user flow on provider failures.
+- Checkout now sends customer order confirmation email and staff order alerts.
+- Added `npm run notifications:reminders` (`scripts/send-reminders.ts`) for 24-hour and
+  2-hour appointment reminders, using `AuditLog` to avoid duplicate reminder sends.
+- Added PM2 ecosystem entries for the port-5000 web process and scheduled reminders.
+
 ### Phase 8 — SEO + GDPR finalize
 
 - Added localized cookie-consent banner and GA4 loading gated behind accepted analytics
@@ -20,8 +31,6 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ### Phase 7 — AI chatbot
 
-- Skipped Phase 6 notifications/reminders for now and proceeded with the AI chatbot
-  milestone.
 - Added Anthropic Claude integration with a strict approved-content-only prompt and
   locale-aware content retrieval from CMS/generated content, products, booking services,
   blog content, and clinic contact facts.

@@ -7,7 +7,7 @@
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
 > **Current completed milestone: Phase 8 SEO + GDPR finalize.** Phase 6 notifications/reminders
-> were intentionally skipped for now; payment capture and transactional email/SMS remain deferred.
+> are now implemented at provider-integration scope; payment capture remains deferred.
 
 ## Content & media pipeline (from the live site)
 
@@ -139,8 +139,9 @@ Ships ahead of the full Phase 3, reusing that data model at reduced scope.
 - **One-click entry points**: `Book` buttons on `/services/[slug]` + a home "Choose a
   service" selectable grid deep-linking `/booking?service=<key>`; trim homepage length.
 - **Upgraded in Phase 3**: practitioner/no-preference selection, `Availability`-aware slots,
-  and lightweight reschedule/cancel endpoints. Email/SMS + reminders remain deferred to
-  Phase 6. **Verify:** e2e a booking persists; double-book rejected; 390px first.
+  and lightweight reschedule/cancel endpoints. Email/SMS confirmations and reminders are
+  implemented in Phase 6. **Verify:** e2e a booking persists; double-book rejected; 390px
+  first.
 
 ## Phase 3 — Booking (client wizard) ✅ implemented
 
@@ -157,8 +158,8 @@ double-booking prevention, e2e booking, cancel, and reschedule.
 Internal staff schedule area: practitioner/date selector, daily schedule view, working-hours
 range editor, open/closed slot controls, and booked appointment details. Staff edits persist
 to `Availability.slots` and are reflected in the client booking wizard. Staff/admin auth,
-role gating, and own-schedule restriction are implemented in Phase 5; notifications are
-deferred to Phase 6.
+role gating, and own-schedule restriction are implemented in Phase 5; staff new-booking
+alerts are implemented in Phase 6.
 **Verify:** staff edits availability → reflected in client wizard.
 
 ## Phase 5 — CRM + custom admin + auth ✅ implemented
@@ -172,13 +173,14 @@ contraindication access/edits, service/product/pricing/blog management, and edit
 prefer Prisma edits with generated JSON fallback. **Verify:** role gating enforced;
 medical-field access audited; admin edits appear on site after migration + content sync.
 
-## Phase 6 — Notifications + reminders ⏭️ skipped/deferred
+## Phase 6 — Notifications + reminders ✅ implemented
 
 Email (Resend/Postmark) + SMS (Twilio/FI gateway). Booking confirmations (email + SMS,
 SMS preferred) + reminders at 24h and 2h via a scheduled job; staff new-booking alerts;
-order confirmations. This phase is intentionally skipped for now per user direction; it
-should be resumed after the chatbot milestone. **Verify:** confirmation + scheduled reminder
-fire; consent respected.
+order confirmations. Implemented with `lib/notifications.ts`, provider env configuration,
+non-blocking booking/checkout notification sends, `AuditLog` delivery records, and
+`npm run notifications:reminders` for cron/PM2 scheduling. Payment capture remains deferred.
+**Verify:** confirmation + scheduled reminder fire; consent respected.
 
 ## Phase 7 — AI chatbot ✅ implemented
 

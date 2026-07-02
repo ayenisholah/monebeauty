@@ -192,9 +192,11 @@ not deviate without updating them first:
   overrides, products, pricing, and blog management. Run `npm run db:migrate`,
   `npm run db:seed` with `ADMIN_EMAIL`/`ADMIN_PASSWORD`, and `npm run db:sync-content` when
   preparing a target database.
-- **Phase 6 notifications/reminders are intentionally skipped/deferred** per user direction.
-  Booking/order confirmations, reminders, staff alerts, and email/SMS provider integration
-  remain future work.
+- **Current completed milestone: Phase 6 notifications/reminders** — booking confirmations
+  send email/SMS through configured providers, checkout sends order confirmation email,
+  staff alerts are sent for bookings/orders, delivery attempts are audited, and
+  `npm run notifications:reminders` sends 24-hour and 2-hour appointment reminders for
+  PM2/cron scheduling. Payment capture remains deferred.
 - **Current completed milestone: Phase 7 AI chatbot** — the public ChatWidget now uses
   Anthropic Claude with approved-content retrieval, EN/FI/RU locale matching, GDPR consent,
   transcript persistence in `ChatSession`, booking deep-links, and human handoff. Admin

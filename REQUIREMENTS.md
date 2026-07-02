@@ -162,22 +162,23 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 > advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
 > pick date/time (open slots only, single shared default practitioner) → client details
 > (create/match CRM `Client`) → **GDPR consent** → **on-screen confirmation**, persisted via
-> Prisma (`Appointment` + `Consent`). Deferred to the full spec below: email/SMS
-> confirmation + reminders, practitioner selection + per-practitioner availability,
-> reschedule/cancel. Mobile-first; 44px+ tap targets; clear progress indicator.
+> Prisma (`Appointment` + `Consent`). The full spec below adds practitioner-aware
+> availability, reschedule/cancel, and Phase 6 email/SMS confirmations + reminders.
+> Mobile-first; 44px+ tap targets; clear progress indicator.
 
 **Client wizard (24/7):** select treatment → select practitioner (or "no preference",
 name + role only, no public bio) → choose date/time (only open slots) → client details
 (create/match CRM client) → confirm + GDPR consent → on-screen confirmation. The upgraded
 Phase 3 flow is implemented with practitioner-aware availability and lightweight
-cancel/reschedule endpoints. Email + SMS confirmations, reminders at 24h + 2h, and richer
-cutoff policy remain deferred to notification/admin phases. Mobile-first; 44px+ tap targets;
-clear progress indicator; accent selected-state calendar.
+cancel/reschedule endpoints. Email + SMS confirmations, reminders at 24h + 2h, and staff
+alerts are implemented through the Phase 6 notification layer; richer cutoff policy remains
+deferred to a future admin policy pass. Mobile-first; 44px+ tap targets; clear progress
+indicator; accent selected-state calendar.
 
 **Staff flow (`/staff`):** implemented as an internal schedule surface with practitioner/date
 selection, working-hour range application, open/closed slot controls, and appointment details
 (client + treatment + notes). Auth/RBAC, own-schedule restriction, and new-booking
-notifications remain deferred to Phase 5/6. Fully responsive.
+notifications are implemented. Fully responsive.
 
 ## 9. CRM / client database
 
