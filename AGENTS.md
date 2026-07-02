@@ -200,6 +200,12 @@ not deviate without updating them first:
   transcript persistence in `ChatSession`, booking deep-links, and human handoff. Admin
   handoff review lives at `/admin/chat`. Set `ANTHROPIC_API_KEY` and optionally
   `ANTHROPIC_MODEL`; run `npm run db:migrate` before relying on the new chat fields.
+- **Current completed milestone: Phase 8 SEO/GDPR finalize** — public pages now have a
+  localized cookie-consent banner, GA4 loading gated behind analytics consent, hardened
+  robots rules for admin/API paths, enriched `MedicalClinic` JSON-LD, localized legal text,
+  and admin GDPR export/anonymization controls on CRM client profiles. Production Search
+  Console, Lighthouse, SSL/domain checks, and formal legal review remain manual deployment
+  tasks.
 - **UX priority (SCOPE.md):** a visitor should select a service in **one click** and book
   with minimal friction; keep the homepage focused (avoid over-long pages) with an obvious
   "select a service" + **Book Online** path.

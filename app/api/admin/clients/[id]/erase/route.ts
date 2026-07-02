@@ -1,0 +1,75 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { prisma } from "@/lib/db";
+import { audit, requireApiUser } from "@/lib/auth";
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const user = await requireApiUser(["ADMIN"]);
+  if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const { id } = await params;
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  if (payload.confirm !== "ERASE") {
+    return NextResponse.json({ error: "confirmation_required" }, { status: 400 });
+  }
+
+  const client = await prisma.client.findUnique({ where: { id } });
+  if (!client) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  await prisma.$transaction([
+    prisma.chatSession.updateMany({
+      where: { clientId: id },
+      data: {
+        clientId: null,
+        contactName: null,
+        contactEmail: null,
+        contactPhone: null,
+        messages: [],
+      },
+    }),
+    prisma.order.updateMany({
+      where: { clientId: id },
+      data: {
+        email: `erased-${id}@privacy.local`,
+        phone: null,
+      },
+    }),
+    prisma.appointment.updateMany({
+      where: { clientId: id },
+      data: { notes: null },
+    }),
+    prisma.cart.deleteMany({ where: { clientId: id } }),
+    prisma.consent.create({
+      data: { clientId: id, type: "gdpr_erasure", granted: true },
+    }),
+    prisma.client.update({
+      where: { id },
+      data: {
+        userId: null,
+        fullName: "Erased client",
+        phone: `erased-${id}`,
+        email: `erased-${id}@privacy.local`,
+        notes: null,
+        contraindications: null,
+        consentGdpr: false,
+        consentMarketing: false,
+      },
+    }),
+  ]);
+
+  await audit({
+    actor: user.email,
+    action: "client_data_erased",
+    entity: "Client",
+    entityId: id,
+  });
+
+  return NextResponse.json({ ok: true });
+}

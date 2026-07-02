@@ -29,7 +29,7 @@ export default async function Page({
       title={t("termsTitle")}
       lastUpdatedLabel={t("lastUpdated")}
       date="2026-07-01"
-      placeholder={t("placeholder")}
+      body={t.raw("termsBody")}
     />
   );
 }

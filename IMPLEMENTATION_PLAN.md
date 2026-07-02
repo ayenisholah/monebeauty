@@ -6,8 +6,8 @@
 > `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
-> **Current completed milestone: Phase 7 AI chatbot.** Phase 6 notifications/reminders were
-> intentionally skipped for now; payment capture and transactional email/SMS remain deferred.
+> **Current completed milestone: Phase 8 SEO + GDPR finalize.** Phase 6 notifications/reminders
+> were intentionally skipped for now; payment capture and transactional email/SMS remain deferred.
 
 ## Content & media pipeline (from the live site)
 
@@ -189,12 +189,16 @@ booking deep-links for detected services, and human handoff. `/admin/chat` provi
 handoff queue and transcript detail with resolve/reopen actions. **Verify:** answers from
 content only; handoff creates an admin queue item.
 
-## Phase 8 — SEO + GDPR finalize
+## Phase 8 — SEO + GDPR finalize ✅ implemented
 
 `next-sitemap` XML sitemap + robots.txt; GA4 + Search Console; `LocalBusiness`/`MedicalClinic`
 JSON-LD with Helsinki NAP + hours. Cookie-consent banner; data access/erase/export; EU
 residency; SSL. Run Lighthouse and fix Core Web Vitals across marketing pages.
-**Verify:** sitemap valid; JSON-LD passes Rich Results test; Lighthouse ≥ targets.
+Implemented sitemap/robots hardening, richer `MedicalClinic` JSON-LD, GA4 loading gated by
+cookie consent, localized cookie banner, non-placeholder legal pages, and admin GDPR client
+export/anonymization tools. Lighthouse/Rich Results/Search Console validation remains a
+deployment/manual verification task. **Verify:** sitemap valid; JSON-LD passes Rich Results
+test; Lighthouse ≥ targets.
 
 ---
 

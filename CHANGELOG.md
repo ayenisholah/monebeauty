@@ -8,6 +8,16 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Phase 8 — SEO + GDPR finalize
+
+- Added localized cookie-consent banner and GA4 loading gated behind accepted analytics
+  consent.
+- Hardened robots rules for admin/API paths and enriched `MedicalClinic` JSON-LD with local
+  SEO details.
+- Replaced legal placeholders with localized privacy, terms, and cookie policy text.
+- Added admin-only GDPR client export and erasure/anonymization flows with audit logging.
+- Documented Phase 8 checklist and remaining deployment/manual verification work.
+
 ### Phase 7 — AI chatbot
 
 - Skipped Phase 6 notifications/reminders for now and proceeded with the AI chatbot

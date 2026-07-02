@@ -5,12 +5,12 @@ export function LegalPage({
   title,
   lastUpdatedLabel,
   date,
-  placeholder,
+  body,
 }: {
   title: string;
   lastUpdatedLabel: string;
   date: string;
-  placeholder: string;
+  body: string[];
 }) {
   return (
     <section className="bg-page py-[clamp(48px,6vw,88px)]">
@@ -21,9 +21,11 @@ export function LegalPage({
         <p className="mt-[12px] font-sans text-[12px] tracking-[.14em] text-muted uppercase">
           {lastUpdatedLabel}: {date}
         </p>
-        <p className="mt-[28px] font-sans text-[15px] leading-[1.8] font-light text-body">
-          {placeholder}
-        </p>
+        <div className="mt-[28px] grid gap-[16px] font-sans text-[15px] leading-[1.8] font-light text-body">
+          {body.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
       </Container>
     </section>
   );

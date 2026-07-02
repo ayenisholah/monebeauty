@@ -10,6 +10,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/ui/ChatWidget";
 import { CartProvider } from "@/components/shop/CartProvider";
+import { Analytics } from "@/components/privacy/Analytics";
+import { CookieConsent } from "@/components/privacy/CookieConsent";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -56,6 +58,8 @@ export default async function LocaleLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <ChatWidget />
+            <CookieConsent />
+            <Analytics />
           </CartProvider>
         </NextIntlClientProvider>
       </body>

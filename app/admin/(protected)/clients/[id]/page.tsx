@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { audit, requireUser } from "@/lib/auth";
 
@@ -40,6 +41,65 @@ async function updateClientAction(formData: FormData) {
       entityId: id,
     });
   }
+  revalidatePath(`/admin/clients/${id}`);
+}
+
+async function eraseClientAction(formData: FormData) {
+  "use server";
+
+  const user = await requireUser(["ADMIN"]);
+  const id = String(formData.get("id") ?? "");
+  if (String(formData.get("confirm") ?? "") !== "ERASE") return;
+  const existing = await prisma.client.findUnique({ where: { id } });
+  if (!existing) notFound();
+
+  await prisma.$transaction([
+    prisma.chatSession.updateMany({
+      where: { clientId: id },
+      data: {
+        clientId: null,
+        contactName: null,
+        contactEmail: null,
+        contactPhone: null,
+        messages: [],
+      },
+    }),
+    prisma.order.updateMany({
+      where: { clientId: id },
+      data: {
+        email: `erased-${id}@privacy.local`,
+        phone: null,
+      },
+    }),
+    prisma.appointment.updateMany({
+      where: { clientId: id },
+      data: { notes: null },
+    }),
+    prisma.cart.deleteMany({ where: { clientId: id } }),
+    prisma.consent.create({
+      data: { clientId: id, type: "gdpr_erasure", granted: true },
+    }),
+    prisma.client.update({
+      where: { id },
+      data: {
+        userId: null,
+        fullName: "Erased client",
+        phone: `erased-${id}`,
+        email: `erased-${id}@privacy.local`,
+        notes: null,
+        contraindications: null,
+        consentGdpr: false,
+        consentMarketing: false,
+      },
+    }),
+  ]);
+
+  await audit({
+    actor: user.email,
+    action: "client_data_erased",
+    entity: "Client",
+    entityId: id,
+  });
   revalidatePath(`/admin/clients/${id}`);
 }
 
@@ -133,6 +193,32 @@ export default async function AdminClientDetailPage({
               <dd>{client.createdAt.toISOString()}</dd>
             </div>
           </dl>
+          <div className="mt-[18px] border-t border-line-hair pt-[16px]">
+            <h3 className="font-sans text-[12px] tracking-[.12em] text-muted uppercase">
+              GDPR tools
+            </h3>
+            <Link
+              href={`/api/admin/clients/${client.id}/export`}
+              className="mt-[10px] inline-flex min-h-[40px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.12em] text-ink uppercase"
+            >
+              Export client data
+            </Link>
+            <form
+              action={eraseClientAction}
+              className="mt-[14px]"
+            >
+              <input type="hidden" name="id" value={client.id} />
+              <label className="block">
+                <span className="mb-[6px] block font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+                  Type ERASE to anonymize
+                </span>
+                <input name="confirm" className={inputCls} />
+              </label>
+              <button className="mt-[10px] min-h-[40px] rounded-[4px] bg-accent px-[12px] font-sans text-[11px] tracking-[.12em] text-page uppercase">
+                Erase personal data
+              </button>
+            </form>
+          </div>
         </aside>
       </div>
 

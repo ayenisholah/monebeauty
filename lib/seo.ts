@@ -1,5 +1,5 @@
 import { routing } from "@/i18n/routing";
-import { BRAND, CONTACT } from "@/content/site";
+import { BRAND, CONTACT, SOCIALS } from "@/content/site";
 
 export function siteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -51,10 +51,14 @@ export function medicalClinicJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "MedicalClinic",
+    "@id": `${BRAND.url}/#clinic`,
     name: BRAND.name,
     url: BRAND.url,
+    image: `${BRAND.url}/logo.svg`,
     telephone: CONTACT.phone,
     email: CONTACT.email,
+    priceRange: "€€",
+    sameAs: [SOCIALS.instagram, SOCIALS.facebook],
     address: {
       "@type": "PostalAddress",
       streetAddress: CONTACT.address.street,
@@ -68,6 +72,23 @@ export function medicalClinicJsonLd() {
       longitude: CONTACT.geo.lng,
     },
     medicalSpecialty: "Aesthetic",
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ],
+        opens: "00:00",
+        closes: "23:59",
+        description: "By appointment",
+      },
+    ],
   };
 }
 

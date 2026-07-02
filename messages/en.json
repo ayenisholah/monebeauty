@@ -70,6 +70,12 @@
       "message": "Message for the clinic"
     }
   },
+  "CookieConsent": {
+    "title": "Cookie preferences",
+    "body": "We use essential storage for the site to work. Analytics loads only if you accept it.",
+    "accept": "Accept analytics",
+    "decline": "Decline"
+  },
   "Home": {
     "metaTitle": "Instrumental cosmetology & beauty care in Helsinki",
     "metaDescription": "Mone Beauty Clinic — an aesthetic-medicine clinic in Helsinki: endospheres therapy, laser, RF lifting, trichology, facial & body care, and AROSHA products.",
@@ -282,7 +288,26 @@
     "termsTitle": "Terms of Use",
     "cookiesTitle": "Cookies Policy",
     "lastUpdated": "Last updated",
-    "placeholder": "This document is a placeholder. The final, legally reviewed text will be provided by the clinic."
+    "privacyBody": [
+      "Mone Beauty Clinic processes personal data to provide appointments, product orders, customer support, CRM follow-up, and legally required administration. Typical data includes name, phone, email, booking/order details, consent records, and messages you choose to send.",
+      "Health-related notes, contraindications, and treatment comments are treated as special-category data. Access is role-restricted and sensitive access is audited in the admin system.",
+      "Data is processed on the basis of appointment/order performance, legal obligations, consent, and legitimate interest in safe clinic operations. Marketing communication is used only where consent is recorded.",
+      "You can request access, export, correction, or erasure of your data by contacting info@monebeauty.fi. Some accounting or appointment records may need to be retained where required by law.",
+      "The clinic uses EU-oriented hosting and limits third-party processing. Analytics cookies load only after cookie consent."
+    ],
+    "termsBody": [
+      "The website provides information, booking, product order requests, and contact channels for Mone Beauty Clinic. Content is informational and does not replace personal consultation with a qualified professional.",
+      "Appointments are subject to clinic confirmation and availability. If you arrive late, cancel late, or miss an appointment, the clinic's cancellation rules may apply.",
+      "Product orders submitted through the website are order requests until the clinic confirms availability, payment, and handover details.",
+      "Do not misuse the website, attempt unauthorized access, or submit false information. Internal admin and staff areas are restricted to authorized users only.",
+      "The clinic may update these terms as services, legal requirements, or website features change."
+    ],
+    "cookiesBody": [
+      "Essential cookies and local storage are used for basic website functions such as cart state, language-aware navigation, session security, and cookie consent choices.",
+      "Analytics cookies are optional. Google Analytics is loaded only after you accept analytics cookies in the cookie banner.",
+      "You can decline analytics cookies and continue using the website. You can reset your choice by clearing this site's browser storage.",
+      "Chat transcripts are stored only when you give GDPR consent in the chat widget."
+    ]
   },
   "NotFound": {
     "title": "Page not found",

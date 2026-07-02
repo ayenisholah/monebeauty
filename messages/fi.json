@@ -70,6 +70,12 @@
       "message": "Viesti klinikalle"
     }
   },
+  "CookieConsent": {
+    "title": "Evästeasetukset",
+    "body": "Käytämme välttämätöntä tallennusta sivuston toimintaan. Analytiikka latautuu vain, jos hyväksyt sen.",
+    "accept": "Hyväksy analytiikka",
+    "decline": "Kieltäydy"
+  },
   "Home": {
     "metaTitle": "Instrumentaalinen kosmetologia ja kauneudenhoito Helsingissä",
     "metaDescription": "Mone Beauty Clinic — esteettisen lääketieteen klinikka Helsingissä: endospheres-terapia, laser, RF-lifting, trikologia, kasvo- ja vartalohoidot sekä AROSHA-tuotteet.",
@@ -282,7 +288,26 @@
     "termsTitle": "Käyttöehdot",
     "cookiesTitle": "Evästekäytäntö",
     "lastUpdated": "Päivitetty viimeksi",
-    "placeholder": "Tämä asiakirja on paikkamerkki. Klinikka toimittaa lopullisen, oikeudellisesti tarkistetun tekstin."
+    "privacyBody": [
+      "Mone Beauty Clinic käsittelee henkilötietoja ajanvarausten, tuotetilausten, asiakastuen, CRM-seurannan ja lakisääteisen hallinnon toteuttamiseksi. Tietoja voivat olla nimi, puhelin, sähköposti, varaus- ja tilaustiedot, suostumukset sekä viestit, jotka päätät lähettää.",
+      "Terveyteen liittyvät muistiinpanot, vasta-aiheet ja hoitokommentit käsitellään erityisinä henkilötietoina. Pääsy tietoihin on roolirajattu ja arkaluonteisten tietojen käyttö auditoidaan admin-järjestelmässä.",
+      "Tietoja käsitellään ajanvarauksen tai tilauksen toteuttamiseksi, lakisääteisten velvoitteiden, suostumuksen sekä klinikan turvallisen toiminnan oikeutetun edun perusteella. Markkinointiviestejä lähetetään vain suostumuksella.",
+      "Voit pyytää tietojesi tarkastusta, vientiä, korjausta tai poistamista ottamalla yhteyttä osoitteeseen info@monebeauty.fi. Osa kirjanpito- tai ajanvaraustiedoista voidaan säilyttää lain edellyttämällä tavalla.",
+      "Klinikka käyttää EU-painotteista hostingia ja rajoittaa kolmansien osapuolten käsittelyä. Analytiikkaevästeet latautuvat vain evästesuostumuksen jälkeen."
+    ],
+    "termsBody": [
+      "Sivusto tarjoaa tietoa, ajanvarauksen, tuotetilauspyyntöjä ja yhteydenottokanavia Mone Beauty Clinicille. Sisältö on informatiivista eikä korvaa henkilökohtaista konsultaatiota pätevän ammattilaisen kanssa.",
+      "Ajanvaraukset riippuvat klinikan vahvistuksesta ja saatavuudesta. Myöhästyminen, myöhäinen peruutus tai saapumatta jättäminen voi johtaa klinikan peruutusehtojen soveltamiseen.",
+      "Verkkosivuston kautta lähetetyt tuotetilaukset ovat tilauspyyntöjä, kunnes klinikka vahvistaa saatavuuden, maksun ja luovutuksen yksityiskohdat.",
+      "Sivustoa ei saa väärinkäyttää, luvattomaan pääsyyn ei saa pyrkiä eikä vääriä tietoja saa lähettää. Admin- ja henkilökunnan alueet on rajattu valtuutetuille käyttäjille.",
+      "Klinikka voi päivittää näitä ehtoja palveluiden, lainsäädännön tai verkkosivuston ominaisuuksien muuttuessa."
+    ],
+    "cookiesBody": [
+      "Välttämättömiä evästeitä ja paikallista tallennusta käytetään perustoimintoihin, kuten ostoskorin tilaan, kielikohtaiseen navigointiin, istuntoturvaan ja evästevalintoihin.",
+      "Analytiikkaevästeet ovat vapaaehtoisia. Google Analytics latautuu vain, jos hyväksyt analytiikkaevästeet evästebannerissa.",
+      "Voit kieltäytyä analytiikkaevästeistä ja jatkaa sivuston käyttöä. Valinnan voi nollata tyhjentämällä tämän sivuston selaintallennuksen.",
+      "Chat-keskustelut tallennetaan vain, kun annat GDPR-suostumuksen chat-widgetissä."
+    ]
   },
   "NotFound": {
     "title": "Sivua ei löytynyt",
