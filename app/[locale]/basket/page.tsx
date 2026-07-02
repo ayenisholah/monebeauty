@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { ShoppingCartSimple } from "@phosphor-icons/react/ssr";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
+import { BasketClient } from "@/components/shop/BasketClient";
 import { localeAlternates } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -39,12 +39,9 @@ export default async function BasketPage({
         <h1 className="mt-[16px] font-display text-h2 leading-[1.06] font-medium text-ink">
           {t("heading")}
         </h1>
-        <p className="mx-auto mt-[16px] max-w-[440px] font-sans text-lead font-light text-body">
-          {t("empty")}
-        </p>
-        <div className="mt-[28px]">
-          <Button href="/catalog">{t("browse")}</Button>
-        </div>
+      </Container>
+      <Container className="mt-[clamp(28px,4vw,48px)]">
+        <BasketClient />
       </Container>
     </section>
   );

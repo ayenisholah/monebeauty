@@ -115,7 +115,12 @@
     "eyebrow": "Ajanvaraus",
     "heading": "Varaa aika",
     "intro": "Valitse hoito, valitse aika ja vahvista — se vie alle minuutin.",
-    "steps": { "service": "Hoito", "time": "Aika", "you": "Tiedot" },
+    "steps": {
+      "service": "Hoito",
+      "practitioner": "Asiantuntija",
+      "time": "Aika",
+      "you": "Tiedot"
+    },
     "services": {
       "facial": "Kasvohoidot",
       "body": "Vartalohoidot",
@@ -128,6 +133,8 @@
     },
     "pickDate": "Valitse päivä",
     "pickTime": "Valitse aika",
+    "anyPractitioner": "Ei väliä",
+    "anyPractitionerHint": "Valitse ensimmäinen vapaa asiantuntija.",
     "pickDateFirst": "Valitse päivä nähdäksesi vapaat ajat.",
     "loading": "Ladataan vapaita aikoja…",
     "noTimes": "Tälle päivälle ei ole vapaita aikoja — valitse toinen päivä.",
@@ -140,7 +147,12 @@
     },
     "submit": "Vahvista varaus",
     "submitting": "Varataan…",
-    "summary": { "service": "Hoito", "time": "Aika", "reference": "Viite" },
+    "summary": {
+      "service": "Hoito",
+      "practitioner": "Asiantuntija",
+      "time": "Aika",
+      "reference": "Viite"
+    },
     "confirmed": {
       "title": "Aikasi on varattu",
       "body": "Olemme varanneet aikasi ja olemme yhteydessä vahvistaaksemme tiedot.",
@@ -156,8 +168,95 @@
   "Basket": {
     "metaTitle": "Ostoskori",
     "heading": "Ostoskorisi",
-    "empty": "Ostoskorisi on tyhjä. Verkkokassa avautuu pian.",
-    "browse": "Selaa katalogia"
+    "empty": "Ostoskorisi on tyhjä.",
+    "browse": "Selaa katalogia",
+    "summary": "Tilauksen yhteenveto",
+    "items": "Tuotteet",
+    "subtotal": "Välisumma",
+    "checkout": "Kassalle",
+    "increase": "Lisää määrää",
+    "decrease": "Vähennä määrää",
+    "remove": "Poista"
+  },
+  "Cart": {
+    "added": "Lisätty",
+    "openBasket": "Avaa ostoskori, {count} tuotetta"
+  },
+  "Checkout": {
+    "metaTitle": "Kassa",
+    "eyebrow": "Kassa",
+    "heading": "Vahvista tilaus",
+    "intro": "Jätä yhteystietosi, niin otamme yhteyttä saatavuuden ja noudon vahvistamiseksi.",
+    "summary": "Tilauksen yhteenveto",
+    "fields": {
+      "name": "Koko nimi",
+      "phone": "Puhelin",
+      "email": "Sähköposti",
+      "notes": "Lisätiedot (valinnainen)",
+      "consent": "Hyväksyn, että Mone Beauty Clinic tallentaa tietoni tämän tilauksen käsittelemiseksi tietosuojaselosteen mukaisesti."
+    },
+    "submit": "Lähetä tilaus",
+    "submitting": "Lähetetään...",
+    "errors": {
+      "invalid_json": "Tilausta ei voitu lukea. Yritä uudelleen.",
+      "name_required": "Kirjoita koko nimesi.",
+      "phone_required": "Kirjoita puhelinnumerosi.",
+      "email_required": "Kirjoita voimassa oleva sähköpostiosoite.",
+      "consent_required": "Hyväksy tietosuostumus ennen lähettämistä.",
+      "empty_cart": "Ostoskorisi on tyhjä.",
+      "unavailable": "Kassa on tilapäisesti pois käytöstä. Soita tai lähetä sähköpostia.",
+      "generic": "Tarkista lomake ja yritä uudelleen."
+    }
+  },
+  "Order": {
+    "metaTitle": "Tilaus vastaanotettu",
+    "heading": "Tilaus vastaanotettu",
+    "intro": "Kiitos. Olemme vastaanottaneet tilauspyyntösi ja otamme yhteyttä vahvistaaksemme tiedot.",
+    "reference": "Viite",
+    "total": "Yhteensä",
+    "backToCatalog": "Takaisin katalogiin"
+  },
+  "Staff": {
+    "metaTitle": "Henkilökunnan aikataulu",
+    "eyebrow": "Henkilökunta",
+    "heading": "Aikataulu",
+    "intro": "Hallinnoi vapaita aikoja, suljettuja aikoja ja päivän varauksia. Kirjautuminen ja roolirajaus lisätään seuraavassa vaiheessa.",
+    "controls": "Hallinta",
+    "practitioner": "Asiantuntija",
+    "date": "Päivä",
+    "workingHours": "Työajat",
+    "startHour": "Alku",
+    "endHour": "Loppu",
+    "stepMin": "Väli",
+    "daysAhead": "Päivät",
+    "apply": "Käytä jaksolle",
+    "schedule": "Päivän aikataulu",
+    "refresh": "Päivitä",
+    "save": "Tallenna päivä",
+    "saving": "Tallennetaan...",
+    "saved": "Aikataulu tallennettu.",
+    "applied": "Työajat otettu käyttöön.",
+    "loading": "Ladataan aikataulua...",
+    "noSlots": "Tälle päivälle ei ole aikoja.",
+    "days": {
+      "0": "Su",
+      "1": "Ma",
+      "2": "Ti",
+      "3": "Ke",
+      "4": "To",
+      "5": "Pe",
+      "6": "La"
+    },
+    "slotStatus": {
+      "open": "Avoin",
+      "closed": "Suljettu",
+      "booked": "Varattu"
+    },
+    "errors": {
+      "load": "Aikataulua ei voitu ladata.",
+      "save": "Päivää ei voitu tallentaa.",
+      "apply": "Työaikoja ei voitu ottaa käyttöön."
+    }
   },
   "Legal": {
     "privacyTitle": "Tietosuojaseloste",

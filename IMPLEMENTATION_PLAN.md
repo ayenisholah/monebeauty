@@ -6,7 +6,8 @@
 > `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
-> **Immediate next step: the "Next — Lean Booking" milestone below.**
+> **Current completed milestone: Phase 2 e-commerce cart/checkout.** Lean booking is already
+> implemented at reduced scope; payment/email remain deferred.
 
 ## Content & media pipeline (from the live site)
 
@@ -110,14 +111,17 @@ guard. **Verify:** `npm run dev` boots; theme tokens resolve; Prisma connects.
 - **Baseline SEO** — per-page title/meta/alt, ordered headings, real NAP.
 - **Verify:** Lighthouse on marketing pages; visual diff vs PNGs; all three locales render.
 
-## Phase 2 — E-commerce (AROSHA shop)
+## Phase 2 — E-commerce (AROSHA shop) ✅ implemented
 
-Prisma `Product`/`ProductCategory`; `/shop`, `/shop/[category]`, `/shop/product/[slug]`,
-`/cart`, `/checkout`, `/order/[id]`. Seed **31 products** + images from `scraped_content`.
-Cart state, GDPR checkout (consent), order creation + email confirmation. **Verify:** browse →
-add to cart → checkout → order persists + confirmation email; mobile layout at 390px.
+Existing live IA routes are used: `/catalog`, `/catalog/[slug]`, `/basket`, `/checkout`,
+`/order/[id]`. The 31 products + images come from `scraped_content` via the generated
+registry. Cart state is client-side (`localStorage`), checkout captures GDPR consent,
+server-side totals are recalculated from the product registry, and Prisma persists `Client`,
+`Product`, `Order`, `OrderItem`, and `Consent`. Payment capture and confirmation email are
+deferred. **Verify:** browse → add to cart → checkout → order persists + confirmation page;
+mobile layout at 390px.
 
-## Next — Lean Booking (one-click) ⭐ immediate
+## Lean Booking (one-click) ✅ implemented at reduced scope
 
 **Goal:** the SCOPE.md priority — open the site, **select a service in one click, book fast**.
 Ships ahead of the full Phase 3, reusing that data model at reduced scope.
@@ -134,23 +138,29 @@ Ships ahead of the full Phase 3, reusing that data model at reduced scope.
   select-and-advance, `?service=<key>` preselect, GDPR consent, on-screen confirmation.
 - **One-click entry points**: `Book` buttons on `/services/[slug]` + a home "Choose a
   service" selectable grid deep-linking `/booking?service=<key>`; trim homepage length.
-- **Deferred to Phase 3**: email/SMS + reminders, practitioner selection + `Availability`,
-  reschedule/cancel. **Verify:** e2e a booking persists; double-book rejected; 390px first.
+- **Upgraded in Phase 3**: practitioner/no-preference selection, `Availability`-aware slots,
+  and lightweight reschedule/cancel endpoints. Email/SMS + reminders remain deferred to
+  Phase 6. **Verify:** e2e a booking persists; double-book rejected; 390px first.
 
-## Phase 3 — Booking (client wizard)
+## Phase 3 — Booking (client wizard) ✅ implemented
 
 Booking data model (Practitioner, Availability, Appointment, Client). Wizard per
-`05-platform-features.md §1`: treatment → practitioner → date/time (open slots only) →
-details (create/match client) → confirm + consent → confirmation. Reschedule/cancel with
-cutoff. **Verify:** unit tests for slot generation + double-booking prevention; e2e a booking.
+`05-platform-features.md §1`: treatment → practitioner/no preference → date/time (open slots
+only) → details (create/match client) → confirm + consent → confirmation. Slot lookup uses
+`Availability.slots` when present, falls back to generated business-hours slots while staff
+UI is absent, and rejects appointment overlaps. Lightweight cancel/reschedule endpoints exist
+using appointment reference + matching contact detail. **Verify:** slot generation,
+double-booking prevention, e2e booking, cancel, and reschedule.
 
-## Phase 4 — Staff schedule (`/staff`)
+## Phase 4 — Staff schedule (`/staff`) ✅ implemented
 
-Authenticated staff area: daily/weekly calendar, recurring working-hours editor, open/close
-slots + breaks + days off, own appointments, new-booking notifications. Role `staff` sees
-only their own schedule. **Verify:** staff edits availability → reflected in client wizard.
+Internal staff schedule area: practitioner/date selector, daily schedule view, working-hours
+range editor, open/closed slot controls, and booked appointment details. Staff edits persist
+to `Availability.slots` and are reflected in the client booking wizard. Authenticated staff
+access, role gating, own-schedule restriction, and notifications are deferred to Phase 5/6.
+**Verify:** staff edits availability → reflected in client wizard.
 
-## Phase 5 — CRM + custom admin + auth
+## Phase 5 — CRM + custom admin + auth ⭐ next
 
 Auth (admin/staff/client roles). Custom Prisma-backed admin (`/admin`): manage services,
 treatment content, products, pricing, blog, clients. CRM client profile (§9) with quick

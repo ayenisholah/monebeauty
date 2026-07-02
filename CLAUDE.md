@@ -169,10 +169,22 @@ not deviate without updating them first:
 
 - **Brand: Mone Beauty Clinic** (renamed from "Club"), aesthetic-medicine positioning per
   `SCOPE.md`.
-- **Next step: lean service booking** — one-click service selection → simplest possible flow
-  (service picker → date/time → details + GDPR consent → on-screen confirmation, Prisma-
-  persisted). Email/SMS, reminders, practitioner selection, reschedule/cancel are the full
-  Phase 3 completion.
+- **Lean service booking is implemented at reduced scope** — one-click service selection →
+  simplest possible flow (service picker → date/time → details + GDPR consent → on-screen
+  confirmation, Prisma-persisted). Email/SMS, reminders, practitioner selection,
+  reschedule/cancel are the full Phase 3 completion.
+- **Current completed milestone: Phase 2 e-commerce cart/checkout** — product add-to-cart,
+  `/basket`, `/checkout`, Prisma `Order`/`OrderItem` persistence, GDPR consent, and
+  `/order/[id]` confirmation are implemented. Payment capture and confirmation email remain
+  deferred.
+- **Current completed milestone: Phase 3 booking upgrade** — booking now supports
+  Service → Specialist/no preference → Time → You, availability-backed slots, overlap
+  rejection, Prisma appointment persistence, and lightweight cancel/reschedule endpoints.
+  Staff schedule editing UI is the next milestone.
+- **Current completed milestone: Phase 4 staff schedule** — `/staff` now exposes an internal
+  practitioner/date schedule editor, working-hour range application, open/closed slot
+  controls, booked appointment details, and persistence to `Availability.slots`. Auth/RBAC
+  and own-schedule restrictions are deferred to Phase 5.
 - **UX priority (SCOPE.md):** a visitor should select a service in **one click** and book
   with minimal friction; keep the homepage focused (avoid over-long pages) with an obvious
   "select a service" + **Book Online** path.
@@ -181,7 +193,8 @@ not deviate without updating them first:
   - Jost) + `react-markdown` + Anthropic Claude API.
 - **No Payload CMS.** The admin/CMS/CRM is **custom-built on Prisma**.
 - **E-commerce is in scope** — the AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`,
-  `/basket`); cart/checkout are Phase 2.
+  `/basket`, `/checkout`, `/order/[id]`) uses generated scraped product content and Prisma
+  order persistence.
 - **Live IA** (mirrors `monebeauty.fi`): `/`, `/about`, `/instrumental/{endosphere,laser,
 mikroneulanrf}`, `/trichology`, `/arosha`, `/services` (+ 8 subpages), `/catalog` (+ products),
   `/booking`, `/basket`. Legal pages kept for GDPR.

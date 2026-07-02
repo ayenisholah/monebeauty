@@ -36,7 +36,7 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 
 - **Brand: Mone Beauty Clinic** — real `public/logo.svg` + `app/favicon.ico`.
 - **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`, `/basket`);
-  cart/checkout are Phase 2.
+  Phase 2 cart/checkout persists order requests through Prisma. Payment capture is deferred.
 - **Custom admin on Prisma — no Payload CMS.**
 - **Stack is locked** (§2).
 
@@ -96,9 +96,10 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 - `/services` (index) + `/services/{face,body,tricho,laser,mikroneulanrf,eyebrows,packages,gift-cards}`
 
 **Shop:** `/catalog` (31 AROSHA/DIXIDOX products, grouped by category), `/catalog/[slug]`
-(product detail: image, price, size, real description, related), `/basket` (cart — Phase 2).
+(product detail: image, price, size, real description, related), `/basket` (real cart),
+`/checkout`, `/order/[id]` confirmation.
 
-**App / authenticated (later phases):** `/booking` ("Book time" — placeholder now), `/account`,
+**App / authenticated (later phases):** `/booking` (lean booking implemented), `/account`,
 `/staff`, `/admin`.
 
 **Legal (footer):** `/privacy-policy`, `/terms-of-use`, `/cookies-policy`.
@@ -150,12 +151,13 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 - **Product detail:** images, name, size (ml / pack), price (band ≈ €39–€85), description,
   related products, add-to-cart.
 - **Cart + checkout:** GDPR-compliant checkout (consent capture), order creation,
-  order confirmation page + email confirmation; orders visible in `/account` and `/admin`.
+  order confirmation page. Email confirmation, payment capture, and order visibility in
+  `/account` and `/admin` are deferred.
 - Built with the **same design system**; mobile-first.
 
 ## 8. Online booking
 
-> **First iteration (lean) — the immediate next step.** Ship a friction-free, one-click
+> **First iteration (lean) — implemented at reduced scope.** A friction-free, one-click
 > booking: a 3-step wizard **Service → Time → You** where tapping a service selects it and
 > advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
 > pick date/time (open slots only, single shared default practitioner) → client details
@@ -166,13 +168,16 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 
 **Client wizard (24/7):** select treatment → select practitioner (or "no preference",
 name + role only, no public bio) → choose date/time (only open slots) → client details
-(create/match CRM client) → confirm + GDPR consent → confirmation (on-screen + **email** +
-**SMS, preferred**). Reminders at 24h + 2h. Reschedule/cancel with a cutoff window.
-Mobile-first; 44px+ tap targets; clear progress indicator; accent selected-state calendar.
+(create/match CRM client) → confirm + GDPR consent → on-screen confirmation. The upgraded
+Phase 3 flow is implemented with practitioner-aware availability and lightweight
+cancel/reschedule endpoints. Email + SMS confirmations, reminders at 24h + 2h, and richer
+cutoff policy remain deferred to notification/admin phases. Mobile-first; 44px+ tap targets;
+clear progress indicator; accent selected-state calendar.
 
-**Staff flow (`/staff`):** daily/weekly calendar; manage recurring working hours; open/close
-slots, breaks, days off; view own appointments (client + treatment + notes); new-booking
-notifications; fully responsive. Staff see only their own schedule.
+**Staff flow (`/staff`):** implemented as an internal schedule surface with practitioner/date
+selection, working-hour range application, open/closed slot controls, and appointment details
+(client + treatment + notes). Auth/RBAC, own-schedule restriction, and new-booking
+notifications remain deferred to Phase 5/6. Fully responsive.
 
 ## 9. CRM / client database
 

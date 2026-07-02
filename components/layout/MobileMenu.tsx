@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { List, X } from "@phosphor-icons/react";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { HeaderCartLink } from "@/components/shop/HeaderCartLink";
 
 type Item = {
   label: string;
@@ -33,6 +34,7 @@ export function MobileMenu({
 
   return (
     <div className="flex items-center gap-[12px]">
+      <HeaderCartLink />
       <LanguageSwitcher />
       <button
         type="button"

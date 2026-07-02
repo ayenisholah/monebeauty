@@ -21,23 +21,90 @@ const SERVICES: {
   { slug: "consultation", category: "CONSULTATION", bookable: false },
 ];
 
+const BUSINESS_HOURS = {
+  openDays: [1, 2, 3, 4, 5, 6],
+  startHour: 10,
+  endHour: 19,
+  stepMin: 30,
+  daysAhead: 30,
+};
+
+function slotsForDate(date: Date) {
+  const slots = [];
+  for (
+    let t = BUSINESS_HOURS.startHour * 60;
+    t + 30 <= BUSINESS_HOURS.endHour * 60;
+    t += BUSINESS_HOURS.stepMin
+  ) {
+    const start = new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        Math.floor(t / 60),
+        t % 60,
+      ),
+    );
+    const end = new Date(start.getTime() + BUSINESS_HOURS.stepMin * 60000);
+    slots.push({
+      start: start.toISOString(),
+      end: end.toISOString(),
+      status: "open",
+    });
+  }
+  return slots;
+}
+
 async function main() {
-  const practitioner = await prisma.practitioner.findFirst();
+  let practitioner = await prisma.practitioner.findFirst();
   if (!practitioner) {
-    await prisma.practitioner.create({
+    practitioner = await prisma.practitioner.create({
       data: { name: "Mone Beauty Clinic", role: "Specialist" },
     });
   }
 
+  const serviceIds: string[] = [];
   for (const s of SERVICES) {
-    await prisma.service.upsert({
+    const service = await prisma.service.upsert({
       where: { slug: s.slug },
       update: { category: s.category, published: s.bookable },
       create: { slug: s.slug, category: s.category, published: s.bookable },
     });
+    if (s.bookable) serviceIds.push(service.id);
   }
 
-  console.log(`Seeded default practitioner + ${SERVICES.length} services.`);
+  await prisma.practitioner.update({
+    where: { id: practitioner.id },
+    data: {
+      services: { connect: serviceIds.map((id) => ({ id })) },
+    },
+  });
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  for (let i = 0; i <= BUSINESS_HOURS.daysAhead; i++) {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() + i);
+    if (!BUSINESS_HOURS.openDays.includes(date.getUTCDay())) continue;
+    await prisma.availability.upsert({
+      where: {
+        practitionerId_date: {
+          practitionerId: practitioner.id,
+          date,
+        },
+      },
+      update: {},
+      create: {
+        practitionerId: practitioner.id,
+        date,
+        slots: slotsForDate(date),
+      },
+    });
+  }
+
+  console.log(
+    `Seeded default practitioner + ${SERVICES.length} services + ${BUSINESS_HOURS.daysAhead} days of availability.`,
+  );
 }
 
 main()

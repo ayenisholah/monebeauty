@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, ShoppingCartSimple } from "@phosphor-icons/react/ssr";
+import { ArrowLeft } from "@phosphor-icons/react/ssr";
 import { Container } from "@/components/ui/Container";
 import { Markdown } from "@/components/Markdown";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { Link } from "@/i18n/navigation";
 import {
   PRODUCTS,
@@ -106,14 +107,12 @@ export default async function ProductPage({
             <div className="mt-[14px] font-display text-[28px] font-medium text-ink">
               {formatPrice(product.price)}
             </div>
-            <button
-              type="button"
-              aria-label={t("intoBasket")}
-              className="mt-[24px] inline-flex w-fit items-center gap-[10px] rounded-[4px] bg-accent px-[30px] py-[14px] font-sans text-[12px] font-medium tracking-[.16em] text-page uppercase transition-colors hover:[background:color-mix(in_srgb,var(--accent)_86%,#000)]"
-            >
-              <ShoppingCartSimple size={16} weight="thin" />
-              {t("intoBasket")}
-            </button>
+            <AddToCartButton
+              slug={product.slug}
+              label={t("intoBasket")}
+              compact={false}
+              className="mt-[24px]"
+            />
 
             {c.description ? (
               <div className="mt-[clamp(28px,3vw,40px)]">

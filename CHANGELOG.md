@@ -8,6 +8,41 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Phase 4 — Staff schedule
+
+- Added an internal `/staff` schedule surface for selecting practitioner/date, reviewing
+  daily slots, seeing booked appointment/client details, and saving open/closed slots.
+- Added `/api/staff/schedule` to read daily schedule data, persist day-level availability,
+  and apply working-hour patterns over a future date range.
+- Added shared staff schedule helpers for normalized working hours, generated slots, and
+  booked-slot overlays from appointments.
+- Added EN/FI/RU staff schedule UI copy. Auth/RBAC remains deferred to Phase 5.
+
+### Phase 3 — Booking upgrade
+
+- Upgraded the booking flow from lean single-practitioner booking to a four-step
+  Service → Specialist → Time → You wizard with a "no preference" specialist option.
+- Added practitioner-aware slot lookup backed by Prisma `Availability.slots` when present,
+  with generated business-hour fallback and non-cancelled appointment overlap filtering.
+- Added `GET /api/booking/practitioners`, upgraded `GET /api/booking/slots`, and upgraded
+  `POST /api/booking` to revalidate the selected practitioner/slot at submit time.
+- Added lightweight cancel and reschedule endpoints using appointment reference plus
+  matching contact detail.
+- Updated `prisma/seed.ts` to connect bookable services to the default practitioner and
+  create near-term development availability.
+
+### Phase 2 — E-commerce cart & checkout
+
+- Implemented real cart state for the AROSHA/DIXIDOX catalog with `localStorage` persistence,
+  add-to-cart buttons, and a live header basket count.
+- Replaced the `/basket` placeholder with line items, quantity controls, remove actions,
+  item count, subtotal, and a checkout entry point.
+- Added `/checkout`, `POST /api/checkout`, and `/order/[id]`: checkout captures client
+  details + GDPR consent, recalculates product totals server-side, self-heals Prisma
+  `Product` rows, and persists `Client`, `Order`, `OrderItem`, and `Consent` rows.
+- Added localized EN/FI/RU cart, checkout, and order confirmation UI. Payment capture and
+  confirmation email remain deferred.
+
 ### Live-site mirror — real content, media & IA
 
 - **Reoriented the app to mirror the live site** (`monebeauty.fi` = Mone Beauty Club):

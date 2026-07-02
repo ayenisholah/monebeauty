@@ -9,6 +9,7 @@ import { siteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/ui/ChatWidget";
+import { CartProvider } from "@/components/shop/CartProvider";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -50,10 +51,12 @@ export default async function LocaleLayout({
     >
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <ChatWidget />
+          <CartProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <ChatWidget />
+          </CartProvider>
         </NextIntlClientProvider>
       </body>
     </html>

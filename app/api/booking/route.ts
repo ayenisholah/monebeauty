@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getBookingService } from "@/content/booking-services";
-import { getDefaultPractitionerId, getServiceId } from "@/lib/booking";
+import { getServiceId, openSlots } from "@/lib/booking";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   const fullName = String(payload.fullName ?? "").trim();
   const phone = String(payload.phone ?? "").trim();
   const email = String(payload.email ?? "").trim();
+  const practitioner = String(payload.practitionerId ?? "any");
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const consentGdpr = payload.consentGdpr === true;
 
@@ -36,11 +37,22 @@ export async function POST(req: NextRequest) {
 
   const startDate = new Date(start);
   if (startDate.getTime() <= Date.now()) return bad("start_in_past");
-  const endDate = new Date(startDate.getTime() + svc.durationMin * 60000);
+  const dateStr = start.slice(0, 10);
 
   try {
-    const practitionerId = await getDefaultPractitionerId();
+    const available = await openSlots({
+      dateStr,
+      serviceKey: service,
+      practitionerId: practitioner === "any" ? "any" : practitioner,
+    });
+    const matchingSlot = available.find((slot) => slot.start === start);
+    if (!matchingSlot) {
+      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
+    }
+
+    const practitionerId = matchingSlot.practitionerId;
     const serviceId = await getServiceId(svc);
+    const endDate = new Date(matchingSlot.end);
 
     // Double-book guard — any non-cancelled appointment overlapping this window.
     const clash = await prisma.appointment.findFirst({

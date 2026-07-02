@@ -18,9 +18,26 @@ const DEFAULT_DURATION_MIN = 60;
 export interface SlotDto {
   /** ISO start instant. */
   start: string;
+  /** ISO end instant. */
+  end: string;
   /** HH:MM clinic-local label. */
   label: string;
+  /** Practitioner that will receive the booking. */
+  practitionerId: string;
+  practitionerName: string;
 }
+
+export interface PractitionerDto {
+  id: string;
+  name: string;
+  role: string;
+}
+
+type AvailabilitySlot = {
+  start: string;
+  end?: string;
+  status?: "open" | "closed" | "booked";
+};
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -45,36 +62,158 @@ export function generateSlots(dateStr: string, durationMin: number): Date[] {
   return out;
 }
 
-/** Open slots for a date + service: candidates minus past times and booked starts. */
-export async function openSlots(
-  dateStr: string,
-  serviceKey: string,
-): Promise<SlotDto[]> {
-  const svc = getBookingService(serviceKey);
-  const duration = svc?.durationMin ?? DEFAULT_DURATION_MIN;
-  const candidates = generateSlots(dateStr, duration);
-  if (candidates.length === 0) return [];
+function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  return aStart < bEnd && aEnd > bStart;
+}
 
-  const dayStart = candidates[0];
-  const dayEnd = new Date(
-    candidates[candidates.length - 1].getTime() + duration * 60000,
-  );
+function dateLabel(date: Date): string {
+  return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+}
+
+async function serviceRecord(serviceKey: string) {
+  const svc = getBookingService(serviceKey);
+  if (!svc || !svc.bookable) return null;
+  const serviceId = await getServiceId(svc);
+  return { svc, serviceId };
+}
+
+/** Practitioners who can provide a service. Falls back to all/default while admin UI is absent. */
+export async function eligiblePractitioners(
+  serviceKey: string,
+): Promise<PractitionerDto[]> {
+  const record = await serviceRecord(serviceKey);
+  if (!record) return [];
+
+  let practitioners = await prisma.practitioner.findMany({
+    where: { services: { some: { id: record.serviceId } } },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, role: true },
+  });
+
+  if (practitioners.length === 0) {
+    const defaultId = await getDefaultPractitionerId();
+    await prisma.practitioner.update({
+      where: { id: defaultId },
+      data: { services: { connect: { id: record.serviceId } } },
+    });
+    practitioners = await prisma.practitioner.findMany({
+      where: { id: defaultId },
+      select: { id: true, name: true, role: true },
+    });
+  }
+
+  return practitioners;
+}
+
+async function candidateSlotsForPractitioner(
+  dateStr: string,
+  durationMin: number,
+  practitionerId: string,
+): Promise<Array<{ start: Date; end: Date }>> {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const availability = await prisma.availability.findUnique({
+    where: { practitionerId_date: { practitionerId, date } },
+    select: { slots: true },
+  });
+
+  if (availability) {
+    const raw = Array.isArray(availability.slots)
+      ? (availability.slots as AvailabilitySlot[])
+      : [];
+    return raw
+      .filter((slot) => (slot.status ?? "open") === "open")
+      .map((slot) => {
+        const start = new Date(slot.start);
+        const end = slot.end
+          ? new Date(slot.end)
+          : new Date(start.getTime() + durationMin * 60000);
+        return { start, end };
+      })
+      .filter(
+        (slot) =>
+          !Number.isNaN(slot.start.getTime()) &&
+          !Number.isNaN(slot.end.getTime()) &&
+          slot.end.getTime() > slot.start.getTime(),
+      );
+  }
+
+  return generateSlots(dateStr, durationMin).map((start) => ({
+    start,
+    end: new Date(start.getTime() + durationMin * 60000),
+  }));
+}
+
+/** Open slots for a date + service: availability candidates minus past and booked overlaps. */
+export async function openSlots({
+  dateStr,
+  serviceKey,
+  practitionerId,
+}: {
+  dateStr: string;
+  serviceKey: string;
+  practitionerId?: string | "any";
+}): Promise<SlotDto[]> {
+  const svc = getBookingService(serviceKey);
+  if (!svc?.bookable) return [];
+  const duration = svc?.durationMin ?? DEFAULT_DURATION_MIN;
+  if (!isOpenDate(dateStr)) return [];
+
+  const practitioners = await eligiblePractitioners(serviceKey);
+  const selected =
+    practitionerId && practitionerId !== "any"
+      ? practitioners.filter((p) => p.id === practitionerId)
+      : practitioners;
+  if (selected.length === 0) return [];
+
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dayStart = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+  const dayEnd = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0));
   const booked = await prisma.appointment.findMany({
     where: {
+      practitionerId: { in: selected.map((p) => p.id) },
       start: { gte: dayStart, lt: dayEnd },
       status: { not: "CANCELLED" },
     },
-    select: { start: true },
+    select: { practitionerId: true, start: true, end: true },
   });
-  const takenStarts = new Set(booked.map((b) => b.start.getTime()));
 
   const now = Date.now();
-  return candidates
-    .filter((c) => c.getTime() > now && !takenStarts.has(c.getTime()))
-    .map((c) => ({
-      start: c.toISOString(),
-      label: `${pad(c.getUTCHours())}:${pad(c.getUTCMinutes())}`,
-    }));
+  const out: SlotDto[] = [];
+  for (const practitioner of selected) {
+    const candidates = await candidateSlotsForPractitioner(
+      dateStr,
+      duration,
+      practitioner.id,
+    );
+    const practitionerBookings = booked.filter(
+      (b) => b.practitionerId === practitioner.id,
+    );
+    for (const candidate of candidates) {
+      if (candidate.start.getTime() <= now) continue;
+      const clash = practitionerBookings.some((b) =>
+        overlaps(candidate.start, candidate.end, b.start, b.end),
+      );
+      if (clash) continue;
+      out.push({
+        start: candidate.start.toISOString(),
+        end: candidate.end.toISOString(),
+        label: dateLabel(candidate.start),
+        practitionerId: practitioner.id,
+        practitionerName: practitioner.name,
+      });
+    }
+  }
+
+  const unique = new Map<string, SlotDto>();
+  for (const slot of out.sort((a, b) => a.start.localeCompare(b.start))) {
+    const key =
+      practitionerId === "any" || !practitionerId
+        ? slot.start
+        : `${slot.practitionerId}:${slot.start}`;
+    if (!unique.has(key)) unique.set(key, slot);
+  }
+  return [...unique.values()];
 }
 
 /** Find-or-create the single shared default practitioner (self-heals if unseeded). */
@@ -99,4 +238,15 @@ export async function getServiceId(svc: BookingService): Promise<string> {
     data: { slug: svc.key, category: svc.category },
   });
   return created.id;
+}
+
+export async function appointmentByReference(reference: string) {
+  const id = reference.trim();
+  if (!id) return null;
+  return prisma.appointment.findFirst({
+    where: {
+      OR: [{ id }, { id: { endsWith: id } }],
+    },
+    include: { client: true },
+  });
 }

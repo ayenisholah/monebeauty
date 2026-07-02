@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { ShoppingCartSimple } from "@phosphor-icons/react/ssr";
 import { Link } from "@/i18n/navigation";
+import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { formatPrice, type Product } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
 
@@ -48,14 +48,7 @@ export function ProductCard({
         <div className="mt-[8px] font-sans text-[15px] text-ink">
           {formatPrice(product.price)}
         </div>
-        {/* Cart is wired in Phase 2 (add-to-cart); button is presentational for now. */}
-        <button
-          type="button"
-          aria-label={intoBasket}
-          className="mt-[14px] grid h-[42px] w-[42px] place-items-center rounded-full border border-line-btn text-accent transition-colors hover:border-accent hover:bg-accent hover:text-page"
-        >
-          <ShoppingCartSimple size={18} weight="thin" />
-        </button>
+        <AddToCartButton slug={product.slug} label={intoBasket} />
       </div>
     </div>
   );

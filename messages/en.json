@@ -115,7 +115,12 @@
     "eyebrow": "Booking",
     "heading": "Book an appointment",
     "intro": "Choose a treatment, pick a time, and confirm — it takes under a minute.",
-    "steps": { "service": "Service", "time": "Time", "you": "You" },
+    "steps": {
+      "service": "Service",
+      "practitioner": "Specialist",
+      "time": "Time",
+      "you": "You"
+    },
     "services": {
       "facial": "Facial treatments",
       "body": "Body treatments",
@@ -128,6 +133,8 @@
     },
     "pickDate": "Choose a date",
     "pickTime": "Choose a time",
+    "anyPractitioner": "No preference",
+    "anyPractitionerHint": "Choose the first available specialist.",
     "pickDateFirst": "Select a date to see available times.",
     "loading": "Loading available times…",
     "noTimes": "No open times on this day — please pick another date.",
@@ -142,6 +149,7 @@
     "submitting": "Booking…",
     "summary": {
       "service": "Treatment",
+      "practitioner": "Specialist",
       "time": "Time",
       "reference": "Reference"
     },
@@ -160,8 +168,95 @@
   "Basket": {
     "metaTitle": "Basket",
     "heading": "Your basket",
-    "empty": "Your basket is empty. Online checkout is launching soon.",
-    "browse": "Browse the catalog"
+    "empty": "Your basket is empty.",
+    "browse": "Browse the catalog",
+    "summary": "Order summary",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "increase": "Increase quantity",
+    "decrease": "Decrease quantity",
+    "remove": "Remove"
+  },
+  "Cart": {
+    "added": "Added",
+    "openBasket": "Open basket, {count} items"
+  },
+  "Checkout": {
+    "metaTitle": "Checkout",
+    "eyebrow": "Checkout",
+    "heading": "Confirm your order",
+    "intro": "Leave your contact details and we will contact you to confirm availability and handover details.",
+    "summary": "Order summary",
+    "fields": {
+      "name": "Full name",
+      "phone": "Phone",
+      "email": "Email",
+      "notes": "Notes (optional)",
+      "consent": "I agree to Mone Beauty Clinic storing my details to process this order, in line with the Privacy Policy."
+    },
+    "submit": "Submit order",
+    "submitting": "Submitting...",
+    "errors": {
+      "invalid_json": "The order could not be read. Please try again.",
+      "name_required": "Please enter your full name.",
+      "phone_required": "Please enter your phone number.",
+      "email_required": "Please enter a valid email address.",
+      "consent_required": "Please accept the privacy consent before submitting.",
+      "empty_cart": "Your basket is empty.",
+      "unavailable": "Checkout is temporarily unavailable. Please call or email us.",
+      "generic": "Please check the form and try again."
+    }
+  },
+  "Order": {
+    "metaTitle": "Order received",
+    "heading": "Order received",
+    "intro": "Thank you. We have received your order request and will contact you to confirm the details.",
+    "reference": "Reference",
+    "total": "Total",
+    "backToCatalog": "Back to catalog"
+  },
+  "Staff": {
+    "metaTitle": "Staff schedule",
+    "eyebrow": "Staff",
+    "heading": "Schedule",
+    "intro": "Manage open slots, closed times, and the day’s appointments. Authentication and role gating are added in the next phase.",
+    "controls": "Controls",
+    "practitioner": "Practitioner",
+    "date": "Date",
+    "workingHours": "Working hours",
+    "startHour": "Start",
+    "endHour": "End",
+    "stepMin": "Slot",
+    "daysAhead": "Days",
+    "apply": "Apply range",
+    "schedule": "Daily schedule",
+    "refresh": "Refresh",
+    "save": "Save day",
+    "saving": "Saving...",
+    "saved": "Schedule saved.",
+    "applied": "Working hours applied.",
+    "loading": "Loading schedule...",
+    "noSlots": "No slots on this day.",
+    "days": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "slotStatus": {
+      "open": "Open",
+      "closed": "Closed",
+      "booked": "Booked"
+    },
+    "errors": {
+      "load": "Could not load schedule.",
+      "save": "Could not save this day.",
+      "apply": "Could not apply working hours."
+    }
   },
   "Legal": {
     "privacyTitle": "Privacy Policy",

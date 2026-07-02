@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -14,7 +14,14 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { cn } from "@/lib/cn";
 
 type ServiceOption = { key: string; image: string | null };
-type Slot = { start: string; label: string };
+type Practitioner = { id: string; name: string; role: string };
+type Slot = {
+  start: string;
+  end: string;
+  label: string;
+  practitionerId: string;
+  practitionerName: string;
+};
 type Fallback = {
   phone: string;
   phoneHref: string;
@@ -22,7 +29,7 @@ type Fallback = {
   emailHref: string;
 };
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 export function BookingWizard({
   services,
@@ -38,6 +45,10 @@ export function BookingWizard({
 
   const [step, setStep] = useState<Step>(initialService ? 2 : 1);
   const [service, setService] = useState<string | null>(initialService ?? null);
+  const [practitioner, setPractitioner] = useState<string>("any");
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  const [practitionersLoading, setPractitionersLoading] = useState(false);
+  const [practitionersDegraded, setPractitionersDegraded] = useState(false);
   const [date, setDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
 
@@ -68,13 +79,41 @@ export function BookingWizard({
     minute: "2-digit",
   });
 
-  const loadSlots = useCallback(async (d: string, svc: string) => {
+  const loadPractitioners = useCallback(async (svc: string) => {
+    setPractitionersLoading(true);
+    setPractitionersDegraded(false);
+    setPractitioners([]);
+    try {
+      const res = await fetch(
+        `/api/booking/practitioners?service=${encodeURIComponent(svc)}`,
+      );
+      const data = await res.json();
+      setPractitioners(
+        Array.isArray(data.practitioners) ? data.practitioners : [],
+      );
+      setPractitionersDegraded(Boolean(data.degraded));
+    } catch {
+      setPractitionersDegraded(true);
+    } finally {
+      setPractitionersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!initialService) return;
+    const timer = window.setTimeout(() => {
+      void loadPractitioners(initialService);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialService, loadPractitioners]);
+
+  const loadSlots = useCallback(async (d: string, svc: string, pr: string) => {
     setSlotsLoading(true);
     setSlotsDegraded(false);
     setSlots([]);
     try {
       const res = await fetch(
-        `/api/booking/slots?date=${encodeURIComponent(d)}&service=${encodeURIComponent(svc)}`,
+        `/api/booking/slots?date=${encodeURIComponent(d)}&service=${encodeURIComponent(svc)}&practitioner=${encodeURIComponent(pr)}`,
       );
       const data = await res.json();
       setSlots(Array.isArray(data.slots) ? data.slots : []);
@@ -88,22 +127,33 @@ export function BookingWizard({
 
   function pickService(key: string) {
     setService(key);
+    setPractitioner("any");
+    setPractitioners([]);
     setSlot(null);
     setDate(null);
     setSlots([]);
     setStep(2);
+    void loadPractitioners(key);
+  }
+
+  function pickPractitioner(id: string) {
+    setPractitioner(id);
+    setSlot(null);
+    setDate(null);
+    setSlots([]);
+    setStep(3);
   }
 
   function pickDate(value: string) {
     setDate(value);
     setSlot(null);
-    if (service) void loadSlots(value, service);
+    if (service) void loadSlots(value, service, practitioner);
   }
 
   function pickSlot(s: Slot) {
     setSlot(s);
     setError(null);
-    setStep(3);
+    setStep(4);
   }
 
   async function submit() {
@@ -117,6 +167,7 @@ export function BookingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service,
+          practitionerId: practitioner,
           start: slot.start,
           fullName: form.fullName,
           phone: form.phone,
@@ -132,8 +183,8 @@ export function BookingWizard({
       }
       if (res.status === 409) {
         setError(t("errors.slotTaken"));
-        setStep(2);
-        if (date && service) loadSlots(date, service);
+        setStep(3);
+        if (date && service) loadSlots(date, service, practitioner);
         return;
       }
       if (data?.degraded) {
@@ -154,6 +205,8 @@ export function BookingWizard({
     setConfirmation(null);
     setStep(1);
     setService(null);
+    setPractitioner("any");
+    setPractitioners([]);
     setDate(null);
     setSlot(null);
     setForm({ fullName: "", phone: "", email: "", notes: "" });
@@ -167,7 +220,6 @@ export function BookingWizard({
   const chipIdle =
     "border-line-btn text-ink hover:border-line-btn-hover hover:bg-btn-fill";
 
-  // ---- Confirmation view ------------------------------------------------------
   if (confirmation) {
     const label = service ? t(`services.${service}`) : "";
     return (
@@ -180,16 +232,15 @@ export function BookingWizard({
           {t("confirmed.body")}
         </p>
         <dl className="mx-auto mt-[24px] max-w-[360px] space-y-[10px] text-left font-sans text-[14px] text-ink">
-          <div className="flex justify-between gap-[16px] border-b border-line-hair pb-[10px]">
-            <dt className="text-muted">{t("summary.service")}</dt>
-            <dd className="text-right font-medium">{label}</dd>
-          </div>
-          <div className="flex justify-between gap-[16px] border-b border-line-hair pb-[10px]">
-            <dt className="text-muted">{t("summary.time")}</dt>
-            <dd className="text-right font-medium">
-              {dateTimeFmt.format(new Date(confirmation.start))}
-            </dd>
-          </div>
+          <SummaryRow label={t("summary.service")} value={label} />
+          <SummaryRow
+            label={t("summary.practitioner")}
+            value={slot?.practitionerName ?? ""}
+          />
+          <SummaryRow
+            label={t("summary.time")}
+            value={dateTimeFmt.format(new Date(confirmation.start))}
+          />
           <div className="flex justify-between gap-[16px]">
             <dt className="text-muted">{t("summary.reference")}</dt>
             <dd className="text-right font-mono text-[12px] tracking-[.06em] uppercase">
@@ -206,12 +257,15 @@ export function BookingWizard({
     );
   }
 
-  // ---- Wizard -----------------------------------------------------------------
-  const stepLabels = [t("steps.service"), t("steps.time"), t("steps.you")];
+  const stepLabels = [
+    t("steps.service"),
+    t("steps.practitioner"),
+    t("steps.time"),
+    t("steps.you"),
+  ];
 
   return (
     <div>
-      {/* Progress */}
       <ol className="flex flex-wrap items-center gap-[8px] font-sans text-[12px] tracking-[.06em] uppercase">
         {stepLabels.map((label, i) => {
           const n = (i + 1) as Step;
@@ -246,7 +300,9 @@ export function BookingWizard({
                 </span>
                 {label}
               </button>
-              {i < 2 && <span className="text-line-btn">·</span>}
+              {i < stepLabels.length - 1 && (
+                <span className="text-line-btn">.</span>
+              )}
             </li>
           );
         })}
@@ -261,7 +317,6 @@ export function BookingWizard({
         </p>
       )}
 
-      {/* Step 1 — Service */}
       {step === 1 && (
         <div className="mt-[clamp(20px,3vw,32px)] grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-[14px]">
           {services.map((s) => (
@@ -291,8 +346,35 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Step 2 — Time */}
       {step === 2 && (
+        <div className="mt-[clamp(20px,3vw,32px)]">
+          {practitionersLoading ? (
+            <p className="font-sans text-[13px] text-muted">{t("loading")}</p>
+          ) : practitionersDegraded || practitioners.length === 0 ? (
+            <FallbackBlock t={t} fallback={fallback} />
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-[12px]">
+              <PractitionerButton
+                active={practitioner === "any"}
+                title={t("anyPractitioner")}
+                subtitle={t("anyPractitionerHint")}
+                onClick={() => pickPractitioner("any")}
+              />
+              {practitioners.map((p) => (
+                <PractitionerButton
+                  key={p.id}
+                  active={practitioner === p.id}
+                  title={p.name}
+                  subtitle={p.role}
+                  onClick={() => pickPractitioner(p.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 3 && (
         <div className="mt-[clamp(20px,3vw,32px)] flex flex-col gap-[28px] md:flex-row md:gap-[32px]">
           <div>
             <p className="mb-[12px] font-sans text-[13px] font-medium tracking-[.04em] text-muted uppercase">
@@ -312,15 +394,20 @@ export function BookingWizard({
             ) : slotsLoading ? (
               <p className="font-sans text-[13px] text-muted">{t("loading")}</p>
             ) : slots.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-[8px]">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-[8px]">
                 {slots.map((s) => (
                   <button
-                    key={s.start}
+                    key={`${s.practitionerId}-${s.start}`}
                     type="button"
                     onClick={() => pickSlot(s)}
                     className={cn(chip, "text-center", chipIdle)}
                   >
-                    {s.label}
+                    <span className="block">{s.label}</span>
+                    {practitioner === "any" && (
+                      <span className="mt-[3px] block truncate text-[11px] text-muted">
+                        {s.practitionerName}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -333,8 +420,7 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Step 3 — You */}
-      {step === 3 && slot && (
+      {step === 4 && slot && (
         <form
           className="mt-[clamp(20px,3vw,32px)] max-w-[520px]"
           onSubmit={(e) => {
@@ -346,6 +432,11 @@ export function BookingWizard({
             {t("summary.time")}:{" "}
             <span className="font-medium text-ink">
               {dateTimeFmt.format(new Date(slot.start))}
+            </span>
+            <br />
+            {t("summary.practitioner")}:{" "}
+            <span className="font-medium text-ink">
+              {slot.practitionerName}
             </span>
           </p>
 
@@ -420,6 +511,43 @@ export function BookingWizard({
 
 const inputCls =
   "w-full rounded-[4px] border border-line-btn bg-page px-[14px] py-[11px] font-sans text-[14px] text-ink outline-none focus:border-accent";
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-[16px] border-b border-line-hair pb-[10px]">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function PractitionerButton({
+  active,
+  title,
+  subtitle,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "min-h-[74px] rounded-[4px] border px-[16px] py-[12px] text-left font-sans text-[13px] transition-colors",
+        active
+          ? "border-accent bg-btn-fill text-ink"
+          : "border-line-btn text-ink hover:border-line-btn-hover hover:bg-btn-fill",
+      )}
+    >
+      <span className="block font-medium">{title}</span>
+      <span className="mt-[4px] block text-[12px] text-muted">{subtitle}</span>
+    </button>
+  );
+}
 
 function Field({
   label,

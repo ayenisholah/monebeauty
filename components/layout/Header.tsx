@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { ShoppingCartSimple } from "@phosphor-icons/react/ssr";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { HeaderCartLink } from "@/components/shop/HeaderCartLink";
 import { NAV } from "@/content/site";
 import { Logo } from "./Logo";
 import { NavDropdown } from "./NavDropdown";
@@ -57,13 +57,7 @@ export async function Header() {
             )}
           </nav>
           <div className="flex items-center gap-[16px]">
-            <Link
-              href="/basket"
-              aria-label="Basket"
-              className="text-nav transition-colors hover:text-accent"
-            >
-              <ShoppingCartSimple size={22} weight="thin" />
-            </Link>
+            <HeaderCartLink />
             <LanguageSwitcher />
             <Button href="/booking" size="sm">
               {t("bookTime")}
