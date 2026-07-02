@@ -9,6 +9,7 @@ const nav = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/blog", label: "Blog" },
+  { href: "/admin/chat", label: "Chat" },
 ];
 
 export default async function ProtectedAdminLayout({

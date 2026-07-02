@@ -49,7 +49,26 @@
   "Chat": {
     "title": "Need help?",
     "subtitle": "We're here for you.",
-    "open": "Open chat"
+    "open": "Open chat",
+    "close": "Close chat",
+    "welcome": "Ask about treatments, products, booking, or clinic details. I answer from approved Mone Beauty Clinic content only.",
+    "placeholder": "Type your question...",
+    "send": "Send message",
+    "thinking": "Checking approved clinic content...",
+    "error": "Chat is temporarily unavailable. Please try again or contact the clinic directly.",
+    "consent": "I agree that this chat can be stored so Mone Beauty Clinic can respond and improve service.",
+    "book": "Book this service",
+    "handoff": "Ask a human to follow up",
+    "sendHandoff": "Send handoff",
+    "handoffSent": "Your request has been sent to the clinic.",
+    "handoffError": "The handoff could not be sent. Please call or email the clinic.",
+    "cancel": "Cancel",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Message for the clinic"
+    }
   },
   "Home": {
     "metaTitle": "Instrumental cosmetology & beauty care in Helsinki",

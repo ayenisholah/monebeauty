@@ -192,6 +192,14 @@ not deviate without updating them first:
   overrides, products, pricing, and blog management. Run `npm run db:migrate`,
   `npm run db:seed` with `ADMIN_EMAIL`/`ADMIN_PASSWORD`, and `npm run db:sync-content` when
   preparing a target database.
+- **Phase 6 notifications/reminders are intentionally skipped/deferred** per user direction.
+  Booking/order confirmations, reminders, staff alerts, and email/SMS provider integration
+  remain future work.
+- **Current completed milestone: Phase 7 AI chatbot** — the public ChatWidget now uses
+  Anthropic Claude with approved-content retrieval, EN/FI/RU locale matching, GDPR consent,
+  transcript persistence in `ChatSession`, booking deep-links, and human handoff. Admin
+  handoff review lives at `/admin/chat`. Set `ANTHROPIC_API_KEY` and optionally
+  `ANTHROPIC_MODEL`; run `npm run db:migrate` before relying on the new chat fields.
 - **UX priority (SCOPE.md):** a visitor should select a service in **one click** and book
   with minimal friction; keep the homepage focused (avoid over-long pages) with an obvious
   "select a service" + **Book Online** path.

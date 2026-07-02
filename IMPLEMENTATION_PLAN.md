@@ -6,8 +6,8 @@
 > `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
-> **Current completed milestone: Phase 5 CRM + custom admin + auth.** Payment, email/SMS,
-> reminders, and AI chatbot remain deferred.
+> **Current completed milestone: Phase 7 AI chatbot.** Phase 6 notifications/reminders were
+> intentionally skipped for now; payment capture and transactional email/SMS remain deferred.
 
 ## Content & media pipeline (from the live site)
 
@@ -172,18 +172,22 @@ contraindication access/edits, service/product/pricing/blog management, and edit
 prefer Prisma edits with generated JSON fallback. **Verify:** role gating enforced;
 medical-field access audited; admin edits appear on site after migration + content sync.
 
-## Phase 6 — Notifications + reminders ⭐ next
+## Phase 6 — Notifications + reminders ⏭️ skipped/deferred
 
 Email (Resend/Postmark) + SMS (Twilio/FI gateway). Booking confirmations (email + SMS,
 SMS preferred) + reminders at 24h and 2h via a scheduled job; staff new-booking alerts;
-order confirmations. **Verify:** confirmation + scheduled reminder fire; consent respected.
+order confirmations. This phase is intentionally skipped for now per user direction; it
+should be resumed after the chatbot milestone. **Verify:** confirmation + scheduled reminder
+fire; consent respected.
 
-## Phase 7 — AI chatbot
+## Phase 7 — AI chatbot ✅ implemented
 
-Claude API, system prompt grounded in CMS content (retrieval) → never fabricates medical
-claims. Streaming; RU/FI/EN (match locale); can launch the booking wizard; **hand off to
-admin** (creates a ticket + stores transcript with consent). Wire to the Phase-1 FAB.
-**Verify:** answers from content only; handoff creates an admin ticket.
+Claude API integration with locale-matched RU/FI/EN responses, system prompt grounded in
+approved CMS/generated content, product content, booking registry, and clinic contact facts.
+The public chat FAB now supports GDPR consent, transcript persistence in `ChatSession`,
+booking deep-links for detected services, and human handoff. `/admin/chat` provides the
+handoff queue and transcript detail with resolve/reopen actions. **Verify:** answers from
+content only; handoff creates an admin queue item.
 
 ## Phase 8 — SEO + GDPR finalize
 

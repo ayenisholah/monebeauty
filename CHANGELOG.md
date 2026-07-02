@@ -8,6 +8,20 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Phase 7 — AI chatbot
+
+- Skipped Phase 6 notifications/reminders for now and proceeded with the AI chatbot
+  milestone.
+- Added Anthropic Claude integration with a strict approved-content-only prompt and
+  locale-aware content retrieval from CMS/generated content, products, booking services,
+  blog content, and clinic contact facts.
+- Replaced the placeholder chat FAB with a real EN/FI/RU chatbot panel, GDPR consent,
+  transcript persistence, booking deep-links, and human handoff form.
+- Added `/api/chat` and `/api/chat/handoff`, extending `ChatSession` with handoff contact
+  fields, status, and update tracking.
+- Added `/admin/chat` and `/admin/chat/[id]` for handoff queue review, transcript reading,
+  and resolve/reopen actions with audit logging.
+
 ### Phase 5 — CRM, custom admin & auth
 
 - Added custom Prisma-backed auth with durable `Session` rows, HTTP-only session cookies,

@@ -58,6 +58,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ChatHandoffStatus {
+  OPEN
+  RESOLVED
+}
+
 // ----------------------------------------------------------------------------
 // Auth
 // ----------------------------------------------------------------------------
@@ -343,9 +348,17 @@ model ChatSession {
   locale           Locale
   messages         Json
   handoffRequested Boolean  @default(false)
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  status           ChatHandoffStatus @default(OPEN)
   client           Client?  @relation(fields: [clientId], references: [id])
   clientId         String?
   createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([handoffRequested, status])
+  @@index([updatedAt])
 }
 
 // ----------------------------------------------------------------------------

@@ -8,10 +8,11 @@ const cards = [
   { key: "products", label: "Products", href: "/admin/products" },
   { key: "services", label: "Services", href: "/admin/services" },
   { key: "articles", label: "Articles", href: "/admin/blog" },
+  { key: "handoffs", label: "Chat handoffs", href: "/admin/chat" },
 ] as const;
 
 export default async function AdminDashboardPage() {
-  const [clients, appointments, orders, products, services, articles, audits] =
+  const [clients, appointments, orders, products, services, articles, handoffs, audits] =
     await Promise.all([
       prisma.client.count(),
       prisma.appointment.count(),
@@ -19,9 +20,20 @@ export default async function AdminDashboardPage() {
       prisma.product.count(),
       prisma.service.count(),
       prisma.article.count(),
+      prisma.chatSession.count({
+        where: { handoffRequested: true, status: "OPEN" },
+      }),
       prisma.auditLog.findMany({ orderBy: { at: "desc" }, take: 8 }),
     ]);
-  const counts = { clients, appointments, orders, products, services, articles };
+  const counts = {
+    clients,
+    appointments,
+    orders,
+    products,
+    services,
+    articles,
+    handoffs,
+  };
 
   return (
     <div>

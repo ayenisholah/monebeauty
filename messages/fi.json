@@ -49,7 +49,26 @@
   "Chat": {
     "title": "Tarvitsetko apua?",
     "subtitle": "Olemme täällä sinua varten.",
-    "open": "Avaa chat"
+    "open": "Avaa chat",
+    "close": "Sulje chat",
+    "welcome": "Kysy hoidoista, tuotteista, ajanvarauksesta tai klinikan tiedoista. Vastaan vain Mone Beauty Clinicin hyväksytystä sisällöstä.",
+    "placeholder": "Kirjoita kysymys...",
+    "send": "Lähetä viesti",
+    "thinking": "Tarkistan klinikan hyväksyttyä sisältöä...",
+    "error": "Chat ei ole tilapäisesti käytettävissä. Yritä uudelleen tai ota yhteyttä klinikkaan.",
+    "consent": "Hyväksyn, että tämä chat voidaan tallentaa, jotta Mone Beauty Clinic voi vastata ja parantaa palvelua.",
+    "book": "Varaa tämä palvelu",
+    "handoff": "Pyydä ihmistä ottamaan yhteyttä",
+    "sendHandoff": "Lähetä pyyntö",
+    "handoffSent": "Pyyntösi on lähetetty klinikalle.",
+    "handoffError": "Pyyntöä ei voitu lähettää. Soita tai lähetä sähköpostia klinikalle.",
+    "cancel": "Peruuta",
+    "fields": {
+      "name": "Nimi",
+      "email": "Sähköposti",
+      "phone": "Puhelin",
+      "message": "Viesti klinikalle"
+    }
   },
   "Home": {
     "metaTitle": "Instrumentaalinen kosmetologia ja kauneudenhoito Helsingissä",
