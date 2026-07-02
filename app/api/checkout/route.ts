@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { PRODUCTS, type Product } from "@/content/products";
+import type { Product } from "@/content/products";
+import { getLiveProduct } from "@/lib/live-content";
 import { normalizeQty } from "@/lib/cart";
 import { routing, type Locale } from "@/i18n/routing";
 
@@ -62,16 +63,17 @@ export async function POST(req: NextRequest) {
     qtyBySlug.set(slug, (qtyBySlug.get(slug) ?? 0) + qty);
   }
 
-  const lines = [...qtyBySlug.entries()]
-    .map(([slug, qty]) => {
-      const product = PRODUCTS.find((p) => p.slug === slug);
-      if (!product || product.price == null) return null;
-      return { product, qty: normalizeQty(qty), lineTotal: product.price * qty };
-    })
-    .filter(
-      (line): line is { product: Product; qty: number; lineTotal: number } =>
-        Boolean(line),
-    );
+  const lines: { product: Product; qty: number; lineTotal: number }[] = [];
+  for (const [slug, qty] of qtyBySlug.entries()) {
+    const product = await getLiveProduct(slug);
+    if (!product || product.price == null) continue;
+    const normalizedQty = normalizeQty(qty);
+    lines.push({
+      product,
+      qty: normalizedQty,
+      lineTotal: product.price * normalizedQty,
+    });
+  }
 
   if (lines.length === 0) return bad("empty_cart");
 

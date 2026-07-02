@@ -1,6 +1,9 @@
+import { randomBytes, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 import { PrismaClient, type ServiceCategory } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const scryptAsync = promisify(scrypt);
 
 // Keep in sync with content/booking-services.ts (kept inline so `prisma db seed` via tsx
 // needs no path-alias resolution). The booking API also self-heals these rows if missing.
@@ -55,6 +58,12 @@ function slotsForDate(date: Date) {
   return slots;
 }
 
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `scrypt:${salt}:${derived.toString("hex")}`;
+}
+
 async function main() {
   let practitioner = await prisma.practitioner.findFirst();
   if (!practitioner) {
@@ -100,6 +109,26 @@ async function main() {
         slots: slotsForDate(date),
       },
     });
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        name: process.env.ADMIN_NAME?.trim() || "Mone Beauty Admin",
+        passwordHash: await hashPassword(adminPassword),
+        role: "ADMIN",
+      },
+      create: {
+        email: adminEmail,
+        name: process.env.ADMIN_NAME?.trim() || "Mone Beauty Admin",
+        passwordHash: await hashPassword(adminPassword),
+        role: "ADMIN",
+      },
+    });
+    console.log(`Seeded admin user ${adminEmail}.`);
   }
 
   console.log(

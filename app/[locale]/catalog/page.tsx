@@ -3,7 +3,8 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { PRODUCTS, type ProductCategory } from "@/content/products";
+import type { ProductCategory } from "@/content/products";
+import { getLiveProducts } from "@/lib/live-content";
 import { localeAlternates } from "@/lib/seo";
 import type { Locale } from "@/i18n/routing";
 
@@ -35,6 +36,7 @@ export default async function CatalogPage({
   setRequestLocale(locale);
   const t = await getTranslations("Catalog");
   const l = locale as Locale;
+  const products = await getLiveProducts();
 
   return (
     <section className="bg-page py-[clamp(40px,5vw,72px)]">
@@ -48,7 +50,7 @@ export default async function CatalogPage({
         </p>
 
         {GROUPS.map(({ category, labelKey }) => {
-          const items = PRODUCTS.filter((p) => p.category === category);
+          const items = products.filter((p) => p.category === category);
           if (items.length === 0) return null;
           return (
             <div key={category} className="mt-[clamp(36px,4vw,56px)]">

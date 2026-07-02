@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { StaffSchedule } from "@/components/staff/StaffSchedule";
+import { requireUser } from "@/lib/auth";
 
 export async function generateMetadata({
   params,
@@ -20,6 +21,7 @@ export default async function StaffPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  await requireUser(["ADMIN", "STAFF"]);
   setRequestLocale(locale);
   const t = await getTranslations("Staff");
 

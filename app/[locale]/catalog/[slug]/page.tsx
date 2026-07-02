@@ -9,11 +9,11 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { Link } from "@/i18n/navigation";
 import {
-  PRODUCTS,
   PRODUCT_SLUGS,
   getProduct,
   formatPrice,
 } from "@/content/products";
+import { getLiveProduct, getLiveProducts } from "@/lib/live-content";
 import {
   absoluteLocalizedUrl,
   localeAlternates,
@@ -35,7 +35,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const p = getProduct(slug);
+  const p = (await getLiveProduct(slug)) ?? getProduct(slug);
   if (!p) return {};
   const c = p.i18n[locale as Locale];
   return {
@@ -52,14 +52,15 @@ export default async function ProductPage({
 }) {
   const { locale, slug } = await params;
   if (!routing.locales.includes(locale as Locale)) notFound();
-  const product = getProduct(slug);
+  const product = await getLiveProduct(slug);
   if (!product) notFound();
   setRequestLocale(locale);
 
   const l = locale as Locale;
   const t = await getTranslations("Product");
   const c = product.i18n[l];
-  const related = PRODUCTS.filter(
+  const products = await getLiveProducts();
+  const related = products.filter(
     (p) => p.slug !== slug && p.category === product.category,
   ).slice(0, 4);
 

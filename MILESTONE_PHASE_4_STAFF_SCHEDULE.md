@@ -26,6 +26,7 @@ Status: implemented, automated verification passed. Manual browser smoke remains
 - [x] Show booked appointment rows with client contact and notes.
 - [x] Add EN/FI/RU staff UI translations.
 - [x] Keep auth/RBAC deferred to Phase 5.
+- [x] Phase 5 follow-up completed: `/staff` and `/api/staff/schedule` are now role-gated.
 
 ## Verification Checklist
 
@@ -38,8 +39,8 @@ Status: implemented, automated verification passed. Manual browser smoke remains
 
 ## Deferred Work
 
-- [ ] Auth and role gating — Phase 5.
-- [ ] Staff users seeing only their own practitioner schedule — Phase 5.
+- [x] Auth and role gating — completed in Phase 5.
+- [x] Staff users seeing only their own practitioner schedule — completed in Phase 5.
 - [ ] New-booking notifications — Phase 6.
 - [ ] Rich weekly calendar visualization.
 - [ ] Break/day-off presets beyond manually closing slots.
@@ -49,4 +50,4 @@ Status: implemented, automated verification passed. Manual browser smoke remains
 - Staff API lives in `app/api/staff/schedule/route.ts`.
 - Staff UI lives in `components/staff/StaffSchedule.tsx`.
 - Shared slot helpers live in `lib/staff-schedule.ts`.
-- This is intentionally unauthenticated until Phase 5 adds auth/RBAC.
+- Phase 5 added auth/RBAC; use an admin or linked staff account for `/staff`.

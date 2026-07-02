@@ -8,6 +8,21 @@ Progress maps to the phases in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.
 
 ## [Unreleased]
 
+### Phase 5 — CRM, custom admin & auth
+
+- Added custom Prisma-backed auth with durable `Session` rows, HTTP-only session cookies,
+  password hashing, role guards, admin/staff login, and logout.
+- Added `/admin` with dashboard, CRM client search/profile editing, service management,
+  generated content-page editing, product management, pricing management, and blog article
+  management.
+- Added `ContentPage` overrides plus `npm run db:sync-content` so generated scraped content
+  can be seeded into Prisma and edited from admin while public pages keep JSON fallback.
+- Protected `/staff` and `/api/staff/schedule`; admins can manage all schedules, while staff
+  users are restricted to their linked practitioner.
+- Added audit logging for client profile updates and sensitive contraindication view/edit
+  events.
+- Updated catalog/product/checkout server paths to prefer Prisma product data where present.
+
 ### Phase 4 — Staff schedule
 
 - Added an internal `/staff` schedule surface for selecting practitioner/date, reviewing

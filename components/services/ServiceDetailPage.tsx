@@ -8,7 +8,7 @@ import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { TreatmentCard } from "@/components/services/TreatmentCard";
 import { bookingKeyForContentSlug } from "@/content/booking-services";
-import { getPageContent } from "@/content/pages";
+import { getLivePageContent } from "@/lib/live-content";
 import type { Locale } from "@/i18n/routing";
 import { excerpt } from "@/lib/seo";
 
@@ -63,7 +63,7 @@ export async function ServiceDetailPage({
   slug: string;
   locale: Locale;
 }) {
-  const content = getPageContent(slug, locale);
+  const content = await getLivePageContent(slug, locale);
   if (!content) return null;
 
   const treatments = parseTreatments(content.body);

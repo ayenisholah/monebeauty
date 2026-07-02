@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireApiUser } from "@/lib/auth";
 import { getDefaultPractitionerId } from "@/lib/booking";
 import {
   dateFromYmd,
@@ -14,6 +15,26 @@ function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
 }
 
+function forbidden() {
+  return NextResponse.json({ error: "forbidden" }, { status: 403 });
+}
+
+async function allowedPractitionerIds(userId: string, role: string) {
+  if (role === "ADMIN") {
+    const practitioners = await prisma.practitioner.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, role: true },
+    });
+    return { practitioners, ids: practitioners.map((p) => p.id) };
+  }
+  const staff = await prisma.staffUser.findUnique({
+    where: { userId },
+    include: { practitioner: { select: { id: true, name: true, role: true } } },
+  });
+  const practitioners = staff?.practitioner ? [staff.practitioner] : [];
+  return { practitioners, ids: practitioners.map((p) => p.id) };
+}
+
 async function practitionerIdOrDefault(id: string | null) {
   if (id) {
     const found = await prisma.practitioner.findUnique({
@@ -26,18 +47,24 @@ async function practitionerIdOrDefault(id: string | null) {
 }
 
 export async function GET(req: NextRequest) {
+  const user = await requireApiUser(["ADMIN", "STAFF"]);
+  if (!user) return forbidden();
   const { searchParams } = new URL(req.url);
   const requestedDate = searchParams.get("date") ?? ymdFromDate(new Date());
   const date = dateFromYmd(requestedDate);
   if (!date) return bad("invalid_date");
 
-  const practitioners = await prisma.practitioner.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, role: true },
-  });
-  const practitionerId = await practitionerIdOrDefault(
+  const { practitioners, ids } = await allowedPractitionerIds(
+    user.id,
+    user.role,
+  );
+  if (ids.length === 0) return forbidden();
+  const requestedPractitionerId = await practitionerIdOrDefault(
     searchParams.get("practitionerId"),
   );
+  const practitionerId = ids.includes(requestedPractitionerId)
+    ? requestedPractitionerId
+    : ids[0];
 
   const availability = await prisma.availability.findUnique({
     where: { practitionerId_date: { practitionerId, date } },
@@ -79,6 +106,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await requireApiUser(["ADMIN", "STAFF"]);
+  if (!user) return forbidden();
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -91,6 +120,8 @@ export async function POST(req: NextRequest) {
   const date = dateFromYmd(dateStr);
   if (!practitionerId) return bad("practitioner_required");
   if (!date) return bad("invalid_date");
+  const { ids } = await allowedPractitionerIds(user.id, user.role);
+  if (!ids.includes(practitionerId)) return forbidden();
 
   const slots = normalizeSlots(payload.slots);
   const saved = await prisma.availability.upsert({
@@ -108,6 +139,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const user = await requireApiUser(["ADMIN", "STAFF"]);
+  if (!user) return forbidden();
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -121,6 +154,8 @@ export async function PUT(req: NextRequest) {
   const start = dateFromYmd(fromDate);
   if (!practitionerId) return bad("practitioner_required");
   if (!start) return bad("invalid_date");
+  const { ids } = await allowedPractitionerIds(user.id, user.role);
+  if (!ids.includes(practitionerId)) return forbidden();
 
   const hours = normalizeWorkingHours({
     openDays: Array.isArray(payload.openDays)

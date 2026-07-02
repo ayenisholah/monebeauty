@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:sync-content": "tsx scripts/sync-cms-from-generated.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -183,8 +183,15 @@ not deviate without updating them first:
   Staff schedule editing UI is the next milestone.
 - **Current completed milestone: Phase 4 staff schedule** — `/staff` now exposes an internal
   practitioner/date schedule editor, working-hour range application, open/closed slot
-  controls, booked appointment details, and persistence to `Availability.slots`. Auth/RBAC
-  and own-schedule restrictions are deferred to Phase 5.
+  controls, booked appointment details, and persistence to `Availability.slots`.
+- **Current completed milestone: Phase 5 CRM/custom admin/auth** — custom Prisma auth now
+  uses `User.passwordHash`, durable `Session` rows, and an HTTP-only session cookie.
+  `/admin` is admin-only; `/staff` and `/api/staff/schedule` require staff/admin and staff
+  users are restricted to their linked `Practitioner`. Admin includes CRM client search and
+  profiles, audited contraindication view/edit events, services, generated content-page
+  overrides, products, pricing, and blog management. Run `npm run db:migrate`,
+  `npm run db:seed` with `ADMIN_EMAIL`/`ADMIN_PASSWORD`, and `npm run db:sync-content` when
+  preparing a target database.
 - **UX priority (SCOPE.md):** a visitor should select a service in **one click** and book
   with minimal friction; keep the homepage focused (avoid over-long pages) with an obvious
   "select a service" + **Book Online** path.

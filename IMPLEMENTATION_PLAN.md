@@ -6,8 +6,8 @@
 > `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
-> **Current completed milestone: Phase 2 e-commerce cart/checkout.** Lean booking is already
-> implemented at reduced scope; payment/email remain deferred.
+> **Current completed milestone: Phase 5 CRM + custom admin + auth.** Payment, email/SMS,
+> reminders, and AI chatbot remain deferred.
 
 ## Content & media pipeline (from the live site)
 
@@ -156,18 +156,23 @@ double-booking prevention, e2e booking, cancel, and reschedule.
 
 Internal staff schedule area: practitioner/date selector, daily schedule view, working-hours
 range editor, open/closed slot controls, and booked appointment details. Staff edits persist
-to `Availability.slots` and are reflected in the client booking wizard. Authenticated staff
-access, role gating, own-schedule restriction, and notifications are deferred to Phase 5/6.
+to `Availability.slots` and are reflected in the client booking wizard. Staff/admin auth,
+role gating, and own-schedule restriction are implemented in Phase 5; notifications are
+deferred to Phase 6.
 **Verify:** staff edits availability → reflected in client wizard.
 
-## Phase 5 — CRM + custom admin + auth ⭐ next
+## Phase 5 — CRM + custom admin + auth ✅ implemented
 
-Auth (admin/staff/client roles). Custom Prisma-backed admin (`/admin`): manage services,
-treatment content, products, pricing, blog, clients. CRM client profile (§9) with quick
-search and **flagged contraindications**; RBAC + audit logging on medical fields.
-**Verify:** role gating enforced; medical-field access audited; admin edits appear on site.
+Custom Prisma-backed auth uses `User.passwordHash` plus durable `Session` rows and an
+HTTP-only session cookie. Admin/staff roles are enforced: `/admin` is admin-only, `/staff`
+and `/api/staff/schedule` require staff/admin, and staff users are limited to their linked
+`Practitioner`. `/admin` includes CRM client search/profile editing, audited
+contraindication access/edits, service/product/pricing/blog management, and editable
+`ContentPage` overrides seeded from generated scraped content. Public pages and catalog
+prefer Prisma edits with generated JSON fallback. **Verify:** role gating enforced;
+medical-field access audited; admin edits appear on site after migration + content sync.
 
-## Phase 6 — Notifications + reminders
+## Phase 6 — Notifications + reminders ⭐ next
 
 Email (Resend/Postmark) + SMS (Twilio/FI gateway). Booking confirmations (email + SMS,
 SMS preferred) + reminders at 24h and 2h via a scheduled job; staff new-booking alerts;
