@@ -19,14 +19,26 @@ export function Analytics() {
     if (!analyticsId) return;
     const id = analyticsId;
 
-    function load() {
-      if (readCookieConsent() !== "accepted") return;
-      if (document.querySelector(`script[data-ga-id="${id}"]`)) return;
+    function disable() {
+      window.gtag?.("consent", "update", {
+        analytics_storage: "denied",
+      });
+    }
 
+    function load() {
+      if (readCookieConsent() !== "accepted") {
+        disable();
+        return;
+      }
       window.dataLayer = window.dataLayer || [];
-      window.gtag = function gtag(...args: unknown[]) {
+      window.gtag ??= function gtag(...args: unknown[]) {
         window.dataLayer?.push(args);
       };
+      window.gtag("consent", "update", {
+        analytics_storage: "granted",
+      });
+      if (document.querySelector(`script[data-ga-id="${id}"]`)) return;
+
       window.gtag("js", new Date());
       window.gtag("config", id, { anonymize_ip: true });
 
@@ -38,7 +50,11 @@ export function Analytics() {
     }
 
     load();
-    const listener = () => load();
+    const listener = (event: Event) => {
+      const value = (event as CustomEvent<"accepted" | "declined">).detail;
+      if (value === "accepted") load();
+      else disable();
+    };
     window.addEventListener(COOKIE_CONSENT_EVENT, listener);
     return () => window.removeEventListener(COOKIE_CONSENT_EVENT, listener);
   }, []);
