@@ -120,6 +120,256 @@
       }
     }
   },
+  "HomeEditorial": {
+    "hero": {
+      "eyebrow": "Aesthetic Medicine Clinic · Helsinki",
+      "heading": "Next-Generation Aesthetic Medicine",
+      "lead": "A comprehensive approach to beauty, skin health, and the natural harmony of face, body, and hair.",
+      "book": "Book online",
+      "services": "Explore services"
+    },
+    "facts": {
+      "location": {
+        "title": "Helsinki clinic",
+        "body": "Solvikinkatu 5, 00990 Helsinki"
+      },
+      "hours": {
+        "title": "By appointment",
+        "body": "Open Monday–Sunday by agreement"
+      },
+      "approach": {
+        "title": "Personal approach",
+        "body": "Care planned around every individual visit"
+      }
+    },
+    "standard": {
+      "eyebrow": "Standard of care",
+      "heading": "A considered clinic experience",
+      "items": [
+        {
+          "title": "Choose",
+          "body": "Explore approved treatment information and select the service that fits your visit."
+        },
+        {
+          "title": "Book",
+          "body": "Choose a specialist or no preference, then see available appointment times."
+        },
+        {
+          "title": "Visit",
+          "body": "Receive your confirmation and meet the clinic team at the agreed time."
+        }
+      ]
+    },
+    "services": {
+      "eyebrow": "Clinical services",
+      "heading": "Care for face, body and hair",
+      "featured": "Featured treatment",
+      "stubs": {
+        "injectable": "Injectable Aesthetic Medicine",
+        "consultation": "Medical Consultation"
+      }
+    },
+    "technology": {
+      "eyebrow": "Clinical technology",
+      "heading": "Technology in experienced hands"
+    },
+    "products": {
+      "eyebrow": "Clinic selection",
+      "heading": "Professional care, continued at home",
+      "lead": "Explore the current AROSHA body-care and DIXIDOX De Luxe trichology collections.",
+      "all": "View full catalog"
+    },
+    "booking": {
+      "eyebrow": "Book online",
+      "heading": "Begin with one simple choice",
+      "lead": "Select a service here and continue directly to specialists and live appointment times.",
+      "placeholder": "Select a service",
+      "cta": "Continue to booking"
+    },
+    "contact": {
+      "eyebrow": "Clinic standard",
+      "heading": "A calm, personal clinic in Helsinki",
+      "lead": "Mone Beauty Clinic brings together aesthetic medicine, advanced technologies, and attentive care. Visits are arranged by appointment."
+    }
+  },
+  "HomeReference": {
+    "nav": {
+      "treatments": "Treatments",
+      "technologies": "Technologies",
+      "products": "Products",
+      "standard": "Standard of Care",
+      "consultation": "Consultation",
+      "menu": "Menu"
+    },
+    "common": {
+      "bookOnline": "Book Online",
+      "book": "Book",
+      "readMore": "Read more"
+    },
+    "hero": {
+      "metaLeft": "Licensed Medical Clinic · Helsinki",
+      "metaRight": "Face · Body · Hair",
+      "title": "Next-generation aesthetic medicine.",
+      "lead": "A comprehensive approach to beauty, skin health, and the natural harmony of face, body, and hair. Mone is a licensed medical clinic offering safe, evidence-based procedures and personalized treatment plans.",
+      "explore": "Explore Treatments",
+      "imageAlt": "A clinician performing a treatment at Mone Beauty Clinic",
+      "tag": "Solvikinkatu 5, Helsinki",
+      "facts": {
+        "location": {
+          "label": "Location",
+          "value": "Solvikinkatu 5, 00990 Helsinki"
+        },
+        "hours": { "label": "Hours", "value": "By agreement · Booking 24/7" },
+        "telephone": { "label": "Telephone", "value": "+358 40 129 3800" }
+      }
+    },
+    "standard": {
+      "marker": "01 · Standard of Care",
+      "title": "Our standard of care",
+      "lead": "Every treatment is planned and performed to medical standards, following a defined clinical pathway from first consultation to ongoing maintenance.",
+      "items": {
+        "consultation": {
+          "title": "Consultation",
+          "body": "A structured medical consultation to review history, concerns, and expectations."
+        },
+        "diagnosis": {
+          "title": "Diagnosis",
+          "body": "Instrumental skin and scalp analysis to establish an accurate baseline."
+        },
+        "plan": {
+          "title": "Treatment plan",
+          "body": "A written plan defining procedures, their sequence, and the expected timeline."
+        },
+        "care": {
+          "title": "Care",
+          "body": "Professional home care and scheduled follow-up to maintain results."
+        }
+      },
+      "credentials": {
+        "licensed": "Licensed clinic",
+        "eu": "EU standards",
+        "evidence": "Evidence-based",
+        "personalized": "Personalized programs",
+        "gdpr": "GDPR confidentiality"
+      }
+    },
+    "treatments": {
+      "marker": "02 · Treatments",
+      "title": "Clinical services",
+      "lead": "Eight treatment categories, each planned around a diagnosis. Select a treatment to request an appointment, or read the full protocol.",
+      "comingSoon": "Coming soon"
+    },
+    "services": {
+      "facial": {
+        "name": "Facial treatments",
+        "description": "Diagnostic-led facials for skin health and barrier repair."
+      },
+      "body": {
+        "name": "Body treatments",
+        "description": "Targeted body programs for contour, tone, and circulation."
+      },
+      "endospheres": {
+        "name": "Endospheres therapy",
+        "description": "Compressive microvibration for lymphatic drainage and firmness."
+      },
+      "laser": {
+        "name": "Laser hair removal",
+        "description": "Medical diode laser for permanent hair reduction."
+      },
+      "rf": {
+        "name": "Microneedle RF lifting",
+        "description": "Radiofrequency microneedling for collagen remodeling."
+      },
+      "trichology": {
+        "name": "Trichology care",
+        "description": "Scalp and hair diagnostics with clinical treatment protocols."
+      },
+      "brows": {
+        "name": "Eyebrow & eyelash treatments",
+        "description": "Precision brow and lash shaping and tinting."
+      },
+      "packages": {
+        "name": "Service packages",
+        "description": "Combined treatment courses planned across sessions."
+      },
+      "injectable": {
+        "name": "Injectable aesthetic medicine",
+        "description": "Physician-led injectable treatments. [CLINIC TO PROVIDE]"
+      },
+      "consultation": {
+        "name": "Medical consultation",
+        "description": "Dedicated diagnostic consultation with a clinician. [CLINIC TO PROVIDE]"
+      }
+    },
+    "technology": {
+      "marker": "03 · Technologies",
+      "title": "Clinical technologies",
+      "lead": "The devices behind our treatments. Each is a medical-grade system, operated by trained clinicians and selected for documented results.",
+      "items": {
+        "endospheres": {
+          "name": "Endospheres Therapy",
+          "spec": "Non-invasive · 45 min",
+          "body": "Compressive microvibration delivered through a matrix of rotating spheres to support drainage and skin tone."
+        },
+        "laser": {
+          "name": "Laser Hair Removal",
+          "spec": "Non-invasive · 30 min",
+          "body": "A medical diode laser targeting the hair follicle across all treatable body areas."
+        },
+        "rf": {
+          "name": "Microneedle RF Lifting",
+          "spec": "Minimally invasive · 60 min",
+          "body": "Insulated microneedles deliver radiofrequency into the dermis to stimulate collagen."
+        },
+        "trichology": {
+          "name": "Trichology",
+          "spec": "Diagnostic · 45 min",
+          "body": "Instrumental scalp analysis guiding targeted hair and scalp treatment protocols."
+        }
+      }
+    },
+    "products": {
+      "marker": "04 · Products",
+      "title": "Professional products",
+      "lead": "Professional formulations dispensed as part of your treatment plan. Two clinical lines continue your results between appointments.",
+      "tabs": { "AROSHA_BODY": "AROSHA", "DIXIDOX_TRICHO": "DIXIDOX de Luxe" },
+      "add": "Add to cart",
+      "note": "Dispensed as part of your treatment plan.",
+      "all": "View full formulary — 31 products"
+    },
+    "booking": {
+      "marker": "05 · Consultation",
+      "title": "Book a consultation",
+      "lead": "Begin with a consultation. We review your history and concerns, examine the area, and prepare a written treatment plan.",
+      "intro": "Appointments are arranged by agreement. Choose a treatment and a preferred date, and we will confirm your time by email.",
+      "requested": "Requested treatment",
+      "whatsapp": "WhatsApp — message the clinic",
+      "gdpr": "Your information is processed confidentially in accordance with GDPR and used only to arrange your appointment.",
+      "fields": {
+        "name": "Full name",
+        "phone": "Phone",
+        "email": "Email",
+        "treatment": "Treatment",
+        "date": "Preferred date",
+        "notes": "Notes"
+      },
+      "select": "Select a treatment",
+      "notesPlaceholder": "Anything we should know before your consultation.",
+      "submit": "Request appointment"
+    },
+    "footer": {
+      "about": "A licensed medical clinic in Helsinki for aesthetic medicine, skin, body, and hair.",
+      "clinic": "Clinic",
+      "hours": "Hours",
+      "byAgreement": "By agreement",
+      "booking247": "Online booking 24/7",
+      "explore": "Explore",
+      "legal": "Legal",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "cookies": "Cookies Policy"
+    }
+  },
   "Catalog": {
     "metaTitle": "Catalog",
     "metaDescription": "AROSHA and DIXIDOX De Luxe professional products at Mone Beauty Clinic, Helsinki.",

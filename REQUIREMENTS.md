@@ -1,5 +1,14 @@
 # Requirements — Mone Beauty
 
+## Owner-approved homepage direction (2026-07-12)
+
+Reproduce root `index.html` as the homepage visual and content reference. Its medical,
+diagnostic, evidence-based, and licensing language is owner-approved for this page: centered real-video hero and
+three facts, Standard of Care, clinical services with explicit missing-medical-content stubs,
+alternating technologies, accessible AROSHA/DIXIDOX tabs, compact one-click booking handoff,
+and clinic standard/contact. Preserve localization, generated content/media, cart, booking,
+chatbot, SEO, and the global shell. This supersedes older homepage section-order language.
+
 > **This document is binding.** It is the distilled, authoritative requirements spec for
 > the project. Together with [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) it is the
 > contract the build must follow. Do not deviate without updating these documents first.
@@ -10,11 +19,11 @@
 The app realizes the **client brief** (`SCOPE.md` = **Mone Beauty Clinic**), an
 aesthetic-medicine clinic. On conflict, resolve:
 
-| Source                                                                       | Authoritative for                                                                            | Strictness        |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------- |
+| Source                                                                       | Authoritative for                                                                                 | Strictness        |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------- |
 | [`SCOPE.md`](./SCOPE.md)                                                     | **Brand, positioning, IA/structure, product features** (booking, CRM, admin, chatbot, shop, GDPR) | Binding — wins    |
-| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **Visual design system** (tokens, type, spacing, radii, shadows, components) + page structure | Strictly followed |
-| [`scraped_content/`](./scraped_content/)                                     | **Existing-page copy, images, video, real NAP/media** (3 locales)                            | Reused as content |
+| [`design_handoff_mone_beauty_clinic/`](./design_handoff_mone_beauty_clinic/) | **Visual design system** (tokens, type, spacing, radii, shadows, components) + page structure     | Strictly followed |
+| [`scraped_content/`](./scraped_content/)                                     | **Existing-page copy, images, video, real NAP/media** (3 locales)                                 | Reused as content |
 
 Where `SCOPE.md` conflicts with `scraped_content/` (brand name, positioning, homepage
 structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma + Postgres)

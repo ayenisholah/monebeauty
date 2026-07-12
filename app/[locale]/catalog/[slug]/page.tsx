@@ -8,11 +8,7 @@ import { Markdown } from "@/components/Markdown";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { Link } from "@/i18n/navigation";
-import {
-  PRODUCT_SLUGS,
-  getProduct,
-  formatPrice,
-} from "@/content/products";
+import { PRODUCT_SLUGS, getProduct, formatPrice } from "@/content/products";
 import { getLiveProduct, getLiveProducts } from "@/lib/live-content";
 import {
   absoluteLocalizedUrl,
@@ -58,11 +54,14 @@ export default async function ProductPage({
 
   const l = locale as Locale;
   const t = await getTranslations("Product");
-  const c = product.i18n[l];
+  const generated = getProduct(slug);
+  const c =
+    product.i18n[l] ?? generated?.i18n[l] ?? Object.values(product.i18n)[0];
+  if (!c) notFound();
   const products = await getLiveProducts();
-  const related = products.filter(
-    (p) => p.slug !== slug && p.category === product.category,
-  ).slice(0, 4);
+  const related = products
+    .filter((p) => p.slug !== slug && p.category === product.category)
+    .slice(0, 4);
 
   return (
     <section className="bg-page py-[clamp(32px,4vw,64px)]">

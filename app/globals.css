@@ -134,3 +134,1019 @@
     scroll-behavior: auto !important;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}
+body:has(.home-reference) > header,
+body:has(.home-reference) > footer {
+  display: none;
+}
+.home-reference {
+  --g: 22px;
+  color: var(--color-body);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.home-reference .hr-section-head,
+.home-reference .hr-care article,
+.home-reference .hr-services article,
+.home-reference .hr-tech article,
+.home-reference .hr-products article,
+.home-reference .hr-booking > * {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.34s ease,
+    transform 0.34s ease;
+}
+.home-reference .hr-visible {
+  opacity: 1 !important;
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-reference .hr-section-head,
+  .home-reference .hr-care article,
+  .home-reference .hr-services article,
+  .home-reference .hr-tech article,
+  .home-reference .hr-products article,
+  .home-reference .hr-booking > * {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hr-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: auto;
+  padding-inline: var(--g);
+}
+.hr-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--color-line-header);
+  background: rgba(251, 248, 243, 0.88);
+  backdrop-filter: blur(11px);
+}
+.hr-header-inner {
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hr-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--color-ink);
+  line-height: 1;
+}
+.hr-brand svg {
+  width: 24px;
+  color: var(--accent);
+}
+.hr-brand b {
+  font-size: 15px;
+  letter-spacing: 0.26em;
+}
+.hr-brand span {
+  margin-top: 4px;
+  font-size: 8px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+.hr-nav {
+  display: none;
+}
+.hr-mobile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hr-mobile button {
+  display: flex;
+}
+.hr-menu {
+  padding: 6px var(--g) 22px;
+  background: var(--color-page);
+}
+.hr-menu > a:not(.hr-btn) {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-line-hair);
+  color: var(--color-ink);
+}
+.hr-menu .hr-btn {
+  width: 100%;
+  margin-top: 18px;
+}
+.hr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.hr-btn.dark {
+  background: var(--color-cta);
+  color: var(--color-cta-heading);
+}
+.hr-btn.ghost {
+  border-color: var(--color-line-btn);
+  color: var(--color-ink);
+}
+.hr-btn.small {
+  padding: 11px 18px;
+  font-size: 11px;
+}
+.hr-more {
+  border-bottom: 1px solid var(--color-line-underline);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.hr-hero {
+  padding: clamp(34px, 5vw, 60px) 0 clamp(30px, 4vw, 52px);
+}
+.hr-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-line-hair);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.hr-meta span:last-child {
+  color: var(--color-accent-sand);
+}
+.hr-hero-copy {
+  max-width: 900px;
+  margin: clamp(34px, 5vw, 58px) auto clamp(30px, 4vw, 46px);
+  text-align: center;
+}
+.hr-hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 76px);
+  font-weight: 500;
+  line-height: 1.03;
+  color: var(--color-ink);
+}
+.hr-hero-copy p {
+  max-width: 60ch;
+  margin: 22px auto 0;
+  font-size: clamp(15px, 1.55vw, 18px);
+}
+.hr-hero-copy > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 30px;
+}
+.hr-hero-image {
+  position: relative;
+  min-height: 280px;
+  aspect-ratio: 21/9;
+  overflow: hidden;
+  border: 1px solid var(--color-line-card);
+}
+.hr-hero-image img,
+.hr-hero-image video {
+  object-fit: cover;
+}
+.hr-hero-image video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hr-hero-image > span {
+  position: absolute;
+  z-index: 3;
+  bottom: 16px;
+  left: 16px;
+  padding: 8px 12px;
+  background: rgba(251, 248, 243, 0.84);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.hr-strip {
+  display: grid;
+  border: 1px solid var(--color-line-card);
+  border-top: 0;
+}
+.hr-strip div {
+  padding: 18px 20px;
+  border-top: 1px solid var(--color-line-card);
+}
+.hr-strip dt {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.hr-strip dd {
+  margin-top: 6px;
+  color: var(--color-ink);
+}
+.hr-section {
+  padding-block: clamp(70px, 8.5vw, 128px);
+}
+.hr-section.alt {
+  background: var(--color-alt);
+}
+.hr-section-head {
+  max-width: 640px;
+  margin: 0 auto clamp(40px, 5vw, 60px);
+  text-align: center;
+}
+.hr-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--accent);
+}
+.hr-marker:before,
+.hr-marker:after {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: var(--color-line-underline);
+}
+.hr-marker span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.hr-section-head h2 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 500;
+  line-height: 1.05;
+  color: var(--color-ink);
+}
+.hr-section-head p {
+  margin-top: 18px;
+}
+.hr-care {
+  display: grid;
+  border: 1px solid var(--color-line-card);
+}
+.hr-care article {
+  padding: 30px 24px;
+  border-bottom: 1px solid var(--color-line-card);
+}
+.hr-care article:last-child {
+  border: 0;
+}
+.hr-care article > span {
+  font-family: var(--font-display);
+  font-size: 25px;
+  color: var(--accent);
+}
+.hr-care h3 {
+  margin-top: 20px;
+  font-family: var(--font-display);
+  font-size: 25px;
+  color: var(--color-ink);
+}
+.hr-care p {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.hr-creds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 22px 36px;
+  margin-top: 36px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.hr-services {
+  display: grid;
+  gap: 22px;
+}
+.hr-services article {
+  overflow: hidden;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-card);
+}
+.hr-card-image {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+.hr-card-image img {
+  object-fit: cover;
+}
+.hr-card-body {
+  padding: 24px;
+}
+.hr-card-body > span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.hr-card-body h3 {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.08;
+  color: var(--color-ink);
+}
+.hr-card-body p {
+  margin: 10px 0 20px;
+  font-size: 14px;
+}
+.hr-card-body > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.soon .hr-card-image {
+  display: grid;
+  place-items: center;
+  background: var(--color-alt);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.hr-tech article {
+  display: grid;
+  gap: 28px;
+  margin-bottom: clamp(52px, 7vw, 90px);
+}
+.hr-tech-image {
+  position: relative;
+  min-height: 310px;
+}
+.hr-tech-image img {
+  object-fit: cover;
+}
+.hr-tech article > div:last-child > b {
+  display: block;
+  font-size: 26px;
+  color: var(--accent);
+}
+.hr-tech article > div:last-child > span {
+  display: block;
+  margin-top: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.hr-tech h3 {
+  margin-top: 12px;
+  font-size: clamp(28px, 4vw, 43px);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.hr-tech p {
+  margin: 15px 0 24px;
+}
+.hr-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-line-hair);
+}
+.hr-tabs button {
+  padding: 16px clamp(14px, 3vw, 34px);
+  border-bottom: 2px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.hr-tabs button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.hr-tabs span {
+  margin-left: 7px;
+}
+.hr-products {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 30px;
+}
+.hr-products article {
+  border: 1px solid var(--color-line-card);
+  background: var(--color-card);
+}
+.hr-product-image {
+  position: relative;
+  aspect-ratio: 1/1;
+}
+.hr-product-image img {
+  object-fit: cover;
+}
+.hr-products article > div:last-child {
+  padding: 16px;
+}
+.hr-products small {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.hr-products h3 {
+  min-height: 42px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+.hr-products p {
+  height: 40px;
+  overflow: hidden;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.hr-products strong {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 11px;
+}
+.hr-products em {
+  font-style: normal;
+  font-size: 15px;
+  color: var(--color-ink);
+}
+.hr-add {
+  display: inline-grid !important;
+  margin: 14px 10px 0 0 !important;
+}
+.hr-product-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 34px;
+}
+.hr-product-foot p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.hr-booking {
+  display: grid;
+  gap: 42px;
+}
+.hr-booking > div > p:first-child {
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 1.35;
+  color: var(--color-ink);
+}
+.hr-echo {
+  margin-top: 24px;
+  padding: 16px;
+  border-left: 2px solid var(--accent);
+  background: var(--color-card);
+}
+.hr-echo span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hr-contact {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+.hr-contact a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink);
+}
+.hr-gdpr {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+  font-size: 12px;
+}
+.hr-booking form {
+  display: grid;
+  gap: 18px;
+}
+.hr-booking label {
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hr-booking input,
+.hr-booking select,
+.hr-booking textarea {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid var(--color-line-btn);
+  background: var(--color-card);
+  padding: 12px;
+  color: var(--color-ink);
+  text-transform: none;
+}
+.hr-booking textarea {
+  min-height: 100px;
+}
+.hr-form-row {
+  display: grid;
+  gap: 18px;
+}
+.hr-footer {
+  background: var(--color-footer);
+  color: var(--color-footer-link);
+}
+.hr-footer-grid {
+  display: grid;
+  gap: 38px;
+  padding-block: 70px;
+}
+.hr-footer-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hr-footer-logo svg {
+  color: var(--color-gold);
+}
+.hr-footer-logo b {
+  letter-spacing: 0.26em;
+  color: var(--color-footer-logo);
+}
+.hr-footer-logo span {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+}
+.hr-footer-grid > div:first-child > p {
+  max-width: 250px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+.hr-social {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.hr-social a {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--color-line-social);
+  border-radius: 50%;
+}
+.hr-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.hr-footer-col h4 {
+  margin-bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-footer-heading);
+}
+.hr-footer-bar {
+  border-top: 1px solid var(--color-line-footer);
+  padding: 22px 0;
+  font-size: 12px;
+  color: var(--color-footer-copy);
+}
+.hr-footer-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+.hr-footer-bar-inner > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+@media (min-width: 680px) {
+  .hr-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hr-strip div {
+    border-top: 0;
+    border-left: 1px solid var(--color-line-card);
+  }
+  .hr-strip div:first-child {
+    border-left: 0;
+  }
+  .hr-care {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hr-services {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hr-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hr-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 768px) {
+  .home-reference {
+    --g: 40px;
+  }
+  .hr-products {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .hr-care {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .hr-care article {
+    border-right: 1px solid var(--color-line-card);
+    border-bottom: 0;
+  }
+  .hr-footer-grid {
+    grid-template-columns: 2fr repeat(4, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .hr-services .featured {
+    grid-column: 1/-1;
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+  }
+  .hr-services .featured .hr-card-image {
+    aspect-ratio: auto;
+    min-height: 480px;
+  }
+  .hr-tech article {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 70px;
+  }
+  .hr-tech article:nth-child(even) .hr-tech-image {
+    order: 2;
+  }
+  .hr-tech-image {
+    min-height: 430px;
+  }
+}
+@media (min-width: 1040px) {
+  .hr-header-inner {
+    height: 82px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .hr-nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+  .hr-nav a:not(.hr-btn) {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-nav);
+  }
+  .hr-left {
+    justify-self: start;
+  }
+  .hr-right {
+    justify-self: end;
+  }
+  .hr-mobile {
+    display: none;
+  }
+  .hr-booking {
+    grid-template-columns: 1fr 1.1fr;
+    gap: 80px;
+  }
+}
+@media (min-width: 1200px) {
+  .home-reference {
+    --g: 60px;
+  }
+}
+
+/* Exact homepage-reference refinements ported from index.html. */
+.home-reference .hr-section-head p {
+  margin-top: 16px;
+  font-size: clamp(15px, 1.5vw, 17px);
+}
+.home-reference .hr-care {
+  gap: 1px;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-line-card);
+}
+.home-reference .hr-care article {
+  position: relative;
+  overflow: hidden;
+  padding: 32px 26px 30px;
+  border: 0;
+  background: var(--color-card);
+}
+.home-reference .hr-care article > span {
+  font-size: 76px;
+  font-weight: 500;
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-line-card-hover);
+}
+.home-reference .hr-care h3 {
+  margin-top: 20px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.home-reference .hr-care p {
+  margin-top: 10px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.home-reference .hr-creds {
+  gap: 0;
+  margin-top: clamp(30px, 4vw, 46px);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--color-ink);
+}
+.home-reference .hr-creds span {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 22px;
+  border-left: 1px solid var(--color-line-hair);
+}
+.home-reference .hr-creds span:first-child {
+  border-left: 0;
+}
+.home-reference .hr-creds svg {
+  color: var(--accent);
+}
+.home-reference .hr-services {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-line-card);
+}
+.home-reference .hr-services article {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+}
+.home-reference .hr-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px 18px 20px;
+}
+.home-reference .hr-card-body h3 {
+  margin-top: 0;
+  font-size: clamp(20px, 2.2vw, 24px);
+}
+.home-reference .hr-card-body p {
+  flex: 1;
+  margin: 7px 0 16px;
+  font-size: 13.5px;
+}
+.home-reference .hr-card-body > div {
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line-hair);
+}
+.home-reference .soon .hr-card-image {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(151, 120, 90, 0.05) 0 9px,
+      transparent 9px 18px
+    ),
+    var(--color-alt);
+}
+.home-reference .hr-services .featured {
+  position: relative;
+  grid-column: 1/-1;
+  display: flex;
+  min-height: 320px;
+  aspect-ratio: 2/1;
+  align-items: flex-end;
+}
+.home-reference .hr-services .featured .hr-card-image {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+.home-reference .hr-services .featured:after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(28, 24, 20, 0.72),
+    rgba(28, 24, 20, 0.28) 44%,
+    transparent 72%
+  );
+  content: "";
+}
+.home-reference .hr-services .featured .hr-card-body {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: clamp(22px, 3vw, 38px);
+  color: #e7decf;
+}
+.home-reference .hr-services .featured .hr-card-body > span {
+  color: var(--color-gold);
+}
+.home-reference .hr-services .featured .hr-card-body h3 {
+  margin-top: 12px;
+  font-size: clamp(28px, 4vw, 46px);
+  color: #fcf7ef;
+}
+.home-reference .hr-services .featured .hr-card-body p {
+  max-width: 44ch;
+  color: #e7decf;
+}
+.home-reference .hr-services .featured .hr-card-body > div {
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+}
+.home-reference .hr-services .featured .hr-btn.ghost {
+  border-color: rgba(247, 241, 232, 0.42);
+  color: #fcf7ef;
+}
+.home-reference .hr-tech {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-line-card);
+}
+.home-reference .hr-tech article {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  border: 0;
+  background: var(--color-card);
+}
+.home-reference .hr-tech-image {
+  min-height: 0;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+}
+.home-reference .hr-tech-image img {
+  transition: transform 0.4s ease;
+}
+.home-reference .hr-tech article:hover .hr-tech-image img {
+  transform: scale(1.03);
+}
+.home-reference .hr-tech-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(26px, 3.4vw, 46px);
+}
+.home-reference .hr-tech-body > b {
+  display: block;
+  font-size: 44px;
+  font-weight: 500;
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-line-card-hover);
+}
+.home-reference .hr-tech-spec {
+  display: block;
+  margin-top: 16px;
+  color: var(--color-accent-sand);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.home-reference .hr-tech h3 {
+  margin-top: 12px;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 500;
+  line-height: 1.06;
+  color: var(--color-ink);
+}
+.home-reference .hr-tech-text {
+  max-width: 48ch;
+  margin: 12px 0 0;
+  color: var(--color-body);
+  font-size: 15px;
+}
+.home-reference .hr-tech-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+}
+.home-reference .hr-tabs {
+  justify-content: center;
+  margin-bottom: 34px;
+}
+.home-reference .hr-tabs button {
+  position: relative;
+  margin: 0 18px;
+  padding: 14px 4px;
+}
+.home-reference .hr-products {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1px;
+  margin-top: 0;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-line-card);
+}
+.home-reference .hr-products article {
+  border: 0;
+}
+.home-reference .hr-products h3 {
+  font-size: 13px;
+  font-weight: 500;
+}
+.home-reference .hr-products p {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.home-reference .hr-products strong {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line-hair);
+}
+.home-reference .hr-add {
+  width: 40px !important;
+  height: 36px !important;
+  border-radius: 0 !important;
+  background: var(--color-btn-fill);
+}
+.home-reference .hr-booking {
+  max-width: 940px;
+  margin: 0 auto;
+}
+.home-reference .hr-booking form {
+  gap: 15px;
+  padding: 26px;
+  border: 1px solid var(--color-line-card);
+  background: var(--color-card);
+}
+@media (min-width: 560px) {
+  .home-reference .hr-care {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 860px) {
+  .home-reference .hr-tech article {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+  .home-reference .hr-tech-image {
+    min-height: 340px;
+    aspect-ratio: auto;
+  }
+  .home-reference .hr-tech-reverse .hr-tech-image {
+    order: 2;
+  }
+  .home-reference .hr-booking {
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+  }
+}
+@media (min-width: 980px) {
+  .home-reference .hr-care {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

@@ -120,6 +120,248 @@
       }
     }
   },
+  "HomeEditorial": {
+    "hero": {
+      "eyebrow": "Esteettisen lääketieteen klinikka · Helsinki",
+      "heading": "Uuden sukupolven esteettistä lääketiedettä",
+      "lead": "Kokonaisvaltainen lähestymistapa kauneuteen, ihon hyvinvointiin sekä kasvojen, vartalon ja hiusten luonnolliseen harmoniaan.",
+      "book": "Varaa aika",
+      "services": "Tutustu palveluihin"
+    },
+    "facts": {
+      "location": {
+        "title": "Klinikka Helsingissä",
+        "body": "Solvikinkatu 5, 00990 Helsinki"
+      },
+      "hours": {
+        "title": "Sopimuksen mukaan",
+        "body": "Ma–su ajanvarauksella"
+      },
+      "approach": {
+        "title": "Yksilöllinen palvelu",
+        "body": "Huolenpitoa jokaisen käynnin tarpeisiin"
+      }
+    },
+    "standard": {
+      "eyebrow": "Hoidon standardi",
+      "heading": "Huolella suunniteltu klinikkakokemus",
+      "items": [
+        {
+          "title": "Valitse",
+          "body": "Tutustu hyväksyttyihin hoitotietoihin ja valitse käyntiisi sopiva palvelu."
+        },
+        {
+          "title": "Varaa",
+          "body": "Valitse asiantuntija tai ei toivetta ja katso vapaat ajat."
+        },
+        {
+          "title": "Saavu",
+          "body": "Saat vahvistuksen ja tapaat klinikan tiimin sovittuna aikana."
+        }
+      ]
+    },
+    "services": {
+      "eyebrow": "Kliiniset palvelut",
+      "heading": "Hoitoa kasvoille, vartalolle ja hiuksille",
+      "featured": "Esittelyssä",
+      "stubs": {
+        "injectable": "Esteettiset injektiohoidot",
+        "consultation": "Lääkärin konsultaatio"
+      }
+    },
+    "technology": {
+      "eyebrow": "Kliininen teknologia",
+      "heading": "Teknologia kokeneissa käsissä"
+    },
+    "products": {
+      "eyebrow": "Klinikan valikoima",
+      "heading": "Ammattimaista hoitoa myös kotiin",
+      "lead": "Tutustu AROSHA-vartalonhoitoon ja DIXIDOX De Luxe -trikologiatuotteisiin.",
+      "all": "Koko tuotevalikoima"
+    },
+    "booking": {
+      "eyebrow": "Varaa verkossa",
+      "heading": "Aloita yhdellä valinnalla",
+      "lead": "Valitse palvelu ja jatka suoraan asiantuntijoihin ja vapaisiin aikoihin.",
+      "placeholder": "Valitse palvelu",
+      "cta": "Jatka varaukseen"
+    },
+    "contact": {
+      "eyebrow": "Klinikan standardi",
+      "heading": "Rauhallinen ja yksilöllinen klinikka Helsingissä",
+      "lead": "Mone Beauty Clinic yhdistää esteettisen lääketieteen, edistyneet teknologiat ja huolellisen palvelun. Käynnit ajanvarauksella."
+    }
+  },
+  "HomeReference": {
+    "nav": {
+      "treatments": "Hoidot",
+      "technologies": "Teknologiat",
+      "products": "Tuotteet",
+      "standard": "Hoidon standardi",
+      "consultation": "Konsultaatio",
+      "menu": "Valikko"
+    },
+    "common": {
+      "bookOnline": "Varaa aika",
+      "book": "Varaa",
+      "readMore": "Lue lisää"
+    },
+    "hero": {
+      "metaLeft": "Luvanvarainen lääkäriklinikka · Helsinki",
+      "metaRight": "Kasvot · Vartalo · Hiukset",
+      "title": "Uuden sukupolven esteettistä lääketiedettä.",
+      "lead": "Kokonaisvaltainen lähestymistapa kauneuteen, ihon terveyteen sekä kasvojen, vartalon ja hiusten luonnolliseen harmoniaan. Mone on luvanvarainen lääkäriklinikka, joka tarjoaa turvallisia, näyttöön perustuvia hoitoja ja yksilöllisiä hoitosuunnitelmia.",
+      "imageAlt": "Kliinikko tekemässä hoitoa Mone Beauty Clinicillä",
+      "explore": "Tutustu hoitoihin",
+      "tag": "Solvikinkatu 5, Helsinki"
+    },
+    "standard": {
+      "marker": "01 · Hoidon standardi",
+      "title": "Hoitomme standardi",
+      "lead": "Jokainen hoito suunnitellaan ja toteutetaan lääketieteellisten standardien mukaisesti selkeää kliinistä hoitopolkua noudattaen ensikonsultaatiosta ylläpitoon.",
+      "items": {
+        "consultation": {
+          "title": "Konsultaatio",
+          "body": "Jäsennelty lääketieteellinen konsultaatio, jossa käydään läpi tausta, huolenaiheet ja odotukset."
+        },
+        "diagnosis": {
+          "title": "Diagnoosi",
+          "body": "Instrumentaalinen ihon ja hiuspohjan analyysi tarkan lähtötilanteen määrittämiseksi."
+        },
+        "plan": {
+          "title": "Hoitosuunnitelma",
+          "body": "Kirjallinen suunnitelma, jossa määritellään toimenpiteet, niiden järjestys ja odotettu aikataulu."
+        },
+        "care": {
+          "title": "Hoito",
+          "body": "Ammatillinen kotihoito ja sovitut seurantakäynnit tulosten ylläpitämiseksi."
+        }
+      },
+      "credentials": {
+        "licensed": "Luvanvarainen klinikka",
+        "eu": "EU-standardit",
+        "evidence": "Näyttöön perustuva",
+        "personalized": "Yksilölliset ohjelmat",
+        "gdpr": "GDPR-luottamuksellisuus"
+      }
+    },
+    "treatments": {
+      "marker": "02 · Hoidot",
+      "title": "Kliiniset palvelut",
+      "comingSoon": "Tulossa",
+      "lead": "Kahdeksan hoitokategoriaa, joista jokainen suunnitellaan diagnoosin pohjalta. Valitse hoito ajanvarausta varten tai lue koko hoitoprotokolla."
+    },
+    "services": {
+      "facial": {
+        "name": "Kasvohoidot",
+        "description": "Diagnostiikkaan perustuvat kasvohoidot ihon terveydelle ja suojakerroksen korjaamiseen."
+      },
+      "body": {
+        "name": "Vartalohoidot",
+        "description": "Kohdennetut vartalo-ohjelmat muotoiluun, kiinteyteen ja verenkiertoon."
+      },
+      "endospheres": {
+        "name": "Endospheres-terapia",
+        "description": "Kompressiivinen mikrovärähtely lymfakierron ja ihon kiinteyden tukemiseksi."
+      },
+      "laser": {
+        "name": "Laserkarvanpoisto",
+        "description": "Lääketieteellinen diodilaser pysyvään karvankasvun vähentämiseen."
+      },
+      "rf": {
+        "name": "Mikroneula-RF-kohotus",
+        "description": "Radiotaajuusmikroneulaus kollageenin uudismuodostuksen tukemiseksi."
+      },
+      "trichology": {
+        "name": "Trikologinen hoito",
+        "description": "Hiuspohjan ja hiusten diagnostiikka kliinisillä hoitoprotokollilla."
+      },
+      "brows": {
+        "name": "Kulma- ja ripsihoidot",
+        "description": "Kulmien ja ripsien tarkka muotoilu ja värjäys."
+      },
+      "packages": {
+        "name": "Hoitopaketit",
+        "description": "Usealle käynnille suunnitellut yhdistelmähoitokokonaisuudet."
+      },
+      "injectable": {
+        "name": "Esteettiset injektiohoidot",
+        "description": "Lääkärijohtoiset injektiohoidot. [CLINIC TO PROVIDE]"
+      },
+      "consultation": {
+        "name": "Lääketieteellinen konsultaatio",
+        "description": "Erillinen diagnostinen konsultaatio kliinikon kanssa. [CLINIC TO PROVIDE]"
+      }
+    },
+    "technology": {
+      "marker": "03 · Teknologiat",
+      "title": "Kliiniset teknologiat",
+      "lead": "Hoitojemme taustalla olevat laitteet. Jokainen on lääketieteellisen tason järjestelmä, jota koulutetut ammattilaiset käyttävät dokumentoitujen tulosten saavuttamiseksi.",
+      "items": {
+        "endospheres": {
+          "name": "Endospheres Therapy",
+          "spec": "Ei-invasiivinen · 45 min",
+          "body": "Pyörivien pallojen matriisin tuottama kompressiivinen mikrovärähtely tukee nestekiertoa ja ihon kiinteyttä."
+        },
+        "laser": {
+          "name": "Laserkarvanpoisto",
+          "spec": "Ei-invasiivinen · 30 min",
+          "body": "Lääketieteellinen diodilaser kohdistuu karvatuppiin kaikilla hoidettavilla vartaloalueilla."
+        },
+        "rf": {
+          "name": "Mikroneula-RF-kohotus",
+          "spec": "Mini-invasiivinen · 60 min",
+          "body": "Eristetyt mikroneulat johtavat radiotaajuusenergiaa dermikseen kollageenin muodostuksen stimuloimiseksi."
+        },
+        "trichology": {
+          "name": "Trikologia",
+          "spec": "Diagnostinen · 45 min",
+          "body": "Instrumentaalinen hiuspohja-analyysi ohjaa kohdennettuja hiusten ja hiuspohjan hoitoprotokollia."
+        }
+      }
+    },
+    "products": {
+      "marker": "04 · Tuotteet",
+      "title": "Ammattilaistuotteet",
+      "lead": "Ammattilaiskoostumukset osana hoitosuunnitelmaasi. Kaksi kliinistä tuotelinjaa jatkaa tulosten tukemista käyntien välillä.",
+      "tabs": { "AROSHA_BODY": "AROSHA", "DIXIDOX_TRICHO": "DIXIDOX de Luxe" },
+      "note": "Annostellaan osana hoitosuunnitelmaasi.",
+      "add": "Lisää ostoskoriin",
+      "all": "Katso koko valikoima — 31 tuotetta"
+    },
+    "booking": {
+      "marker": "05 · Konsultaatio",
+      "title": "Varaa konsultaatio",
+      "lead": "Aloita konsultaatiolla. Käymme läpi taustasi ja huolenaiheesi, tutkimme alueen ja laadimme kirjallisen hoitosuunnitelman.",
+      "intro": "Käynnit sovitaan erikseen. Valitse hoito ja toivottu päivä, niin vahvistamme ajan sähköpostitse.",
+      "gdpr": "Tietojasi käsitellään luottamuksellisesti GDPR:n mukaisesti ja vain ajan järjestämiseen.",
+      "notesPlaceholder": "Kerro kaikki, mitä meidän tulisi tietää ennen konsultaatiota.",
+      "requested": "Toivottu hoito",
+      "whatsapp": "WhatsApp — viesti klinikalle",
+      "fields": {
+        "name": "Koko nimi",
+        "phone": "Puhelin",
+        "email": "Sähköposti",
+        "treatment": "Hoito",
+        "date": "Toivottu päivä",
+        "notes": "Lisätiedot"
+      },
+      "select": "Valitse hoito",
+      "submit": "Pyydä aikaa"
+    },
+    "footer": {
+      "about": "Luvanvarainen esteettisen lääketieteen, ihon, vartalon ja hiusten klinikka Helsingissä.",
+      "clinic": "Klinikka",
+      "hours": "Aukiolo",
+      "byAgreement": "Sopimuksen mukaan",
+      "booking247": "Ajanvaraus 24/7",
+      "explore": "Tutustu",
+      "legal": "Lakiasiat",
+      "privacy": "Tietosuojaseloste",
+      "terms": "Käyttöehdot",
+      "cookies": "Evästekäytäntö"
+    }
+  },
   "Catalog": {
     "metaTitle": "Katalogi",
     "metaDescription": "Ammattilaisten AROSHA- ja DIXIDOX De Luxe -tuotteet Mone Beauty Clinicillä, Helsingissä.",

@@ -1,5 +1,11 @@
 # Implementation Plan — Mone Beauty
 
+## Homepage reference match (owner-approved, 2026-07-12)
+
+The localized homepage uses `index.html` as its superseding visual/content specification,
+including its owner-approved medical and licensing language. It retains the production cart,
+localized routes, booking handoff, legal links, and GDPR/AI chat beneath that presentation.
+
 > Binding build roadmap. Pairs with [`REQUIREMENTS.md`](./REQUIREMENTS.md). Phases run in
 > order; each builds on the last. **Commit after each phase.** Key direction: the app
 > realizes the **client brief** (`SCOPE.md` = **Mone Beauty Clinic**, aesthetic medicine);
@@ -205,6 +211,14 @@ test; Lighthouse ≥ targets.
 ---
 
 ## Cross-cutting guardrails (every phase)
+
+### Owner-approved homepage editorial redesign (2026-07-12)
+
+Replace the original homepage composition with the `index.html`-inspired sequence: hero,
+Standard of Care, clinical services, alternating technologies, product tabs, booking picker,
+and clinic standard/contact. Use server-rendered sections with small tab and picker client
+islands. Preserve real localized content/media, cart, booking, JSON-LD, shell, and a11y.
+Verify at 390, 768, 900, and 1280 pixels.
 
 - Match the prototype precisely (exact tokens; reference the PNGs) — this is hi-fi.
 - **Mobile-first** — verify at 390px first.

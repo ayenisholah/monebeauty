@@ -1,4 +1,13 @@
 Project Overview
+Homepage reference direction (owner-approved, 2026-07-12): the localized homepage reproduces
+the rendered design, composition, and approved copy of repository-root `index.html`. All
+medical, diagnostic, evidence-based, and licensing language in that reference is explicitly
+owner-approved for homepage use and supersedes the previous homepage composition. Order:
+centered real-video hero with three facts;
+Standard of Care; clinical services (including `[CLINIC TO PROVIDE]` medical stubs);
+alternating technologies; AROSHA/DIXIDOX tabs; compact `/booking?service=<key>` handoff; and
+clinic standard/contact. The working booking wizard remains the only appointment flow.
+
 Develop a website from scratch for Mone Beauty Clinic, an aesthetic medicine clinic. The website should be more than just a corporate presentation—it should serve as a comprehensive platform for:
 Presenting the clinic
 Showcasing services

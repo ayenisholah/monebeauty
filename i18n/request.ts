@@ -8,8 +8,33 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
+  const english = (await import("../messages/en.json")).default;
+  const localized = (await import(`../messages/${locale}.json`)).default;
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: deepMerge(english, localized),
   };
 });
+
+function deepMerge(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>,
+) {
+  const result = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const previous = result[key];
+    result[key] =
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      previous &&
+      typeof previous === "object" &&
+      !Array.isArray(previous)
+        ? deepMerge(
+            previous as Record<string, unknown>,
+            value as Record<string, unknown>,
+          )
+        : value;
+  }
+  return result;
+}

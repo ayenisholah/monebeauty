@@ -1,72 +1,67 @@
 import { getTranslations } from "next-intl/server";
-import {
-  ArrowRight,
-  CalendarCheck,
-  MapPin,
-  Sparkle,
-  Leaf,
-} from "@phosphor-icons/react/ssr";
+import { ArrowRight, MapPin, Clock, Heart } from "@phosphor-icons/react/ssr";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
-import { BRAND } from "@/content/site";
 
-const TRUST = [
-  { key: "byAppointment", Icon: CalendarCheck },
-  { key: "location", Icon: MapPin },
-  { key: "instrumental", Icon: Sparkle },
-  { key: "products", Icon: Leaf },
-] as const;
-
-/** Homepage hero: eyebrow, brand heading, lead, CTA row and trust strip over the real treatment video. */
 export async function HomeHero() {
-  const t = await getTranslations("Home");
+  const t = await getTranslations("HomeEditorial");
+  const facts = [
+    { key: "location", Icon: MapPin },
+    { key: "hours", Icon: Clock },
+    { key: "approach", Icon: Heart },
+  ] as const;
   return (
-    <section className="bg-page pt-[clamp(28px,4vw,52px)]">
+    <section className="bg-page pt-[clamp(38px,6vw,86px)]">
       <Container className="text-center">
-        <Eyebrow className="mb-[16px]">{t("heroEyebrow")}</Eyebrow>
-        <h1 className="font-display text-[clamp(40px,7vw,92px)] leading-[1.02] font-medium text-ink">
-          {BRAND.name}
+        <div className="flex items-center justify-center gap-[14px] font-sans text-[10px] tracking-[.22em] text-muted uppercase">
+          <span>Helsinki</span>
+          <span aria-hidden="true" className="h-px w-[34px] bg-line-hair" />
+          <span>Est. 2020</span>
+        </div>
+        <Eyebrow className="mt-[24px] mb-[18px]">{t("hero.eyebrow")}</Eyebrow>
+        <h1 className="mx-auto max-w-[980px] font-display text-h1 leading-[1.02] font-medium tracking-[.005em] text-ink uppercase">
+          {t("hero.heading")}
         </h1>
-        <p className="mx-auto mt-[16px] max-w-[620px] font-sans text-lead leading-[1.7] font-light text-body">
-          {t("metaDescription")}
+        <p className="mx-auto mt-[22px] max-w-[680px] font-sans text-lead leading-[1.8] font-light text-body">
+          {t("hero.lead")}
         </p>
-        <div className="mt-[clamp(22px,3vw,32px)] flex flex-wrap justify-center gap-[14px]">
-          <Button href="/booking" variant="primary" iconRight={ArrowRight}>
-            {t("heroBookCta")}
+        <div className="mt-[30px] flex flex-wrap justify-center gap-[12px]">
+          <Button href="/booking" iconRight={ArrowRight}>
+            {t("hero.book")}
           </Button>
           <Button href="/services" variant="outline">
-            {t("heroServicesCta")}
+            {t("hero.services")}
           </Button>
         </div>
       </Container>
-
-      <div className="mt-[clamp(24px,3vw,40px)]">
-        <div className="relative h-[clamp(340px,55vh,600px)] w-full overflow-hidden">
+      <Container className="mt-[clamp(34px,5vw,62px)]">
+        <div className="relative h-[clamp(380px,61vw,690px)] max-h-[690px] overflow-hidden rounded-[var(--radius)] bg-alt">
           <video
             className="absolute inset-0 h-full w-full object-cover"
             autoPlay
             muted
             loop
             playsInline
+            preload="metadata"
             poster="/media/hero-poster.jpg"
           >
             <source src="/media/hero.mp4" type="video/mp4" />
           </video>
         </div>
-      </div>
-
-      <Container>
-        <div className="mt-[clamp(28px,4vw,44px)] grid gap-[clamp(24px,3vw,44px)] border-t border-line-hair pt-[30px] sm:grid-cols-2 lg:grid-cols-4">
-          {TRUST.map(({ key, Icon }) => (
-            <div key={key} className="flex flex-col gap-[16px]">
-              <Icon size={28} weight="thin" className="text-accent" />
+        <div className="grid border-b border-line-hair py-[30px] sm:grid-cols-3">
+          {facts.map(({ key, Icon }, index) => (
+            <div
+              key={key}
+              className={`flex items-start gap-[14px] py-[14px] sm:px-[clamp(12px,3vw,32px)] ${index ? "sm:border-l sm:border-line-hair" : ""}`}
+            >
+              <Icon size={24} weight="thin" className="shrink-0 text-accent" />
               <div>
-                <h3 className="font-sans text-[12px] leading-[1.4] font-semibold tracking-[.08em] text-ink uppercase">
-                  {t(`heroTrust.${key}.title`)}
-                </h3>
-                <p className="mt-[14px] font-sans text-[13px] leading-[1.7] font-light text-body">
-                  {t(`heroTrust.${key}.desc`)}
+                <h2 className="font-sans text-[11px] font-semibold tracking-[.12em] text-ink uppercase">
+                  {t(`facts.${key}.title`)}
+                </h2>
+                <p className="mt-[6px] text-[13px] leading-[1.55] font-light text-body">
+                  {t(`facts.${key}.body`)}
                 </p>
               </div>
             </div>

@@ -1,237 +1,182 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowRight,
-  Atom,
-  Certificate,
-  Medal,
+  CalendarCheck,
+  ChatCircleDots,
+  ClipboardText,
+  MapPin,
   ShieldCheck,
-  UserFocus,
 } from "@phosphor-icons/react/ssr";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
 import { ImageSlot } from "@/components/ui/ImageSlot";
 import { Link } from "@/i18n/navigation";
+import { BOOKING_SERVICES, bookableServices } from "@/content/booking-services";
 import { getPageContent } from "@/content/pages";
+import { PRODUCTS } from "@/content/products";
 import { CONTACT } from "@/content/site";
+import { excerpt } from "@/lib/seo";
 import type { Locale } from "@/i18n/routing";
+import { ProductTabs } from "./ProductTabs";
+import { ServicePicker } from "./ServicePicker";
 
-function cleanMarkdown(text: string) {
-  return text
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/\*\*/g, "")
-    .replace(/\\-/g, "-")
-    .replace(/[#>*_`]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const technologyRows = [
+  [
+    "instrumental/endosphere",
+    "/instrumental/endosphere",
+    "/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg",
+  ],
+  [
+    "instrumental/laser",
+    "/instrumental/laser",
+    "/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg",
+  ],
+  [
+    "instrumental/mikroneulanrf",
+    "/instrumental/mikroneulanrf",
+    "/media/files/land/280/21b80358547be97456baf00ac6a98ac9.jpeg",
+  ],
+  [
+    "trichology",
+    "/trichology",
+    "/media/files/land/303/8b2e9288e47ba7705d700a8d7edb596e.jpeg",
+  ],
+] as const;
 
-function firstHeading(body: string, fallback: string) {
-  const match = body.match(/^#\s+(.+)$/m);
-  return match ? cleanMarkdown(match[1]) : fallback;
-}
-
-function firstParagraphs(body: string, count: number) {
-  return body
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter((block) => block && !block.startsWith("#") && !/^\\?-/.test(block))
-    .slice(0, count)
-    .map(cleanMarkdown);
-}
-
-function findSectionHeading(body: string, patterns: RegExp[], fallback: string) {
-  const heading = body
-    .split(/\r?\n/)
-    .find((line) => patterns.some((pattern) => pattern.test(line)));
-  return heading ? cleanMarkdown(heading) : fallback;
-}
-
-function whyChooseItems(body: string) {
-  const lines = body.split(/\r?\n/);
-  const start = lines.findIndex((line) =>
-    /why choose|miksi valita|почему выбирают/i.test(line),
-  );
-  const source = start === -1 ? lines : lines.slice(start + 1);
-  const items: Array<{ title: string; body: string }> = [];
-
-  for (const raw of source) {
-    const line = raw.trim();
-    const match = line.match(/^\\?-\s+\*\*(.+?)\*\*:?\s*(.+)$/);
-    if (!match) {
-      if (items.length > 0 && line.startsWith("#")) break;
-      continue;
-    }
-    items.push({
-      title: cleanMarkdown(match[1]).replace(/:$/, ""),
-      body: cleanMarkdown(match[2]),
-    });
-    if (items.length === 4) break;
-  }
-
-  return items;
-}
-
-export async function HomeAbout() {
-  const locale = (await getLocale()) as Locale;
-  const t = await getTranslations("Common");
-  const about = getPageContent("about", locale);
-  if (!about) return null;
-  const paragraphs = firstParagraphs(about.body, 2);
-
+export async function StandardOfCare() {
+  const t = await getTranslations("HomeEditorial");
+  const icons = [ClipboardText, ShieldCheck, CalendarCheck] as const;
   return (
-    <section id="about" className="bg-page py-[clamp(60px,7vw,112px)]">
+    <section id="standard" className="bg-page py-[clamp(68px,8vw,118px)]">
       <Container>
-        <div className="grid items-center gap-[clamp(32px,6vw,80px)] nav:grid-cols-[1fr_.95fr]">
+        <div className="grid gap-[36px] nav:grid-cols-[.8fr_2fr]">
           <div>
-            <Eyebrow className="mb-[22px]">{about.title}</Eyebrow>
-            <h2 className="max-w-[620px] font-display text-h2 leading-[1.06] font-medium text-ink">
-              {firstHeading(about.body, about.title)}
+            <Eyebrow>{t("standard.eyebrow")}</Eyebrow>
+            <h2 className="mt-[16px] font-display text-h2-treat leading-[1.08] font-medium text-ink">
+              {t("standard.heading")}
             </h2>
-            <div className="mt-[28px] max-w-[620px] space-y-[20px]">
-              {paragraphs.map((paragraph) => (
-                <p
-                  key={paragraph}
-                  className="font-sans text-lead leading-[1.8] font-light text-body"
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-            <div className="mt-[36px]">
-              <Button href="/about" variant="outline" iconRight={ArrowRight}>
-                {t("readMore")}
-              </Button>
-            </div>
           </div>
-          <ImageSlot
-            src="/media/home/about.jpg"
-            alt={about.title}
-            minHeight={480}
-          />
+          <ol className="grid gap-[22px] sm:grid-cols-3">
+            {icons.map((Icon, index) => (
+              <li key={index} className="border-t border-line-hair pt-[22px]">
+                <div className="flex items-center justify-between">
+                  <Icon size={27} weight="thin" className="text-accent" />
+                  <span className="font-display text-[24px] text-line-card-hover">
+                    0{index + 1}
+                  </span>
+                </div>
+                <h3 className="mt-[22px] font-display text-[25px] font-medium text-ink">
+                  {t(`standard.items.${index}.title`)}
+                </h3>
+                <p className="mt-[10px] text-[14px] leading-[1.7] font-light text-body">
+                  {t(`standard.items.${index}.body`)}
+                </p>
+              </li>
+            ))}
+          </ol>
         </div>
       </Container>
     </section>
   );
 }
 
-export async function HomeTechnologies() {
+export async function ClinicalServices() {
   const locale = (await getLocale()) as Locale;
-  const t = await getTranslations("Nav");
+  const t = await getTranslations("HomeEditorial");
+  const tb = await getTranslations("Booking");
   const tc = await getTranslations("Common");
-  const about = getPageContent("about", locale);
-  const heading = about
-    ? findSectionHeading(
-        about.body,
-        [/Top Modern/i, /Parhaat nykyaikaiset/i, /Лучшие современные/i],
-        t("services"),
-      )
-    : t("services");
-
-  const technologies = [
-    { label: t("endospheres"), href: "/instrumental/endosphere" },
-    { label: t("laser"), href: "/instrumental/laser" },
-    { label: t("rf"), href: "/instrumental/mikroneulanrf" },
-    { label: t("trichology"), href: "/trichology" },
-    { label: t("arosha"), href: "/arosha" },
-    { label: t("catalog"), href: "/catalog" },
-  ] as const;
-
+  const real = BOOKING_SERVICES.slice(0, 6);
+  const stubs = BOOKING_SERVICES.filter((service) => !service.bookable);
+  const cards = [...real, ...stubs];
+  const featured = cards[0];
+  const titleFor = (key: string) =>
+    key === "injectable" || key === "consultation"
+      ? t(`services.stubs.${key}`)
+      : tb(`services.${key}`);
   return (
-    <section className="bg-alt py-[clamp(60px,7vw,104px)]">
-      <div className="mx-auto max-w-[1100px] px-[clamp(20px,5vw,56px)] text-center">
-        <Eyebrow className="mb-[14px]">{t("services")}</Eyebrow>
-        <h2 className="font-display text-h2-tech leading-[1.12] font-medium text-ink">
-          {heading}
-        </h2>
-        <div className="mt-[clamp(34px,4vw,54px)] flex flex-wrap items-center justify-center gap-x-[clamp(28px,5vw,64px)] gap-y-[20px]">
-          {technologies.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="font-display text-tech tracking-[.06em] text-[#A89A85] opacity-85 transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-        <div className="mt-[clamp(34px,4vw,54px)]">
-          <Button href="/services" variant="outline" iconRight={ArrowRight}>
+    <section id="treatments" className="bg-alt py-[clamp(68px,8vw,118px)]">
+      <Container>
+        <div className="flex flex-wrap items-end justify-between gap-[20px]">
+          <div>
+            <Eyebrow>{t("services.eyebrow")}</Eyebrow>
+            <h2 className="mt-[14px] font-display text-h2 leading-[1.06] font-medium text-ink">
+              {t("services.heading")}
+            </h2>
+          </div>
+          <Button href="/services" variant="textLink" iconRight={ArrowRight}>
             {tc("allServices")}
           </Button>
         </div>
-      </div>
-    </section>
-  );
-}
-
-export async function HomeBookingCta() {
-  const t = await getTranslations();
-
-  return (
-    <section id="book" className="bg-page py-[clamp(40px,5vw,80px)]">
-      <Container>
-        <div className="grid overflow-hidden rounded-[var(--radius)] bg-cta nav:grid-cols-[1.1fr_.9fr]">
-          <div className="px-[clamp(28px,5vw,72px)] py-[clamp(44px,6vw,76px)]">
-            <Eyebrow className="mb-[24px] text-gold">{t("Nav.bookTime")}</Eyebrow>
-            <h2 className="max-w-[560px] font-display text-h2-cta leading-[1.06] font-medium text-cta-heading">
-              {t("Booking.heading")}
-            </h2>
-            <p className="mt-[22px] max-w-[560px] font-sans text-[15px] leading-[1.75] font-light text-cta-body">
-              {CONTACT.address.street}, {CONTACT.address.postalCode}{" "}
-              {CONTACT.address.city} · {CONTACT.phone} · {CONTACT.email}
+        <article className="mt-[42px] grid overflow-hidden rounded-[var(--radius)] bg-card nav:grid-cols-[1.25fr_.75fr]">
+          <ImageSlot
+            src={featured.image}
+            alt={titleFor(featured.key)}
+            minHeight={440}
+            rounded={false}
+          />
+          <div className="flex flex-col justify-center p-[clamp(28px,5vw,64px)]">
+            <span className="text-[11px] tracking-[.2em] text-accent uppercase">
+              01 · {t("services.featured")}
+            </span>
+            <h3 className="mt-[16px] font-display text-[clamp(30px,4vw,48px)] leading-[1.05] font-medium">
+              {titleFor(featured.key)}
+            </h3>
+            <p className="mt-[18px] text-[14px] leading-[1.75] font-light text-body">
+              {excerpt(
+                getPageContent(featured.contentSlug!, locale)?.body ?? "",
+                210,
+              )}
             </p>
-            <div className="mt-[32px]">
+            <div className="mt-[28px]">
               <Button
-                href="/booking"
-                variant="primaryOnDark"
+                href={{
+                  pathname: "/booking",
+                  query: { service: featured.key },
+                }}
                 iconRight={ArrowRight}
               >
-                {t("Common.bookTime")}
+                {tc("book")}
               </Button>
             </div>
           </div>
-          <ImageSlot
-            src="/media/files/land/240/d0c2d035d8a3b00a7d39938b2a2b8bea.jpg"
-            alt={t("Nav.bookTime")}
-            minHeight={340}
-            tone="dark"
-            rounded={false}
-          />
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-export async function HomeFeatureStrip() {
-  const locale = (await getLocale()) as Locale;
-  const about = getPageContent("about", locale);
-  if (!about) return null;
-
-  const icons = [Medal, UserFocus, Atom, ShieldCheck, Certificate];
-  const items = whyChooseItems(about.body);
-  if (items.length === 0) return null;
-
-  return (
-    <section className="bg-page pb-[clamp(60px,7vw,104px)]">
-      <Container>
-        <div className="grid gap-[clamp(24px,3vw,44px)] border-t border-line-hair pt-[clamp(38px,5vw,58px)] sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((item, index) => {
-            const Icon = icons[index] ?? Certificate;
+        </article>
+        <div className="mt-[22px] grid gap-[18px] nav:grid-cols-3 sm:grid-cols-2">
+          {cards.slice(1).map((service, index) => {
+            const page = service.contentSlug
+              ? getPageContent(service.contentSlug, locale)
+              : null;
             return (
-              <div key={item.title} className="flex flex-col gap-[16px]">
-                <Icon size={30} weight="thin" className="text-accent" />
-                <div>
-                  <h3 className="font-sans text-[12px] leading-[1.4] font-semibold tracking-[.08em] text-ink uppercase">
-                    {item.title}
-                  </h3>
-                  <p className="mt-[14px] font-sans text-[13px] leading-[1.7] font-light text-body">
-                    {item.body}
-                  </p>
-                </div>
-              </div>
+              <article
+                key={service.key}
+                className="flex min-h-[270px] flex-col rounded-[var(--radius)] border border-line-card bg-card p-[24px] transition-all hover:-translate-y-1 hover:shadow-card"
+              >
+                <span className="font-display text-[21px] text-line-card-hover">
+                  {String(index + 2).padStart(2, "0")}
+                </span>
+                <h3 className="mt-[26px] font-display text-[27px] leading-[1.1] font-medium">
+                  {titleFor(service.key)}
+                </h3>
+                <p className="mt-[12px] flex-1 text-[13px] leading-[1.65] font-light text-body">
+                  {page ? excerpt(page.body, 130) : "[CLINIC TO PROVIDE]"}
+                </p>
+                {service.bookable ? (
+                  <Link
+                    href={{
+                      pathname: "/booking",
+                      query: { service: service.key },
+                    }}
+                    className="mt-[20px] inline-flex items-center gap-[8px] text-[11px] font-medium tracking-[.15em] text-accent uppercase"
+                  >
+                    {tc("book")}
+                    <ArrowRight size={15} />
+                  </Link>
+                ) : (
+                  <span className="mt-[20px] text-[10px] tracking-[.12em] text-muted uppercase">
+                    [CLINIC TO PROVIDE]
+                  </span>
+                )}
+              </article>
             );
           })}
         </div>
@@ -240,13 +185,178 @@ export async function HomeFeatureStrip() {
   );
 }
 
-export async function HomeContentSections() {
+export async function Technologies() {
+  const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("HomeEditorial");
+  const tc = await getTranslations("Common");
+  return (
+    <section id="technologies" className="bg-page py-[clamp(68px,8vw,118px)]">
+      <Container>
+        <div className="text-center">
+          <Eyebrow>{t("technology.eyebrow")}</Eyebrow>
+          <h2 className="mt-[14px] font-display text-h2 font-medium">
+            {t("technology.heading")}
+          </h2>
+        </div>
+        <div className="mt-[48px] space-y-[clamp(48px,7vw,88px)]">
+          {technologyRows.map(([slug, href, image], index) => {
+            const page = getPageContent(slug, locale);
+            if (!page) return null;
+            return (
+              <article
+                key={slug}
+                className="grid items-center gap-[clamp(28px,6vw,74px)] nav:grid-cols-2"
+              >
+                <div className={index % 2 ? "nav:order-2" : ""}>
+                  <ImageSlot src={image} alt={page.title} minHeight={390} />
+                </div>
+                <div>
+                  <span className="font-display text-[22px] text-line-card-hover">
+                    0{index + 1}
+                  </span>
+                  <h3 className="mt-[16px] font-display text-[clamp(30px,3.7vw,48px)] leading-[1.06] font-medium">
+                    {page.title}
+                  </h3>
+                  <p className="mt-[18px] text-[15px] leading-[1.8] font-light text-body">
+                    {excerpt(page.body, 260)}
+                  </p>
+                  <div className="mt-[26px]">
+                    <Button
+                      href={href}
+                      variant="textLink"
+                      iconRight={ArrowRight}
+                    >
+                      {tc("readMore")}
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+export async function ProductShowcase() {
+  const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("HomeEditorial");
+  const cat = await getTranslations("Catalog");
+  return (
+    <section id="products" className="bg-alt py-[clamp(68px,8vw,118px)]">
+      <Container>
+        <div className="max-w-[720px]">
+          <Eyebrow>{t("products.eyebrow")}</Eyebrow>
+          <h2 className="mt-[14px] font-display text-h2 font-medium">
+            {t("products.heading")}
+          </h2>
+          <p className="mt-[16px] text-[15px] leading-[1.75] font-light text-body">
+            {t("products.lead")}
+          </p>
+        </div>
+        <ProductTabs
+          products={PRODUCTS}
+          locale={locale}
+          labels={{
+            AROSHA_BODY: cat("categoryBody"),
+            DIXIDOX_TRICHO: cat("categoryTricho"),
+          }}
+          intoBasket={cat("intoBasket")}
+        />
+        <div className="mt-[36px] text-center">
+          <Button href="/catalog" variant="outline" iconRight={ArrowRight}>
+            {t("products.all")}
+          </Button>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+export async function BookingAndContact() {
+  const t = await getTranslations("HomeEditorial");
+  const tb = await getTranslations("Booking");
+  const services = bookableServices().map((service) => ({
+    key: service.key,
+    title: tb(`services.${service.key}`),
+  }));
   return (
     <>
-      <HomeAbout />
-      <HomeTechnologies />
-      <HomeBookingCta />
-      <HomeFeatureStrip />
+      <section id="booking" className="bg-page py-[clamp(68px,8vw,112px)]">
+        <Container>
+          <div className="grid overflow-hidden rounded-[var(--radius)] bg-cta nav:grid-cols-[1fr_.85fr]">
+            <div className="p-[clamp(30px,6vw,76px)]">
+              <Eyebrow className="text-gold">{t("booking.eyebrow")}</Eyebrow>
+              <h2 className="mt-[16px] font-display text-h2-cta leading-[1.06] font-medium text-cta-heading">
+                {t("booking.heading")}
+              </h2>
+              <p className="mt-[18px] max-w-[560px] text-[15px] leading-[1.75] font-light text-cta-body">
+                {t("booking.lead")}
+              </p>
+              <div className="mt-[28px]">
+                <ServicePicker
+                  services={services}
+                  labels={{
+                    placeholder: t("booking.placeholder"),
+                    cta: t("booking.cta"),
+                  }}
+                />
+              </div>
+            </div>
+            <ImageSlot
+              src="/media/home/about.jpg"
+              alt={t("booking.heading")}
+              minHeight={400}
+              rounded={false}
+              tone="dark"
+            />
+          </div>
+        </Container>
+      </section>
+      <section className="bg-alt py-[clamp(64px,7vw,100px)]">
+        <Container>
+          <div className="grid gap-[36px] nav:grid-cols-[1fr_1fr]">
+            <div>
+              <Eyebrow>{t("contact.eyebrow")}</Eyebrow>
+              <h2 className="mt-[14px] font-display text-h2-treat font-medium">
+                {t("contact.heading")}
+              </h2>
+              <p className="mt-[18px] max-w-[580px] text-[15px] leading-[1.8] font-light text-body">
+                {t("contact.lead")}
+              </p>
+            </div>
+            <div className="grid gap-[16px] sm:grid-cols-2">
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(`${CONTACT.address.street}, ${CONTACT.address.postalCode} ${CONTACT.address.city}`)}`}
+                className="rounded-[var(--radius)] border border-line-card bg-card p-[22px]"
+              >
+                <MapPin size={25} weight="thin" className="text-accent" />
+                <span className="mt-[16px] block text-[13px] leading-[1.6]">
+                  {CONTACT.address.street}
+                  <br />
+                  {CONTACT.address.postalCode} {CONTACT.address.city}
+                </span>
+              </a>
+              <a
+                href={CONTACT.phoneHref}
+                className="rounded-[var(--radius)] border border-line-card bg-card p-[22px]"
+              >
+                <ChatCircleDots
+                  size={25}
+                  weight="thin"
+                  className="text-accent"
+                />
+                <span className="mt-[16px] block text-[13px]">
+                  {CONTACT.phone}
+                  <br />
+                  {CONTACT.email}
+                </span>
+              </a>
+            </div>
+          </div>
+        </Container>
+      </section>
     </>
   );
 }
