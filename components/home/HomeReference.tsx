@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  List,
-  X,
   FlowerLotus,
   Phone,
   WhatsappLogo,
@@ -20,8 +18,6 @@ import {
   UserFocus,
 } from "@phosphor-icons/react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { HeaderCartLink } from "@/components/shop/HeaderCartLink";
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { PRODUCTS } from "@/content/products";
 import { CONTACT, SOCIALS } from "@/content/site";
@@ -182,7 +178,6 @@ export function HomeReference() {
   const t = useTranslations("HomeReference");
   const locale = useLocale() as Locale;
   const router = useRouter();
-  const [menu, setMenu] = useState(false);
   const [tab, setTab] = useState<"AROSHA_BODY" | "DIXIDOX_TRICHO">(
     "AROSHA_BODY",
   );
@@ -233,51 +228,6 @@ export function HomeReference() {
   };
   return (
     <div className="home-reference" id="top">
-      <header className="hr-header">
-        <div className="hr-container hr-header-inner">
-          <nav className="hr-nav hr-left">
-            <a href="#treatments">{t("nav.treatments")}</a>
-            <a href="#technologies">{t("nav.technologies")}</a>
-          </nav>
-          <a className="hr-brand" href="#top">
-            <FlowerLotus weight="thin" />
-            <b>MONE</b>
-            <span>Beauty Clinic</span>
-          </a>
-          <nav className="hr-nav hr-right">
-            <a href="#products">{t("nav.products")}</a>
-            <a href="#standard">{t("nav.standard")}</a>
-            <a className="hr-btn dark small" href="#booking">
-              {t("common.bookOnline")}
-            </a>
-            <LanguageSwitcher />
-          </nav>
-          <div className="hr-mobile">
-            <HeaderCartLink />
-            <LanguageSwitcher />
-            <button
-              aria-label={t("nav.menu")}
-              aria-expanded={menu}
-              onClick={() => setMenu(!menu)}
-            >
-              {menu ? <X /> : <List />}
-            </button>
-          </div>
-        </div>
-        {menu && (
-          <nav className="hr-menu">
-            {nav.map(([id, label], i) => (
-              <a key={id} href={`#${id}`} onClick={() => setMenu(false)}>
-                {label}
-                <span className={cormorant.className}>0{i + 1}</span>
-              </a>
-            ))}
-            <a href="#booking" className="hr-btn dark">
-              {t("common.bookOnline")}
-            </a>
-          </nav>
-        )}
-      </header>
       <main>
         <section className="hr-hero">
           <div className="hr-container">
