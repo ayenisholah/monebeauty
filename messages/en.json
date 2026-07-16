@@ -56,6 +56,8 @@
     "send": "Send message",
     "thinking": "Checking approved clinic content...",
     "error": "Chat is temporarily unavailable. Please try again or contact the clinic directly.",
+    "groundedFallback": "Claude is unavailable, so this answer is copied from approved clinic content.",
+    "sources": "Sources",
     "consent": "I agree that this chat can be stored so Mone Beauty Clinic can respond and improve service.",
     "book": "Book this service",
     "handoff": "Ask a human to follow up",

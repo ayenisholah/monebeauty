@@ -187,12 +187,11 @@ npm run build
 test -f .next/BUILD_ID && cat .next/BUILD_ID
 ```
 
-Recreate the PM2 apps with watch disabled:
+Start or reload the PM2 apps from the committed ecosystem configuration so watch mode,
+restart backoff, and updated environment values are applied:
 
 ```bash
-pm2 delete monebeauty
-pm2 delete monebeauty-reminders
-pm2 start ecosystem.config.cjs
+pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
 ```
 
@@ -214,9 +213,11 @@ Acceptance checks:
 
 - `pm2 list` shows `monebeauty` online with watching disabled.
 - PM2 restart count stops increasing.
+- `pm2 describe monebeauty` shows exponential restart backoff and watch mode disabled.
 - Logs no longer show missing `.next`.
 - `.next/BUILD_ID` exists inside PM2's `cwd`.
 - Local VPS curl and external curl both return the Next.js app.
+- `node scripts/smoke-chat.mjs` reports a non-empty answer with `degraded: false`.
 
 If VPS-local curl works but public access fails, check the listener and firewall:
 

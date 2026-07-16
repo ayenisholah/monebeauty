@@ -2,7 +2,10 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { CONTACT } from "@/content/site";
-import { bookableServices, bookingServiceTitle } from "@/content/booking-services";
+import {
+  bookableServices,
+  bookingServiceTitle,
+} from "@/content/booking-services";
 import { CONTENT_PAGE_SLUGS, getPageContent } from "@/content/pages";
 import { PRODUCTS } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
@@ -13,8 +16,48 @@ export type KnowledgeSnippet = {
   url?: string;
 };
 
+export type KnowledgeResult = {
+  snippets: KnowledgeSnippet[];
+  matched: boolean;
+};
+
 const MAX_BODY = 900;
 const MAX_SNIPPETS = 8;
+const QUERY_STOP_TERMS = new Set([
+  "about",
+  "can",
+  "could",
+  "does",
+  "have",
+  "hello",
+  "help",
+  "offer",
+  "perform",
+  "please",
+  "provide",
+  "tell",
+  "that",
+  "the",
+  "what",
+  "with",
+  "you",
+  "että",
+  "hei",
+  "mitä",
+  "onko",
+  "teillä",
+  "voiko",
+  "для",
+  "есть",
+  "как",
+  "ли",
+  "можно",
+  "предлагаете",
+  "привет",
+  "расскажите",
+  "что",
+  "это",
+]);
 
 function cleanText(value: string) {
   return value
@@ -29,7 +72,7 @@ function terms(value: string) {
   return cleanText(value)
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
-    .filter((term) => term.length > 2);
+    .filter((term) => term.length > 2 && !QUERY_STOP_TERMS.has(term));
 }
 
 function scoreSnippet(queryTerms: string[], snippet: KnowledgeSnippet) {
@@ -160,15 +203,20 @@ export async function retrieveKnowledge(locale: Locale, query: string) {
     ...(await articleSnippets(locale)),
   ];
   const queryTerms = terms(query);
-  if (queryTerms.length === 0) return all.slice(0, MAX_SNIPPETS);
+  if (queryTerms.length === 0) {
+    return { snippets: all.slice(0, MAX_SNIPPETS), matched: false };
+  }
 
   const ranked = all
     .map((snippet) => ({ snippet, score: scoreSnippet(queryTerms, snippet) }))
     .sort((a, b) => b.score - a.score);
   const matching = ranked.filter((item) => item.score > 0);
-  return (matching.length > 0 ? matching : ranked)
-    .slice(0, MAX_SNIPPETS)
-    .map((item) => item.snippet);
+  return {
+    snippets: (matching.length > 0 ? matching : ranked)
+      .slice(0, MAX_SNIPPETS)
+      .map((item) => item.snippet),
+    matched: matching.length > 0,
+  };
 }
 
 export function detectBookingService(locale: Locale, message: string) {

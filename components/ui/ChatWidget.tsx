@@ -15,6 +15,8 @@ import { cn } from "@/lib/cn";
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  degraded?: boolean;
+  sources?: { title: string; href: string }[];
 };
 
 export function ChatWidget() {
@@ -27,9 +29,10 @@ export function ChatWidget() {
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [booking, setBooking] = useState<{ serviceKey: string; href: string } | null>(
-    null,
-  );
+  const [booking, setBooking] = useState<{
+    serviceKey: string;
+    href: string;
+  } | null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
   const [handoffSent, setHandoffSent] = useState(false);
   const [handoff, setHandoff] = useState({
@@ -47,7 +50,10 @@ export function ChatWidget() {
     setInput("");
     setError(null);
     setBooking(null);
-    const nextMessages = [...messages, { role: "user" as const, content: text }];
+    const nextMessages = [
+      ...messages,
+      { role: "user" as const, content: text },
+    ];
     setMessages(nextMessages);
     setLoading(true);
     try {
@@ -58,7 +64,7 @@ export function ChatWidget() {
           sessionId,
           locale,
           message: text,
-          history: messages,
+          history: messages.map(({ role, content }) => ({ role, content })),
           consentGdpr: consent,
         }),
       });
@@ -66,7 +72,12 @@ export function ChatWidget() {
       if (!res.ok) throw new Error("chat_failed");
       setMessages([
         ...nextMessages,
-        { role: "assistant", content: String(data.answer ?? "") },
+        {
+          role: "assistant",
+          content: String(data.answer ?? ""),
+          degraded: data.degraded === true,
+          sources: Array.isArray(data.sources) ? data.sources : [],
+        },
       ]);
       setSessionId(data.sessionId ?? sessionId);
       setBooking(data.booking ?? null);
@@ -109,7 +120,9 @@ export function ChatWidget() {
               <div className="font-display text-[20px] font-semibold text-ink">
                 {panelTitle}
               </div>
-              <p className="font-sans text-[12px] text-muted">{t("subtitle")}</p>
+              <p className="font-sans text-[12px] text-muted">
+                {t("subtitle")}
+              </p>
             </div>
             <button
               type="button"
@@ -138,7 +151,31 @@ export function ChatWidget() {
                       : "mr-auto border border-line-card bg-card text-body",
                   )}
                 >
-                  {message.content}
+                  <p className="whitespace-pre-line">{message.content}</p>
+                  {message.role === "assistant" && message.degraded ? (
+                    <p className="mt-[8px] border-t border-line-hair pt-[7px] text-[11px] text-muted">
+                      {t("groundedFallback")}
+                    </p>
+                  ) : null}
+                  {message.role === "assistant" && message.sources?.length ? (
+                    <div className="mt-[8px] border-t border-line-hair pt-[7px]">
+                      <div className="mb-[4px] text-[10px] tracking-[.1em] text-muted uppercase">
+                        {t("sources")}
+                      </div>
+                      <ul className="grid gap-[3px]">
+                        {message.sources.map((source) => (
+                          <li key={source.href}>
+                            <Link
+                              href={source.href}
+                              className="text-[12px] text-accent underline decoration-line-btn underline-offset-2"
+                            >
+                              {source.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
               ))}
               {loading ? (
@@ -149,7 +186,10 @@ export function ChatWidget() {
             </div>
             {booking ? (
               <Link
-                href={{ pathname: "/booking", query: { service: booking.serviceKey } }}
+                href={{
+                  pathname: "/booking",
+                  query: { service: booking.serviceKey },
+                }}
                 className="mt-[12px] inline-flex min-h-[42px] items-center gap-[8px] rounded-[4px] bg-accent px-[14px] font-sans text-[11px] tracking-[.12em] text-page uppercase"
               >
                 {t("book")} <ArrowRight size={14} weight="thin" />
@@ -172,19 +212,25 @@ export function ChatWidget() {
               <div className="grid gap-[8px]">
                 <input
                   value={handoff.name}
-                  onChange={(e) => setHandoff({ ...handoff, name: e.target.value })}
+                  onChange={(e) =>
+                    setHandoff({ ...handoff, name: e.target.value })
+                  }
                   placeholder={t("fields.name")}
                   className={inputCls}
                 />
                 <input
                   value={handoff.email}
-                  onChange={(e) => setHandoff({ ...handoff, email: e.target.value })}
+                  onChange={(e) =>
+                    setHandoff({ ...handoff, email: e.target.value })
+                  }
                   placeholder={t("fields.email")}
                   className={inputCls}
                 />
                 <input
                   value={handoff.phone}
-                  onChange={(e) => setHandoff({ ...handoff, phone: e.target.value })}
+                  onChange={(e) =>
+                    setHandoff({ ...handoff, phone: e.target.value })
+                  }
                   placeholder={t("fields.phone")}
                   className={inputCls}
                 />

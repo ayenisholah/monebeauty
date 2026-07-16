@@ -1,25 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { completeChat, hasClaudeConfig, type ChatMessage } from "@/lib/ai";
-import { CONTACT } from "@/content/site";
 import { routing, type Locale } from "@/i18n/routing";
 import { detectBookingService, retrieveKnowledge } from "@/lib/chat-knowledge";
+import { answerReliably } from "@/lib/chat-reliability";
 
 const MAX_MESSAGE = 1200;
 const MAX_HISTORY = 12;
 
 function bad(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
-}
-
-function fallback(locale: Locale) {
-  if (locale === "fi") {
-    return `Chat ei ole juuri nyt käytettävissä. Voit varata ajan tai ottaa yhteyttä: ${CONTACT.phone}, ${CONTACT.email}.`;
-  }
-  if (locale === "ru") {
-    return `Чат сейчас недоступен. Вы можете записаться или связаться с клиникой: ${CONTACT.phone}, ${CONTACT.email}.`;
-  }
-  return `Chat is temporarily unavailable. You can book online or contact the clinic: ${CONTACT.phone}, ${CONTACT.email}.`;
 }
 
 function normalizeMessages(value: unknown): ChatMessage[] {
@@ -49,32 +39,28 @@ export async function POST(req: NextRequest) {
   const locale = routing.locales.includes(payload.locale as Locale)
     ? (payload.locale as Locale)
     : routing.defaultLocale;
-  const message = String(payload.message ?? "").trim().slice(0, MAX_MESSAGE);
+  const message = String(payload.message ?? "")
+    .trim()
+    .slice(0, MAX_MESSAGE);
   const consentGdpr = payload.consentGdpr === true;
   const history = normalizeMessages(payload.history);
   const sessionId = String(payload.sessionId ?? "").trim();
   if (!message) return bad("message_required");
 
-  const snippets = await retrieveKnowledge(locale, message);
+  const knowledge = await retrieveKnowledge(locale, message);
   const service = detectBookingService(locale, message);
 
-  let answer: string;
-  let degraded = false;
-  if (!hasClaudeConfig()) {
-    answer = fallback(locale);
-    degraded = true;
-  } else {
-    try {
-      answer = await completeChat({
+  const { answer, degraded, sources } = await answerReliably({
+    locale,
+    knowledge,
+    configured: hasClaudeConfig(),
+    complete: () =>
+      completeChat({
         locale,
-        snippets,
+        snippets: knowledge.snippets,
         messages: [...history, { role: "user", content: message }],
-      });
-    } catch {
-      answer = fallback(locale);
-      degraded = true;
-    }
-  }
+      }),
+  });
 
   let savedSessionId = sessionId || null;
   const nextMessages = [
@@ -108,6 +94,7 @@ export async function POST(req: NextRequest) {
     answer,
     sessionId: savedSessionId,
     degraded,
+    sources,
     booking: service
       ? { serviceKey: service.key, href: `/booking?service=${service.key}` }
       : null,

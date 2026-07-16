@@ -56,6 +56,8 @@
     "send": "Lähetä viesti",
     "thinking": "Tarkistan klinikan hyväksyttyä sisältöä...",
     "error": "Chat ei ole tilapäisesti käytettävissä. Yritä uudelleen tai ota yhteyttä klinikkaan.",
+    "groundedFallback": "Claude ei ole käytettävissä, joten vastaus on kopioitu klinikan hyväksytystä sisällöstä.",
+    "sources": "Lähteet",
     "consent": "Hyväksyn, että tämä chat voidaan tallentaa, jotta Mone Beauty Clinic voi vastata ja parantaa palvelua.",
     "book": "Varaa tämä palvelu",
     "handoff": "Pyydä ihmistä ottamaan yhteyttä",

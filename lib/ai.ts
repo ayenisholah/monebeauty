@@ -3,8 +3,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Locale } from "@/i18n/routing";
 import type { KnowledgeSnippet } from "@/lib/chat-knowledge";
-
-const DEFAULT_MODEL = "claude-sonnet-5";
+import { claudeRuntimeConfig } from "@/lib/chat-reliability";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -12,18 +11,53 @@ export type ChatMessage = {
 };
 
 export function hasClaudeConfig() {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return claudeRuntimeConfig().configured;
 }
 
 function client() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const config = claudeRuntimeConfig();
+  return new Anthropic({
+    apiKey: config.apiKey,
+    maxRetries: config.maxRetries,
+    timeout: config.timeoutMs,
+  });
+}
+
+function safeString(value: unknown) {
+  if (typeof value !== "string") return null;
+  const sanitized = value.replace(/[^a-zA-Z0-9._:-]/g, "").slice(0, 120);
+  return sanitized || null;
+}
+
+function logClaudeError(error: unknown, model: string) {
+  const candidate =
+    error && typeof error === "object"
+      ? (error as {
+          constructor?: { name?: string };
+          requestID?: unknown;
+          status?: unknown;
+        })
+      : null;
+  const status =
+    typeof candidate?.status === "number" ? candidate.status : null;
+  console.error(
+    JSON.stringify({
+      status,
+      errorClass: safeString(candidate?.constructor?.name) ?? "UnknownError",
+      requestId: safeString(candidate?.requestID),
+      model: safeString(model) ?? "unknown",
+    }),
+  );
 }
 
 function localeName(locale: Locale) {
   return locale === "fi" ? "Finnish" : locale === "ru" ? "Russian" : "English";
 }
 
-export function groundedSystemPrompt(locale: Locale, snippets: KnowledgeSnippet[]) {
+export function groundedSystemPrompt(
+  locale: Locale,
+  snippets: KnowledgeSnippet[],
+) {
   return [
     `You are the website assistant for Mone Beauty Clinic in Helsinki. Answer in ${localeName(locale)}.`,
     "Use only the approved context below. Do not invent medical claims, prices, policies, contraindications, or treatment outcomes.",
@@ -50,16 +84,24 @@ export async function completeChat({
   snippets: KnowledgeSnippet[];
   messages: ChatMessage[];
 }) {
-  const response = await client().messages.create({
-    model: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
-    max_tokens: 700,
-    temperature: 0.2,
-    system: groundedSystemPrompt(locale, snippets),
-    messages,
-  });
+  const config = claudeRuntimeConfig();
+  try {
+    const response = await client().messages.create({
+      model: config.model,
+      max_tokens: 700,
+      temperature: 0.2,
+      system: groundedSystemPrompt(locale, snippets),
+      messages,
+    });
 
-  return response.content
-    .map((block) => (block.type === "text" ? block.text : ""))
-    .join("")
-    .trim();
+    const answer = response.content
+      .map((block) => (block.type === "text" ? block.text : ""))
+      .join("")
+      .trim();
+    if (!answer) throw new Error("empty_claude_response");
+    return answer;
+  } catch (error) {
+    logClaudeError(error, config.model);
+    throw error;
+  }
 }

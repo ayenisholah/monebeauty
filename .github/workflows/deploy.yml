@@ -14,23 +14,6 @@ jobs:
       matrix:
         node-version: [20.x]
 
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      NOTIFICATION_FROM_EMAIL: ${{ secrets.NOTIFICATION_FROM_EMAIL }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      SINCH_APP_ID: ${{ secrets.SINCH_APP_ID }}
-      SINCH_REGION: ${{ secrets.SINCH_REGION }}
-      SINCH_SERVICE_PLAN_ID: ${{ secrets.SINCH_SERVICE_PLAN_ID }}
-      SINCH_ACCESS_KEY_ID: ${{ secrets.SINCH_ACCESS_KEY_ID }}
-      SINCH_ACCESS_KEY_SECRET: ${{ secrets.SINCH_ACCESS_KEY_SECRET }}
-      SINCH_PROJECT_ID: ${{ secrets.SINCH_PROJECT_ID }}
-      SINCH_SMS_SENDER: ${{ secrets.SINCH_SMS_SENDER }}
-      PORT: 5000
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +41,8 @@ jobs:
 
       - name: Run database migrations
         if: github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           if [ -d prisma/migrations ]; then
             npx prisma migrate deploy
@@ -70,25 +55,53 @@ jobs:
 
       - name: Write production environment file
         if: github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTIFICATION_FROM_EMAIL: ${{ secrets.NOTIFICATION_FROM_EMAIL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SINCH_APP_ID: ${{ secrets.SINCH_APP_ID }}
+          SINCH_REGION: ${{ secrets.SINCH_REGION }}
+          SINCH_SERVICE_PLAN_ID: ${{ secrets.SINCH_SERVICE_PLAN_ID }}
+          SINCH_ACCESS_KEY_ID: ${{ secrets.SINCH_ACCESS_KEY_ID }}
+          SINCH_ACCESS_KEY_SECRET: ${{ secrets.SINCH_ACCESS_KEY_SECRET }}
+          SINCH_PROJECT_ID: ${{ secrets.SINCH_PROJECT_ID }}
+          SINCH_SMS_SENDER: ${{ secrets.SINCH_SMS_SENDER }}
         run: |
+          umask 077
+          env_file="$(mktemp .env.production.XXXXXX)"
+          trap 'rm -f "$env_file"' EXIT
           {
-            echo "DATABASE_URL=${DATABASE_URL}"
-            echo "NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}"
-            echo "ADMIN_EMAIL=${ADMIN_EMAIL}"
-            echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}"
-            echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
-            echo "NOTIFICATION_FROM_EMAIL=${NOTIFICATION_FROM_EMAIL}"
-            echo "RESEND_API_KEY=${RESEND_API_KEY}"
-            echo "SINCH_APP_ID=${SINCH_APP_ID}"
-            echo "SINCH_REGION=${SINCH_REGION}"
-            echo "SINCH_SERVICE_PLAN_ID=${SINCH_SERVICE_PLAN_ID}"
-            echo "SINCH_ACCESS_KEY_ID=${SINCH_ACCESS_KEY_ID}"
-            echo "SINCH_ACCESS_KEY_SECRET=${SINCH_ACCESS_KEY_SECRET}"
-            echo "SINCH_PROJECT_ID=${SINCH_PROJECT_ID}"
-            echo "SINCH_SMS_SENDER=${SINCH_SMS_SENDER}"
-            echo "PORT=${PORT}"
-          } > .env.production
+            printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+            printf 'NEXT_PUBLIC_SITE_URL=%s\n' "$NEXT_PUBLIC_SITE_URL"
+            printf 'ADMIN_EMAIL=%s\n' "$ADMIN_EMAIL"
+            printf 'ADMIN_PASSWORD=%s\n' "$ADMIN_PASSWORD"
+            printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY"
+            printf 'ANTHROPIC_MODEL=%s\n' 'claude-sonnet-5'
+            printf 'NOTIFICATION_FROM_EMAIL=%s\n' "$NOTIFICATION_FROM_EMAIL"
+            printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
+            printf 'SINCH_APP_ID=%s\n' "$SINCH_APP_ID"
+            printf 'SINCH_REGION=%s\n' "$SINCH_REGION"
+            printf 'SINCH_SERVICE_PLAN_ID=%s\n' "$SINCH_SERVICE_PLAN_ID"
+            printf 'SINCH_ACCESS_KEY_ID=%s\n' "$SINCH_ACCESS_KEY_ID"
+            printf 'SINCH_ACCESS_KEY_SECRET=%s\n' "$SINCH_ACCESS_KEY_SECRET"
+            printf 'SINCH_PROJECT_ID=%s\n' "$SINCH_PROJECT_ID"
+            printf 'SINCH_SMS_SENDER=%s\n' "$SINCH_SMS_SENDER"
+            printf 'PORT=%s\n' '5000'
+          } > "$env_file"
+          chmod 600 "$env_file"
+          mv -f "$env_file" .env.production
+          trap - EXIT
 
       - name: Restart app with PM2
         if: github.event_name == 'push'
-        run: pm2 restart monebeauty || pm2 start npm --name monebeauty -- run start
+        run: |
+          pm2 startOrReload ecosystem.config.cjs --update-env
+          pm2 save
+
+      - name: Verify Claude chat after deployment
+        if: github.event_name == 'push'
+        run: node scripts/smoke-chat.mjs
