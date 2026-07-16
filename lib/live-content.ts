@@ -32,14 +32,18 @@ export async function getLiveProducts(locale: Locale): Promise<Product[]> {
   return rows.flatMap((row) => {
     const content = row.contents[0];
     if (!content) return [];
-    return [{
-      slug: row.slug,
-      category: row.category as ProductCategory,
-      image: row.images[0] ?? null,
-      price: Number(row.price),
-      size: row.size,
-      i18n: { [locale]: { name: content.name, description: content.description } } as Product["i18n"],
-    }];
+    return [
+      {
+        slug: row.slug,
+        category: row.category as ProductCategory,
+        image: row.images[0] ?? null,
+        price: Number(row.price),
+        size: row.size,
+        i18n: {
+          [locale]: { name: content.name, description: content.description },
+        } as Product["i18n"],
+      },
+    ];
   });
 }
 
@@ -64,7 +68,9 @@ export async function getLiveProduct(
     image: row.images[0] ?? null,
     price: Number(row.price),
     size: row.size,
-    i18n: { [locale]: { name: content.name, description: content.description } } as Product["i18n"],
+    i18n: {
+      [locale]: { name: content.name, description: content.description },
+    } as Product["i18n"],
   };
 }
 
@@ -116,7 +122,10 @@ export async function getPublishedTechnologies(locale: Locale) {
   });
 }
 
-export async function getPublishedTechnologyByPath(path: string, locale: Locale) {
+export async function getPublishedTechnologyByPath(
+  path: string,
+  locale: Locale,
+) {
   const row = await prisma.technology.findFirst({
     where: {
       publicPath: path,
@@ -141,7 +150,9 @@ export async function getPublishedPricing(locale: Locale) {
     orderBy: [{ order: "asc" }, { price: "asc" }],
     include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
   });
-  return rows.flatMap((row) => row.contents[0] ? [{ ...row, content: row.contents[0] }] : []);
+  return rows.flatMap((row) =>
+    row.contents[0] ? [{ ...row, content: row.contents[0] }] : [],
+  );
 }
 
 export async function getPublishedArticles(locale: Locale) {
@@ -153,11 +164,12 @@ export async function getPublishedArticles(locale: Locale) {
     orderBy: [{ order: "asc" }, { publishedAt: "desc" }],
     include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
   });
-  return rows.flatMap((row) => row.contents[0] ? [{ ...row, content: row.contents[0] }] : []);
+  return rows.flatMap((row) =>
+    row.contents[0] ? [{ ...row, content: row.contents[0] }] : [],
+  );
 }
 
 export async function getBookableServices(locale: Locale) {
   const services = await getPublishedServices(locale);
   return services.filter((service) => service.bookable);
 }
-
