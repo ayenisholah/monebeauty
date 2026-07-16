@@ -17,6 +17,18 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      NOTIFICATION_FROM_EMAIL: ${{ secrets.NOTIFICATION_FROM_EMAIL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SINCH_APP_ID: ${{ secrets.SINCH_APP_ID }}
+      SINCH_REGION: ${{ secrets.SINCH_REGION }}
+      SINCH_SERVICE_PLAN_ID: ${{ secrets.SINCH_SERVICE_PLAN_ID }}
+      SINCH_ACCESS_KEY_ID: ${{ secrets.SINCH_ACCESS_KEY_ID }}
+      SINCH_ACCESS_KEY_SECRET: ${{ secrets.SINCH_ACCESS_KEY_SECRET }}
+      SINCH_PROJECT_ID: ${{ secrets.SINCH_PROJECT_ID }}
+      SINCH_SMS_SENDER: ${{ secrets.SINCH_SMS_SENDER }}
       PORT: 5000
 
     steps:
@@ -62,6 +74,18 @@ jobs:
           {
             echo "DATABASE_URL=${DATABASE_URL}"
             echo "NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}"
+            echo "ADMIN_EMAIL=${ADMIN_EMAIL}"
+            echo "ADMIN_PASSWORD=${ADMIN_PASSWORD}"
+            echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
+            echo "NOTIFICATION_FROM_EMAIL=${NOTIFICATION_FROM_EMAIL}"
+            echo "RESEND_API_KEY=${RESEND_API_KEY}"
+            echo "SINCH_APP_ID=${SINCH_APP_ID}"
+            echo "SINCH_REGION=${SINCH_REGION}"
+            echo "SINCH_SERVICE_PLAN_ID=${SINCH_SERVICE_PLAN_ID}"
+            echo "SINCH_ACCESS_KEY_ID=${SINCH_ACCESS_KEY_ID}"
+            echo "SINCH_ACCESS_KEY_SECRET=${SINCH_ACCESS_KEY_SECRET}"
+            echo "SINCH_PROJECT_ID=${SINCH_PROJECT_ID}"
+            echo "SINCH_SMS_SENDER=${SINCH_SMS_SENDER}"
             echo "PORT=${PORT}"
           } > .env.production
 
