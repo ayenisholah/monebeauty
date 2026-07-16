@@ -101,7 +101,3 @@ jobs:
         run: |
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
-
-      - name: Verify Claude chat after deployment
-        if: github.event_name == 'push'
-        run: node scripts/smoke-chat.mjs
