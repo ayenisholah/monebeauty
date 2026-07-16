@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:create-admin": "tsx --env-file=.env scripts/create-admin.ts",
     "db:sync-content": "tsx scripts/sync-cms-from-generated.ts",
     "notifications:reminders": "tsx scripts/send-reminders.ts",
     "notifications:test": "tsx scripts/test-notifications.ts"
