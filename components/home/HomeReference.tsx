@@ -29,7 +29,12 @@ import type { Locale } from "@/i18n/routing";
 import { cormorant } from "@/lib/fonts";
 
 const services = [
-  ["facial", "60 min", "/media/home/facial.jpg", "/services/face"],
+  [
+    "facial",
+    "60 min",
+    "/media/home/unsplash-photo-1643684391140-c5056cfd3436.jpg",
+    "/services/face",
+  ],
   ["body", "60 min", "/media/home/endospheres.jpg", "/services/body"],
   [
     "endospheres",
@@ -331,7 +336,7 @@ export function HomeReference() {
           <div className="hr-care">
             {["consultation", "diagnosis", "plan", "care"].map((k, i) => (
               <article key={k}>
-                <span>0{i + 1}</span>
+                <span className={cormorant.className}>0{i + 1}</span>
                 <h3>{t(`standard.items.${k}.title`)}</h3>
                 <p>{t(`standard.items.${k}.body`)}</p>
               </article>
@@ -377,12 +382,15 @@ export function HomeReference() {
                   <p>{t(`services.${key}.description`)}</p>
                   <div>
                     <button
-                      className="hr-btn ghost small"
+                      className={`hr-btn ${i === 0 ? "dark" : "ghost"} small`}
                       onClick={() => choose(key)}
                     >
                       {t("common.book")}
                     </button>
-                    <Link href={href} className="hr-more">
+                    <Link
+                      href={href}
+                      className={i === 0 ? "hr-btn ghost small" : "hr-more"}
+                    >
                       {t("common.readMore")}
                     </Link>
                   </div>

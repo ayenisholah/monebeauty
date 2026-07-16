@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:sync-content": "tsx scripts/sync-cms-from-generated.ts",
-    "notifications:reminders": "tsx scripts/send-reminders.ts"
+    "notifications:reminders": "tsx scripts/send-reminders.ts",
+    "notifications:test": "tsx scripts/test-notifications.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

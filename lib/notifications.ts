@@ -4,7 +4,7 @@ import { BRAND, CONTACT } from "@/content/site";
 import { bookingServiceTitle } from "@/content/booking-services";
 import type { Locale } from "@/i18n/routing";
 
-type NotifyResult = {
+export type NotifyResult = {
   channel: "email" | "sms";
   status: "sent" | "skipped" | "failed";
   detail?: string;
@@ -37,7 +37,9 @@ function enabled() {
 }
 
 function fromEmail() {
-  return env("NOTIFICATION_FROM_EMAIL") || `Mone Beauty Clinic <${CONTACT.email}>`;
+  return (
+    env("NOTIFICATION_FROM_EMAIL") || `Mone Beauty Clinic <${CONTACT.email}>`
+  );
 }
 
 function staffEmails() {
@@ -93,7 +95,7 @@ async function postJson(url: string, headers: HeadersInit, body: unknown) {
   }
 }
 
-async function sendEmail({
+export async function sendEmail({
   to,
   subject,
   text,
@@ -102,9 +104,12 @@ async function sendEmail({
   subject: string;
   text: string;
 }): Promise<NotifyResult> {
-  if (!enabled()) return { channel: "email", status: "skipped", detail: "disabled" };
+  if (!enabled())
+    return { channel: "email", status: "skipped", detail: "disabled" };
 
-  const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  const recipients = Array.isArray(to)
+    ? to.filter(Boolean)
+    : [to].filter(Boolean);
   if (recipients.length === 0) {
     return { channel: "email", status: "skipped", detail: "no_recipient" };
   }
@@ -146,16 +151,19 @@ async function sendEmail({
   }
 }
 
-async function sendSms({
+export async function sendSms({
   to,
   text,
 }: {
   to: string | string[];
   text: string;
 }): Promise<NotifyResult> {
-  if (!enabled()) return { channel: "sms", status: "skipped", detail: "disabled" };
+  if (!enabled())
+    return { channel: "sms", status: "skipped", detail: "disabled" };
 
-  const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  const recipients = Array.isArray(to)
+    ? to.filter(Boolean)
+    : [to].filter(Boolean);
   if (recipients.length === 0) {
     return { channel: "sms", status: "skipped", detail: "no_recipient" };
   }
@@ -165,12 +173,68 @@ async function sendSms({
   const accountSid = env("TWILIO_ACCOUNT_SID");
   const authToken = env("TWILIO_AUTH_TOKEN") || token;
   const from = env("TWILIO_FROM") || env("SMS_FROM");
+  const sinchProjectId = env("SINCH_PROJECT_ID");
+  const sinchAppId = env("SINCH_APP_ID");
+  const sinchAccessKeyId = env("SINCH_ACCESS_KEY_ID");
+  const sinchAccessKeySecret = env("SINCH_ACCESS_KEY_SECRET");
+  const sinchRegion = env("SINCH_REGION").toLowerCase();
+  const sinchSender = env("SINCH_SMS_SENDER") || env("SMS_FROM");
 
   try {
+    if (
+      sinchProjectId &&
+      sinchAppId &&
+      sinchAccessKeyId &&
+      sinchAccessKeySecret
+    ) {
+      if (!sinchSender) {
+        return {
+          channel: "sms",
+          status: "failed",
+          detail: "sinch_missing_sender",
+        };
+      }
+
+      if (sinchRegion !== "eu" && sinchRegion !== "us") {
+        return {
+          channel: "sms",
+          status: "failed",
+          detail: "sinch_invalid_region",
+        };
+      }
+
+      const auth = Buffer.from(
+        `${sinchAccessKeyId}:${sinchAccessKeySecret}`,
+      ).toString("base64");
+      const url = `https://${sinchRegion}.conversation.api.sinch.com/v1/projects/${encodeURIComponent(sinchProjectId)}/messages:send`;
+
+      for (const recipient of recipients) {
+        await postJson(
+          url,
+          { Authorization: `Basic ${auth}` },
+          {
+            app_id: sinchAppId,
+            recipient: {
+              identified_by: {
+                channel_identities: [{ channel: "SMS", identity: recipient }],
+              },
+            },
+            message: { text_message: { text } },
+            channel_properties: { SMS_SENDER: sinchSender },
+          },
+        );
+      }
+      return { channel: "sms", status: "sent", detail: "sinch_conversation" };
+    }
+
     if (accountSid && authToken && from) {
       const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
       for (const recipient of recipients) {
-        const body = new URLSearchParams({ From: from, To: recipient, Body: text });
+        const body = new URLSearchParams({
+          From: from,
+          To: recipient,
+          Body: text,
+        });
         const res = await fetch(
           `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
           {
@@ -188,10 +252,14 @@ async function sendSms({
     }
 
     if (webhook) {
-      await postJson(webhook, token ? { Authorization: `Bearer ${token}` } : {}, {
-        to: recipients,
-        text,
-      });
+      await postJson(
+        webhook,
+        token ? { Authorization: `Bearer ${token}` } : {},
+        {
+          to: recipients,
+          text,
+        },
+      );
       return { channel: "sms", status: "sent", detail: "webhook" };
     }
 
@@ -200,7 +268,8 @@ async function sendSms({
     return {
       channel: "sms",
       status: "failed",
-      detail: error instanceof Error ? error.message.slice(0, 180) : "unknown_error",
+      detail:
+        error instanceof Error ? error.message.slice(0, 180) : "unknown_error",
     };
   }
 }
@@ -231,7 +300,8 @@ function appointmentText(
   kind: "confirmation" | "reminder_24h" | "reminder_2h",
 ) {
   const service =
-    bookingServiceTitle(appointment.service.slug, locale) ?? appointment.service.slug;
+    bookingServiceTitle(appointment.service.slug, locale) ??
+    appointment.service.slug;
   const when = dateTime(appointment.start, locale);
   const reference = appointment.id.slice(-8).toUpperCase();
   const intro =
@@ -265,7 +335,8 @@ function appointmentSms(
   kind: "confirmation" | "reminder_24h" | "reminder_2h",
 ) {
   const service =
-    bookingServiceTitle(appointment.service.slug, locale) ?? appointment.service.slug;
+    bookingServiceTitle(appointment.service.slug, locale) ??
+    appointment.service.slug;
   const prefix =
     kind === "confirmation"
       ? "Booking received"
@@ -298,7 +369,12 @@ export async function notifyAppointmentConfirmation(
     }),
   ]);
 
-  await logNotification("booking_confirmation", "Appointment", appointment.id, results);
+  await logNotification(
+    "booking_confirmation",
+    "Appointment",
+    appointment.id,
+    results,
+  );
 }
 
 export async function notifyAppointmentReminder(
@@ -311,7 +387,10 @@ export async function notifyAppointmentReminder(
       ? `${BRAND.name}: appointment reminder for tomorrow`
       : `${BRAND.name}: appointment reminder`;
   const results = await Promise.all([
-    sendSms({ to: appointment.client.phone, text: appointmentSms(appointment, locale, kind) }),
+    sendSms({
+      to: appointment.client.phone,
+      text: appointmentSms(appointment, locale, kind),
+    }),
     sendEmail({
       to: appointment.client.email,
       subject,
@@ -319,7 +398,12 @@ export async function notifyAppointmentReminder(
     }),
   ]);
 
-  await logNotification(`booking_${kind}`, "Appointment", appointment.id, results);
+  await logNotification(
+    `booking_${kind}`,
+    "Appointment",
+    appointment.id,
+    results,
+  );
 }
 
 export async function notifyOrderConfirmation(

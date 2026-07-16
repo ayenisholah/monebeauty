@@ -13,7 +13,11 @@ export default function AdminRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${jost.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${jost.variable} h-full`}
+      data-scroll-behavior="smooth"
+    >
       <body className="min-h-full bg-page text-ink">{children}</body>
     </html>
   );

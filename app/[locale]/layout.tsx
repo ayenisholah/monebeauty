@@ -50,6 +50,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={`${cormorant.variable} ${jost.variable} h-full`}
+      data-scroll-behavior="smooth"
     >
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
