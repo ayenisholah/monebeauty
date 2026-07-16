@@ -389,7 +389,7 @@ export function HomeReference() {
                   <p className="hr-tech-text">
                     {t(`technology.items.${key}.body`)}
                   </p>
-                  <div className="hr-tech-actions">
+                  <div className="hr-tech-actions justify-between">
                     <button
                       className="hr-btn ghost small"
                       onClick={() => choose(key)}
@@ -445,14 +445,16 @@ export function HomeReference() {
                   <strong>
                     {p.size} <em>{p.price ? `€${p.price}` : ""}</em>
                   </strong>
-                  <AddToCartButton
-                    slug={p.slug}
-                    label={t("products.add")}
-                    className="hr-add"
-                  />
-                  <Link href={`/catalog/${p.slug}`} className="hr-more">
-                    {t("common.readMore")}
-                  </Link>
+                  <div className="mt-[14px] flex items-center justify-between">
+                    <AddToCartButton
+                      slug={p.slug}
+                      label={t("products.add")}
+                      className="hr-add"
+                    />
+                    <Link href={`/catalog/${p.slug}`} className="hr-more">
+                      {t("common.readMore")}
+                    </Link>
+                  </div>
                 </div>
               </article>
             ))}

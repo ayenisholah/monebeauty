@@ -603,7 +603,7 @@ body:has(.home-reference) > footer {
 }
 .hr-add {
   display: inline-grid !important;
-  margin: 14px 10px 0 0 !important;
+  margin: 0 !important;
 }
 .hr-product-foot {
   display: flex;
