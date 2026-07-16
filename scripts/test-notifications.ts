@@ -20,7 +20,9 @@ async function main() {
   }
 
   const { sendEmail, sendSms } = await import("../lib/notifications");
-  const sentAt = new Date().toISOString();
+  const { renderDeliveryTestEmail } = await import("../lib/email");
+  const sentAt = new Date();
+  const testEmail = renderDeliveryTestEmail(sentAt);
   const results: Array<{
     recipient: string;
     channel: "email" | "sms";
@@ -32,8 +34,7 @@ async function main() {
   for (const recipient of emailRecipients) {
     const result = await sendEmail({
       to: recipient,
-      subject: "Mone Beauty Clinic delivery test",
-      text: `This is an authorized Mone Beauty Clinic email delivery test sent at ${sentAt}. No action is required.`,
+      ...testEmail,
     });
     results.push({
       recipient,
@@ -47,7 +48,7 @@ async function main() {
   for (const recipient of smsRecipients) {
     const result = await sendSms({
       to: recipient,
-      text: `Mone Beauty Clinic delivery test (${sentAt}). No action required.`,
+      text: `Mone Beauty Clinic delivery test (${sentAt.toISOString()}). No action required.`,
     });
     results.push({
       recipient,

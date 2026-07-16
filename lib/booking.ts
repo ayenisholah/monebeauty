@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/db";
-import {
-  getBookingService,
-  type BookingService,
-} from "@/content/booking-services";
 import { BUSINESS_HOURS } from "@/lib/booking-config";
+import type { Locale } from "@/i18n/routing";
 
 /**
  * Lean booking slot logic. Times are treated as clinic wall-clock (Helsinki) and stored as
@@ -70,18 +67,25 @@ function dateLabel(date: Date): string {
   return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
-async function serviceRecord(serviceKey: string) {
-  const svc = getBookingService(serviceKey);
-  if (!svc || !svc.bookable) return null;
-  const serviceId = await getServiceId(svc);
-  return { svc, serviceId };
+async function serviceRecord(serviceKey: string, locale?: Locale) {
+  const service = await prisma.service.findFirst({
+    where: {
+      slug: serviceKey,
+      bookable: true,
+      archivedAt: null,
+      ...(locale ? { contents: { some: { locale, status: "PUBLISHED" } } } : {}),
+    },
+    select: { id: true, slug: true, durationMin: true },
+  });
+  return service ? { svc: service, serviceId: service.id } : null;
 }
 
 /** Practitioners who can provide a service. Falls back to all/default while admin UI is absent. */
 export async function eligiblePractitioners(
   serviceKey: string,
+  locale?: Locale,
 ): Promise<PractitionerDto[]> {
-  const record = await serviceRecord(serviceKey);
+  const record = await serviceRecord(serviceKey, locale);
   if (!record) return [];
 
   let practitioners = await prisma.practitioner.findMany({
@@ -149,17 +153,19 @@ export async function openSlots({
   dateStr,
   serviceKey,
   practitionerId,
+  locale,
 }: {
   dateStr: string;
   serviceKey: string;
   practitionerId?: string | "any";
+  locale?: Locale;
 }): Promise<SlotDto[]> {
-  const svc = getBookingService(serviceKey);
-  if (!svc?.bookable) return [];
-  const duration = svc?.durationMin ?? DEFAULT_DURATION_MIN;
+  const record = await serviceRecord(serviceKey, locale);
+  if (!record) return [];
+  const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
   if (!isOpenDate(dateStr)) return [];
 
-  const practitioners = await eligiblePractitioners(serviceKey);
+  const practitioners = await eligiblePractitioners(serviceKey, locale);
   const selected =
     practitionerId && practitionerId !== "any"
       ? practitioners.filter((p) => p.id === practitionerId)
@@ -228,16 +234,11 @@ export async function getDefaultPractitionerId(): Promise<string> {
   return created.id;
 }
 
-/** Find-or-create the DB Service row for a booking-service (Service.slug = key). */
-export async function getServiceId(svc: BookingService): Promise<string> {
-  const existing = await prisma.service.findUnique({
-    where: { slug: svc.key },
-  });
-  if (existing) return existing.id;
-  const created = await prisma.service.create({
-    data: { slug: svc.key, category: svc.category },
-  });
-  return created.id;
+/** Resolve an existing database-owned booking service; runtime never self-seeds content. */
+export async function getServiceId(serviceKey: string): Promise<string> {
+  const existing = await serviceRecord(serviceKey);
+  if (!existing) throw new Error("unknown_service");
+  return existing.serviceId;
 }
 
 export async function appointmentByReference(reference: string) {

@@ -14,8 +14,9 @@ export function ProductCard({
   locale: Locale;
   intoBasket: string;
 }) {
-  const localized = product.i18n[locale] ?? Object.values(product.i18n)[0];
-  const name = localized?.name ?? product.slug;
+  const localized = product.i18n[locale];
+  if (!localized) return null;
+  const name = localized.name;
   const href = `/catalog/${product.slug}`;
 
   return (

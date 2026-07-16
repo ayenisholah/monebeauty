@@ -7,17 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { TreatmentCard } from "@/components/services/TreatmentCard";
-import { bookingKeyForContentSlug } from "@/content/booking-services";
-import { getLivePageContent } from "@/lib/live-content";
+import { getPublishedServiceByPath } from "@/lib/live-content";
 import type { Locale } from "@/i18n/routing";
 import { excerpt } from "@/lib/seo";
-
-type TreatmentItem = {
-  group: string | null;
-  title: string;
-  description: string;
-  price: string;
-};
+import { notFound } from "next/navigation";
+import { parseProcedures } from "@/lib/procedures";
 
 const SERVICE_IMAGES: Record<string, string[]> = {
   "services/face": [
@@ -63,14 +57,17 @@ export async function ServiceDetailPage({
   slug: string;
   locale: Locale;
 }) {
-  const content = await getLivePageContent(slug, locale);
-  if (!content) return null;
+  const service = await getPublishedServiceByPath(`/${slug}`, locale);
+  if (!service) notFound();
+  const content = { title: service.content.h1, body: service.content.whatItIs };
 
-  const treatments = parseTreatments(content.body);
-  const bookingKey = bookingKeyForContentSlug(slug);
+  const treatments = parseProcedures(content.body);
+  const bookingKey = service.bookable ? service.slug : undefined;
   const common = await getTranslations("Common");
   const nav = await getTranslations("Nav");
-  const images = SERVICE_IMAGES[slug] ?? ["/media/home/facial.jpg"];
+  const images = service.images.length
+    ? service.images
+    : (SERVICE_IMAGES[slug] ?? []);
   const heroImage = images[0];
 
   if (!bookingKey || treatments.length === 0) {
@@ -107,23 +104,28 @@ export async function ServiceDetailPage({
               </p>
               <div className="mt-[30px]">
                 <Button
-                  href={{ pathname: "/booking", query: { service: bookingKey } }}
+                  href={{
+                    pathname: "/booking",
+                    query: { service: bookingKey },
+                  }}
                   iconRight={ArrowRight}
                 >
                   {common("bookThis")}
                 </Button>
               </div>
             </div>
-            <div className="relative min-h-[300px] overflow-hidden rounded-[var(--radius)] border border-line-card bg-card shadow-card sm:min-h-[420px]">
-              <Image
-                src={heroImage}
-                alt={content.title}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 520px"
-              />
-            </div>
+            {heroImage ? (
+              <div className="relative min-h-[300px] overflow-hidden rounded-[var(--radius)] border border-line-card bg-card shadow-card sm:min-h-[420px]">
+                <Image
+                  src={heroImage}
+                  alt={service.content.imageAlt || content.title}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 520px"
+                />
+              </div>
+            ) : null}
           </div>
         </Container>
       </section>
@@ -133,6 +135,7 @@ export async function ServiceDetailPage({
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-[clamp(16px,1.8vw,26px)]">
             {treatments.map((item, index) => {
               const image = images[index % images.length] ?? heroImage;
+              if (!image) return null;
               return (
                 <TreatmentCard
                   key={`${item.group ?? "service"}-${item.title}-${index}`}
@@ -151,72 +154,4 @@ export async function ServiceDetailPage({
       </section>
     </article>
   );
-}
-
-function parseTreatments(markdown: string): TreatmentItem[] {
-  const lines = markdown
-    .replace(/\r\n/g, "\n")
-    .replace(/\n## Media[\s\S]*$/i, "")
-    .split("\n");
-  const items: TreatmentItem[] = [];
-  let group: string | null = null;
-  let current: { title: string; description: string[] } | null = null;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    const h3 = trimmed.match(/^###\s+(.+)$/);
-    const h4 = trimmed.match(/^####\s+(.+)$/);
-
-    if (h3) {
-      group = cleanInlineMarkdown(h3[1]);
-      continue;
-    }
-
-    if (h4) {
-      const heading = cleanInlineMarkdown(h4[1]);
-      if (isPriceLine(heading)) {
-        if (current) {
-          const description = cleanDescription(current.description.join("\n"));
-          if (description) {
-            items.push({
-              group,
-              title: current.title,
-              description,
-              price: heading,
-            });
-          }
-          current = null;
-        }
-      } else {
-        current = { title: heading, description: [] };
-      }
-      continue;
-    }
-
-    if (current && !isBasketMarker(trimmed)) current.description.push(line);
-  }
-
-  return items;
-}
-
-function isPriceLine(value: string) {
-  return /(?:€|â‚¬|\beur\b|\d+\s*-\s*\d+|\d+\s*\/|\d+\s*min)/i.test(value);
-}
-
-function isBasketMarker(value: string) {
-  return /^(into a basket|koriin|в корзину)$/i.test(value);
-}
-
-function cleanInlineMarkdown(value: string) {
-  return value
-    .replace(/\*\*/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function cleanDescription(value: string) {
-  return value
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }

@@ -2,12 +2,6 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { CONTACT } from "@/content/site";
-import {
-  bookableServices,
-  bookingServiceTitle,
-} from "@/content/booking-services";
-import { CONTENT_PAGE_SLUGS, getPageContent } from "@/content/pages";
-import { PRODUCTS } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
 
 export type KnowledgeSnippet = {
@@ -89,45 +83,25 @@ function publicPath(slug: string) {
 }
 
 async function pageSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-  try {
     const rows = await prisma.contentPage.findMany({
-      where: { locale },
+      where: { locale, status: "PUBLISHED" },
       select: { slug: true, title: true, body: true },
       orderBy: { slug: "asc" },
     });
-    if (rows.length > 0) {
-      return rows.map((row) => ({
+    return rows.map((row) => ({
         title: row.title,
         body: cleanText(row.body).slice(0, MAX_BODY),
         url: publicPath(row.slug),
       }));
-    }
-  } catch {
-    // Fall back to committed generated content when DB is unavailable or unmigrated.
-  }
-
-  const snippets: KnowledgeSnippet[] = [];
-  for (const slug of CONTENT_PAGE_SLUGS) {
-    const page = getPageContent(slug, locale);
-    if (!page) continue;
-    snippets.push({
-      title: page.title,
-      body: cleanText(page.body).slice(0, MAX_BODY),
-      url: publicPath(slug),
-    });
-  }
-  return snippets;
 }
 
 async function productSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-  try {
     const rows = await prisma.product.findMany({
-      where: { published: true },
-      include: { contents: { where: { locale } } },
+      where: { published: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
+      include: { contents: { where: { locale, status: "PUBLISHED" } } },
       orderBy: [{ order: "asc" }, { slug: "asc" }],
       take: 40,
     });
-    if (rows.length > 0) {
       const snippets: KnowledgeSnippet[] = [];
       for (const row of rows) {
         const content = row.contents[0];
@@ -141,30 +115,11 @@ async function productSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
         });
       }
       return snippets;
-    }
-  } catch {
-    // Fall back to committed generated content when DB is unavailable or unmigrated.
-  }
-
-  const snippets: KnowledgeSnippet[] = [];
-  for (const product of PRODUCTS) {
-    const content = product.i18n[locale] ?? product.i18n.en;
-    if (!content) continue;
-    snippets.push({
-      title: content.name,
-      body: cleanText(
-        `${content.description} Price: ${product.price ?? ""} EUR. Size: ${product.size ?? ""}`,
-      ).slice(0, MAX_BODY),
-      url: `/catalog/${product.slug}`,
-    });
-  }
-  return snippets;
 }
 
 async function articleSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-  try {
     const rows = await prisma.articleContent.findMany({
-      where: { locale, article: { published: true } },
+      where: { locale, status: "PUBLISHED", article: { published: true, archivedAt: null } },
       include: { article: { select: { slug: true } } },
       take: 20,
     });
@@ -173,16 +128,18 @@ async function articleSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
       body: cleanText(`${row.excerpt ?? ""} ${row.body}`).slice(0, MAX_BODY),
       url: `/blog/${row.article.slug}`,
     }));
-  } catch {
-    return [];
-  }
 }
 
-function serviceSnippets(locale: Locale): KnowledgeSnippet[] {
-  return bookableServices().map((service) => ({
-    title: bookingServiceTitle(service.key, locale) ?? service.key,
-    body: `Bookable service key: ${service.key}. Duration: ${service.durationMin} minutes. Category: ${service.category}.`,
-    url: `/booking?service=${service.key}`,
+async function serviceSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
+  const services = await prisma.service.findMany({
+    where: { bookable: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
+    include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
+    orderBy: [{ order: "asc" }, { slug: "asc" }],
+  });
+  return services.map((service) => ({
+    title: service.contents[0].h1,
+    body: cleanText(`${service.contents[0].shortDesc} ${service.contents[0].whatItIs} Duration: ${service.durationMin} minutes.`).slice(0, MAX_BODY),
+    url: `/booking?service=${service.slug}`,
   }));
 }
 
@@ -197,7 +154,7 @@ function contactSnippet(): KnowledgeSnippet {
 export async function retrieveKnowledge(locale: Locale, query: string) {
   const all = [
     contactSnippet(),
-    ...serviceSnippets(locale),
+    ...(await serviceSnippets(locale)),
     ...(await pageSnippets(locale)),
     ...(await productSnippets(locale)),
     ...(await articleSnippets(locale)),
@@ -219,12 +176,16 @@ export async function retrieveKnowledge(locale: Locale, query: string) {
   };
 }
 
-export function detectBookingService(locale: Locale, message: string) {
+export async function detectBookingService(locale: Locale, message: string) {
   const text = cleanText(message).toLowerCase();
-  return bookableServices().find((service) => {
-    const title = bookingServiceTitle(service.key, locale)?.toLowerCase() ?? "";
+  const services = await prisma.service.findMany({
+    where: { bookable: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
+    include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
+  });
+  return services.find((service) => {
+    const title = service.contents[0]?.h1.toLowerCase() ?? "";
     return (
-      text.includes(service.key.toLowerCase()) ||
+      text.includes(service.slug.toLowerCase()) ||
       Boolean(title && text.includes(title))
     );
   });

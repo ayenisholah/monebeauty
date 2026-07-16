@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocale } from "next-intl";
 import { CaretDown } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 
@@ -17,6 +18,7 @@ export function LanguageSwitcher({
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -31,7 +33,13 @@ export function LanguageSwitcher({
 
   function choose(next: string) {
     setOpen(false);
-    if (next !== locale) router.replace(pathname, { locale: next });
+    if (next !== locale) {
+      const query = Object.fromEntries(searchParams.entries());
+      router.replace(
+        query && Object.keys(query).length > 0 ? { pathname, query } : pathname,
+        { locale: next },
+      );
+    }
   }
 
   return (

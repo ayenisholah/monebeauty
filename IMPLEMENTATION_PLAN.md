@@ -15,6 +15,27 @@ localized routes, booking handoff, legal links, and GDPR/AI chat beneath that pr
 > **Current completed milestone: Phase 8 SEO + GDPR finalize.** Phase 6 notifications/reminders
 > are now implemented at provider-integration scope; payment capture remains deferred.
 
+## Phase 9 — localized admin and database-owned content (in progress)
+
+- Split locale routes into public and admin groups so the admin has its own HTML/application
+  shell and never inherits public chrome, cart, chatbot, consent, or analytics.
+- Use Finnish admin segments across FI/EN/RU: `asiakkaat`, `palvelut`, `teknologiat`,
+  `sisalto`, `tuotteet`, `hinnasto`, `artikkelit`, `keskustelut`, `kirjaudu`, and `uusi`.
+  Permanently redirect legacy English admin URLs.
+- Add the localized responsive admin sidebar/drawer, `Admin` translations, context-preserving
+  locale switcher, dashboard warnings/metrics/audits/quick actions, and localized CRUD.
+- Evolve Prisma with `PublicationStatus`, strict per-locale publication, dedicated
+  `Technology` content, localized pricing, archive metadata, extended service/product
+  metadata, and deletion guards. Every mutation is authorized, validated, audited, and
+  revalidated; media is restricted to `/media/**`.
+- Replace runtime generated-registry reads with shared Prisma repositories for public pages,
+  homepage, catalog, booking, pricing/blog consumers, notifications, and chatbot knowledge.
+  Generated JSON becomes bootstrap/import-only. Routine sync is insert-only; `--force`
+  explicitly refreshes existing imported records.
+- Backfill existing localized content and real media. Verify migrations/seed, legacy
+  redirects, locale isolation, CRUD/archive/delete/anonymization, booking/cart regressions,
+  390/768/900/desktop sidebar access, lint, type-check, tests, and production build.
+
 ## Content & media pipeline (from the live site)
 
 - `scripts/gen-content.mjs` parses `scraped_content/{en,fi,ru}/*.md` → committed
@@ -42,7 +63,7 @@ app/
     (later)     shop cart/checkout/order, account, staff
     (account)/    account            # client: appointments, orders, profile
     (staff)/      staff              # staff schedule
-  admin/                            # custom Prisma-backed admin + CRM
+    (admin)/admin/                  # localized Finnish-path custom admin + CRM
   api/            booking, chat, checkout, webhooks (email/sms)
   styleguide/                       # component + token showcase
 components/
@@ -65,12 +86,15 @@ content/     seed copy/images derived from scraped_content/
 
 ```
 User            id, email, passwordHash?, role(admin|staff|client), locale
-Service         id, slug, category, priceFrom, heroImage(alt), order, published
+Service         id, slug, publicPath, category, duration, bookable, priceFrom, images,
+                order, archivedAt; locale TreatmentContent has DRAFT/PUBLISHED status
 TreatmentContent serviceId, locale, h1, shortDesc, whatItIs, suitableFor[], benefits[],
                  processSteps[], safety, preCare, postCare, contraindications[],
                  sessions, results, faq[{q,a}], seo{title,description,ogImage}
-Product         id, slug, name(i18n), size, price, images[], description(i18n),
-                category(AROSHA_BODY|DIXIDOX_TRICHO), published
+Technology      id, slug, publicPath, images, order, relatedServiceId?, archivedAt;
+                TechnologyContent(locale, name, specification, body, SEO, status)
+Product         id, slug, size, price, currency, images[], category, order, archivedAt;
+                ProductContent(locale, copy, image alt, SEO, status)
 Cart / CartItem  cartId, productId, qty
 Order / OrderItem id, clientId?, items[], totals, status, consent, createdAt
 Practitioner    id, name, role, services[]
@@ -78,11 +102,11 @@ StaffUser       id, userId, practitionerId, workingHours, daysOff
 Availability    practitionerId, date, slots[{start,end,status(open|closed|booked)}]
 Appointment     id, clientId, practitionerId, serviceId, start, end,
                 status(booked|confirmed|completed|cancelled|rescheduled), channel,
-                notes, history[]
+                notes, procedureIndex?, procedureTitle?, procedurePrice?, history[]
 Client (CRM)    id, fullName, phone, email, appointments[], orders[], notes,
                 contraindications(sensitive), consent{gdpr,marketing}, cancelHistory[]
-Article         id, slug, title(i18n), body(i18n), cover(alt), seo, publishedAt
-PricingItem     serviceId?, label, price, unit, category
+Article         id, slug, cover, order, archivedAt; ArticleContent(locale, body, SEO, status)
+PricingItem     serviceId?, category, price, order; PricingContent(locale,label,unit,status)
 ChatSession     id, locale, messages[], handoffRequested, clientId?
 Consent / AuditLog  actor, action, entity, at   # GDPR + medical-field audit
 ```
@@ -158,6 +182,24 @@ only) → details (create/match client) → confirm + consent → confirmation. 
 UI is absent, and rejects appointment overlaps. Lightweight cancel/reschedule endpoints exist
 using appointment reference + matching contact detail. **Verify:** slot generation,
 double-booking prevention, e2e booking, cancel, and reschedule.
+
+### Dedicated booking routing and procedure context
+
+- Route every active public Book/Book Online CTA to localized `/booking`; generic actions
+  open service selection, service/technology actions pass `service`, and procedure cards pass
+  a one-based `procedure` index.
+- Centralize parsing of procedures from localized published service content. Resolve URL and
+  API context against that shared source, never browser-supplied display values.
+- Show the selected service/procedure summary above the wizard and preserve valid context on
+  locale changes. Changing service clears procedure context and updates the booking URL.
+- Hand the retained homepage form into the wizard once through expiring, versioned,
+  tab-scoped storage; never place personal data in a URL.
+- Persist nullable procedure index/title/price snapshots on `Appointment` and surface them in
+  confirmation, staff schedule, CRM history, email/SMS reminders, and staff alerts, with
+  service-only fallback for existing appointments.
+- Verify generic/service/procedure/invalid URL paths, EN/FI/RU switching, 390px and desktop
+  context cards, one-time/expired form handoff, server validation, migration, legacy
+  appointments, formatting, lint, types, tests, and production build.
 
 ## Phase 4 — Staff schedule (`/staff`) ✅ implemented
 

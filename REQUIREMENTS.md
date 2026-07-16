@@ -166,6 +166,27 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 
 ## 8. Online booking
 
+All active public **Book** and **Book Online** CTAs open the localized dedicated `/booking`
+flow. Generic CTAs open service selection; service and technology CTAs use
+`/booking?service=<service-slug>`; procedure cards additionally use a validated, one-based
+`procedure` index. The ordinary Consultation navigation link may remain an in-page anchor.
+Locale switching preserves valid booking context.
+
+The compact homepage booking form remains as a safe handoff. It transfers name, phone,
+email, notes, preferred date, and service through a versioned tab-scoped `sessionStorage`
+record with a 30-minute expiry. Personal data must never be placed in the URL; the booking
+wizard consumes and removes the record once. Contextual URLs advance directly to specialist
+selection, while changing service clears procedure context and updates the URL.
+
+Booking context is resolved only from the requested locale's published Prisma service
+content. The booking page shows a concise approved-content service/procedure summary. Unknown
+services become generic booking visits; invalid/stale procedure indices fall back to the
+validated parent service. `POST /api/booking` accepts an optional `procedureIndex`, resolves
+it again server-side, and persists nullable procedure index/title/price snapshots separately
+from client notes. Confirmation, staff/CRM views, confirmation/reminder messages, and staff
+notifications show the procedure snapshot when present and otherwise fall back to the parent
+service.
+
 > **First iteration (lean) — implemented at reduced scope.** A friction-free, one-click
 > booking: a 3-step wizard **Service → Time → You** where tapping a service selects it and
 > advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
@@ -202,6 +223,45 @@ User-friendly admin panel (custom, Prisma-backed) to edit text, images, pricing,
 products, and blog without a developer. Hosts the CRM and the chatbot handoff queue.
 **Roles:** admin (full), staff (own schedule + own appointments), client (account only).
 Access control + **audit logging** on medical fields.
+
+### 10.1 Localized admin IA and application shell
+
+- The admin uses the same Finnish path segments in every locale. Finnish has no prefix;
+  English and Russian use `/en` and `/ru`. Canonical modules are `/admin`,
+  `/admin/kirjaudu`, `/admin/asiakkaat`, `/admin/palvelut`, `/admin/teknologiat`,
+  `/admin/sisalto`, `/admin/tuotteet`, `/admin/hinnasto`, `/admin/artikkelit`, and
+  `/admin/keskustelut`; creation uses `/uusi` and records use `/[id]`.
+- Existing English admin paths permanently redirect to the matching Finnish path.
+- The desktop admin has a permanent left sidebar. Below desktop it becomes an accessible
+  off-canvas drawer with overlay, focus containment, Escape close, and 44px controls.
+- Admin navigation, forms, validation, confirmations, status and empty-state labels, login,
+  dashboard, and dates are localized through the `Admin` message namespace. Locale changes
+  preserve the Finnish path, record id, query string, and editor context.
+- Public and admin route groups have separate shells. Admin never loads the public header,
+  footer, cart, chatbot, cookie banner, or analytics.
+
+### 10.2 Database content ownership and publication
+
+- `Service` (clinical service), `Technology` (clinical technology), and `Product`
+  (professional product) are separate Prisma entities with global operational fields and
+  locale-specific content rows.
+- Every locale-specific page, treatment, technology, product, price label, and article has a
+  `DRAFT` or `PUBLISHED` state. Public queries return only the requested locale's published
+  content; missing/draft translations are omitted or produce a localized 404. There is no
+  translation generation and no fallback to English or another locale.
+- Services own slug/path/category/duration/booking/price/media/order/practitioner/archive
+  fields. Technologies own path/media/order and an optional related booking service.
+  Products own price/currency/size/media/category/order/archive fields. Pricing keeps numeric
+  values and relationships global while labels and units are localized.
+- Services and products referenced by appointments or orders cannot be hard-deleted; they are
+  archived. Historical appointment relations and order-item snapshots remain intact.
+- All mutations require admin authorization, validate input, write `AuditLog`, and revalidate
+  affected public and admin paths. Media inputs are restricted to existing `/media/**` paths.
+- Homepage sections, service and technology pages, catalog, pricing, blog, booking,
+  notifications, and chatbot retrieval use shared Prisma repositories at runtime.
+- `content/generated/*.json` is import/bootstrap input only. Routine synchronization creates
+  missing rows without overwriting admin-owned values; an explicit force option is required
+  to refresh existing records.
 
 ## 11. AI chatbot
 

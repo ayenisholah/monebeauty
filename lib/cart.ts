@@ -1,4 +1,4 @@
-import { PRODUCTS, type Product } from "@/content/products";
+import type { Product } from "@/content/products";
 
 export type CartItemInput = {
   slug: string;
@@ -18,10 +18,10 @@ export function normalizeQty(value: number): number {
   return Math.min(99, Math.max(1, Math.floor(value)));
 }
 
-export function resolveCartLines(items: CartItemInput[]): CartLine[] {
+export function resolveCartLines(items: CartItemInput[], products: Product[]): CartLine[] {
   return items
     .map((item) => {
-      const product = PRODUCTS.find((p) => p.slug === item.slug);
+      const product = products.find((p) => p.slug === item.slug);
       if (!product || product.price == null) return null;
       const qty = normalizeQty(item.qty);
       return {

@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/db";
-import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { BRAND, CONTACT } from "@/content/site";
-import { bookingServiceTitle } from "@/content/booking-services";
 import type { Locale } from "@/i18n/routing";
+import {
+  renderCustomerAppointmentEmail,
+  renderCustomerOrderEmail,
+  renderStaffAppointmentEmail,
+  renderStaffOrderEmail,
+  type AppointmentEmailData,
+  type OrderEmailData,
+} from "@/lib/email";
 
 export type NotifyResult = {
   channel: "email" | "sms";
@@ -10,23 +16,8 @@ export type NotifyResult = {
   detail?: string;
 };
 
-type AppointmentNotification = {
-  id: string;
-  start: Date;
-  end: Date;
-  client: { fullName: string; email: string; phone: string };
-  practitioner: { name: string; role: string };
-  service: { slug: string };
-};
-
-type OrderNotification = {
-  id: string;
-  email: string;
-  phone: string | null;
-  total: unknown;
-  currency: string;
-  items: Array<{ name: string; qty: number; unitPrice: unknown }>;
-};
+type AppointmentNotification = AppointmentEmailData;
+type OrderNotification = OrderEmailData;
 
 function env(name: string) {
   return process.env[name]?.trim() ?? "";
@@ -56,13 +47,6 @@ function staffPhones() {
     .filter(Boolean);
 }
 
-function money(value: unknown, currency = "EUR") {
-  return new Intl.NumberFormat("fi-FI", {
-    style: "currency",
-    currency,
-  }).format(Number(value));
-}
-
 function dateTime(date: Date, locale: Locale = "fi") {
   return new Intl.DateTimeFormat(locale, {
     weekday: "long",
@@ -73,14 +57,6 @@ function dateTime(date: Date, locale: Locale = "fi") {
     minute: "2-digit",
     timeZone: "Europe/Helsinki",
   }).format(date);
-}
-
-function bookingUrl(locale: Locale) {
-  return `${siteUrl()}${absoluteLocalizedUrl("", "/booking", locale)}`;
-}
-
-function orderUrl(orderId: string, locale: Locale) {
-  return `${siteUrl()}${absoluteLocalizedUrl("", `/order/${orderId}`, locale)}`;
 }
 
 async function postJson(url: string, headers: HeadersInit, body: unknown) {
@@ -99,10 +75,12 @@ export async function sendEmail({
   to,
   subject,
   text,
+  html,
 }: {
   to: string | string[];
   subject: string;
   text: string;
+  html?: string;
 }): Promise<NotifyResult> {
   if (!enabled())
     return { channel: "email", status: "skipped", detail: "disabled" };
@@ -122,7 +100,13 @@ export async function sendEmail({
       await postJson(
         "https://api.resend.com/emails",
         { Authorization: `Bearer ${resendKey}` },
-        { from: fromEmail(), to: recipients, subject, text },
+        {
+          from: fromEmail(),
+          to: recipients,
+          subject,
+          text,
+          ...(html ? { html } : {}),
+        },
       );
       return { channel: "email", status: "sent", detail: "resend" };
     }
@@ -136,6 +120,7 @@ export async function sendEmail({
           To: recipients.join(","),
           Subject: subject,
           TextBody: text,
+          ...(html ? { HtmlBody: html } : {}),
         },
       );
       return { channel: "email", status: "sent", detail: "postmark" };
@@ -294,78 +279,65 @@ async function logNotification(
   );
 }
 
-function appointmentText(
-  appointment: AppointmentNotification,
-  locale: Locale,
-  kind: "confirmation" | "reminder_24h" | "reminder_2h",
-) {
-  const service =
-    bookingServiceTitle(appointment.service.slug, locale) ??
-    appointment.service.slug;
-  const when = dateTime(appointment.start, locale);
-  const reference = appointment.id.slice(-8).toUpperCase();
-  const intro =
-    kind === "confirmation"
-      ? "Your appointment request has been received."
-      : kind === "reminder_24h"
-        ? "Reminder: your appointment is tomorrow."
-        : "Reminder: your appointment is soon.";
-
-  return [
-    `${BRAND.name}`,
-    "",
-    `Hello ${appointment.client.fullName},`,
-    intro,
-    "",
-    `Service: ${service}`,
-    `Specialist: ${appointment.practitioner.name}`,
-    `Time: ${when}`,
-    `Reference: ${reference}`,
-    "",
-    `Address: ${CONTACT.address.street}, ${CONTACT.address.postalCode} ${CONTACT.address.city}`,
-    `Phone: ${CONTACT.phone}`,
-    "",
-    "If you need to change or cancel your appointment, contact the clinic directly.",
-  ].join("\n");
+async function appointmentServiceTitle(slug: string, locale: Locale) {
+  const content = await prisma.treatmentContent.findFirst({
+    where: { locale, status: "PUBLISHED", service: { slug } },
+    select: { h1: true },
+  });
+  return content?.h1 ?? slug;
 }
 
 function appointmentSms(
   appointment: AppointmentNotification,
   locale: Locale,
   kind: "confirmation" | "reminder_24h" | "reminder_2h",
+  service: string,
 ) {
-  const service =
-    bookingServiceTitle(appointment.service.slug, locale) ??
-    appointment.service.slug;
   const prefix =
     kind === "confirmation"
       ? "Booking received"
       : kind === "reminder_24h"
         ? "Reminder tomorrow"
         : "Reminder soon";
-  return `${BRAND.shortName}: ${prefix}. ${service}, ${dateTime(appointment.start, locale)}. Ref ${appointment.id.slice(-8).toUpperCase()}. ${CONTACT.phone}`;
+  const treatment = appointment.procedureTitle ?? service;
+  return `${BRAND.shortName}: ${prefix}. ${treatment}, ${dateTime(appointment.start, locale)}. Ref ${appointment.id.slice(-8).toUpperCase()}. ${CONTACT.phone}`;
 }
 
 export async function notifyAppointmentConfirmation(
   appointment: AppointmentNotification,
   locale: Locale = "fi",
 ) {
-  const subject = `${BRAND.name}: booking ${appointment.id.slice(-8).toUpperCase()}`;
-  const text = `${appointmentText(appointment, locale, "confirmation")}\n\nBook another appointment: ${bookingUrl(locale)}`;
+  const [service, staffService] = await Promise.all([
+    appointmentServiceTitle(appointment.service.slug, locale),
+    appointmentServiceTitle(appointment.service.slug, "fi"),
+  ]);
+  const localizedAppointment = {
+    ...appointment,
+    service: {
+      ...appointment.service,
+      title: service,
+      staffTitle: staffService,
+    },
+  };
+  const customerMessage = renderCustomerAppointmentEmail(
+    localizedAppointment,
+    locale,
+    "confirmation",
+  );
+  const staffMessage = renderStaffAppointmentEmail(localizedAppointment);
   const results = await Promise.all([
     sendSms({
       to: appointment.client.phone,
-      text: appointmentSms(appointment, locale, "confirmation"),
+      text: appointmentSms(appointment, locale, "confirmation", service),
     }),
-    sendEmail({ to: appointment.client.email, subject, text }),
+    sendEmail({ to: appointment.client.email, ...customerMessage }),
     sendEmail({
       to: staffEmails(),
-      subject: `New booking: ${appointment.id.slice(-8).toUpperCase()}`,
-      text: `${text}\n\nClient phone: ${appointment.client.phone}\nClient email: ${appointment.client.email}`,
+      ...staffMessage,
     }),
     sendSms({
       to: staffPhones(),
-      text: `New ${BRAND.shortName} booking: ${appointment.client.fullName}, ${dateTime(appointment.start, locale)}, ref ${appointment.id.slice(-8).toUpperCase()}.`,
+      text: `New ${BRAND.shortName} booking: ${appointment.client.fullName}, ${appointment.procedureTitle ?? staffService}, ${dateTime(appointment.start, locale)}, ref ${appointment.id.slice(-8).toUpperCase()}.`,
     }),
   ]);
 
@@ -382,19 +354,27 @@ export async function notifyAppointmentReminder(
   kind: "reminder_24h" | "reminder_2h",
   locale: Locale = "fi",
 ) {
-  const subject =
-    kind === "reminder_24h"
-      ? `${BRAND.name}: appointment reminder for tomorrow`
-      : `${BRAND.name}: appointment reminder`;
+  const service = await appointmentServiceTitle(
+    appointment.service.slug,
+    locale,
+  );
+  const localizedAppointment = {
+    ...appointment,
+    service: { ...appointment.service, title: service },
+  };
+  const message = renderCustomerAppointmentEmail(
+    localizedAppointment,
+    locale,
+    kind,
+  );
   const results = await Promise.all([
     sendSms({
       to: appointment.client.phone,
-      text: appointmentSms(appointment, locale, kind),
+      text: appointmentSms(appointment, locale, kind, service),
     }),
     sendEmail({
       to: appointment.client.email,
-      subject,
-      text: appointmentText(appointment, locale, kind),
+      ...message,
     }),
   ]);
 
@@ -410,34 +390,17 @@ export async function notifyOrderConfirmation(
   order: OrderNotification,
   locale: Locale = "fi",
 ) {
-  const reference = order.id.slice(-8).toUpperCase();
-  const lines = order.items.map(
-    (item) =>
-      `${item.qty} x ${item.name} - ${money(Number(item.unitPrice) * item.qty, order.currency)}`,
-  );
-  const text = [
-    `${BRAND.name}`,
-    "",
-    "Your order request has been received.",
-    "",
-    `Reference: ${reference}`,
-    ...lines,
-    `Total: ${money(order.total, order.currency)}`,
-    "",
-    `Order page: ${orderUrl(order.id, locale)}`,
-    `Questions: ${CONTACT.email} / ${CONTACT.phone}`,
-  ].join("\n");
+  const customerMessage = renderCustomerOrderEmail(order, locale);
+  const staffMessage = renderStaffOrderEmail(order);
 
   const results = await Promise.all([
     sendEmail({
       to: order.email,
-      subject: `${BRAND.name}: order ${reference}`,
-      text,
+      ...customerMessage,
     }),
     sendEmail({
       to: staffEmails(),
-      subject: `New order: ${reference}`,
-      text: `${text}\n\nCustomer phone: ${order.phone ?? "-"}`,
+      ...staffMessage,
     }),
   ]);
 

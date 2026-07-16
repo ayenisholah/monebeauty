@@ -400,6 +400,12 @@
       "brows": "Kulmat ja ripset",
       "packages": "Hoitopaketit"
     },
+    "context": {
+      "service": "Valittu palvelu",
+      "procedure": "Valittu hoito",
+      "duration": "{minutes} min",
+      "priceFrom": "Alkaen {price}"
+    },
     "pickDate": "Valitse päivä",
     "pickTime": "Valitse aika",
     "anyPractitioner": "Ei väliä",
@@ -418,6 +424,7 @@
     "submitting": "Varataan…",
     "summary": {
       "service": "Hoito",
+      "procedure": "Toimenpide",
       "practitioner": "Asiantuntija",
       "time": "Aika",
       "reference": "Viite"
@@ -552,6 +559,87 @@
       "Voit kieltäytyä analytiikkaevästeistä ja jatkaa sivuston käyttöä. Valinnan voi nollata tyhjentämällä tämän sivuston selaintallennuksen.",
       "Chat-keskustelut tallennetaan vain, kun annat GDPR-suostumuksen chat-widgetissä."
     ]
+  },
+  "Admin": {
+    "appName": "Mone Beauty -hallinta",
+    "menu": "Avaa navigointi",
+    "close": "Sulje navigointi",
+    "logout": "Kirjaudu ulos",
+    "locale": "Käyttöliittymän kieli",
+    "nav": {
+      "dashboard": "Yhteenveto",
+      "clients": "Asiakkaat",
+      "services": "Kliiniset palvelut",
+      "technologies": "Teknologiat",
+      "content": "Sisältösivut",
+      "products": "Ammattilaistuotteet",
+      "pricing": "Hinnasto",
+      "blog": "Artikkelit",
+      "chat": "Keskustelut"
+    },
+    "login": {
+      "eyebrow": "Mone Beauty Clinic",
+      "title": "Kirjaudu hallintaan",
+      "email": "Sähköposti",
+      "password": "Salasana",
+      "submit": "Kirjaudu",
+      "invalid": "Sähköposti tai salasana ei kelpaa hallintakäyttöön."
+    },
+    "dashboard": {
+      "title": "Toiminnan yhteenveto",
+      "subtitle": "Julkaisujen, asiakkaiden, varausten, kaupan ja tuen tilanne.",
+      "warnings": "Julkaisuvaroitukset",
+      "noWarnings": "Kaikilla aktiivisilla tietueilla on julkaistu sisältö jokaisella kielellä.",
+      "recent": "Viimeisimmät auditointitapahtumat",
+      "quick": "Luo nopeasti"
+    },
+    "common": {
+      "new": "Uusi",
+      "save": "Tallenna",
+      "delete": "Poista",
+      "archive": "Arkistoi",
+      "restore": "Palauta",
+      "edit": "Muokkaa",
+      "search": "Hae",
+      "empty": "Tietueita ei löytynyt.",
+      "actions": "Toiminnot",
+      "status": "Tila",
+      "draft": "Luonnos",
+      "published": "Julkaistu",
+      "archived": "Arkistoitu",
+      "global": "Yleiset asetukset",
+      "locales": "Kielikohtainen sisältö",
+      "slug": "Tunniste",
+      "publicPath": "Julkinen polku",
+      "order": "Järjestys",
+      "images": "Mediapolut (yksi riville)",
+      "price": "Hinta",
+      "category": "Kategoria",
+      "title": "Otsikko",
+      "body": "Sisältö",
+      "summary": "Tiivistelmä",
+      "seoTitle": "SEO-otsikko",
+      "seoDescription": "SEO-kuvaus",
+      "imageAlt": "Kuvan vaihtoehtoinen teksti",
+      "label": "Nimike",
+      "unit": "Yksikkö",
+      "preview": "Esikatselu",
+      "back": "Takaisin",
+      "confirmDelete": "Poista pysyvästi vain, jos historialliset tiedot eivät viittaa tietueeseen.",
+      "required": "Täytä pakolliset kentät.",
+      "updated": "Muutokset tallennettu.",
+      "notProvided": "Ei annettu"
+    },
+    "modules": {
+      "clients": "Asiakkaat",
+      "services": "Kliiniset palvelut",
+      "technologies": "Kliiniset teknologiat",
+      "content": "Sisältösivut",
+      "products": "Ammattilaistuotteet",
+      "pricing": "Hinnasto",
+      "blog": "Artikkelit",
+      "chat": "Keskustelut"
+    }
   },
   "NotFound": {
     "title": "Sivua ei löytynyt",

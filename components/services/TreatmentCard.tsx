@@ -55,7 +55,7 @@ export function TreatmentCard({
       </div>
       <div className="flex min-h-0 flex-1 flex-col p-[22px_22px_26px]">
         {item.group ? (
-          <p className="mb-[10px] font-sans text-[11px] font-medium uppercase tracking-[.2em] text-accent">
+          <p className="mb-[10px] font-sans text-[11px] font-medium tracking-[.2em] text-accent uppercase">
             {item.group}
           </p>
         ) : null}
@@ -89,7 +89,7 @@ export function TreatmentCard({
           <Button
             href={{
               pathname: "/booking",
-              query: { service: bookingKey },
+              query: { service: bookingKey, procedure: index + 1 },
             }}
             iconRight={ArrowRight}
             size="sm"

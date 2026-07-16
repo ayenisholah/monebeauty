@@ -2,6 +2,7 @@ import { Container } from "@/components/ui/Container";
 import { Markdown } from "@/components/Markdown";
 import { getLivePageContent } from "@/lib/live-content";
 import type { Locale } from "@/i18n/routing";
+import { notFound } from "next/navigation";
 
 /** Renders a real content page (title + markdown body) from scraped_content. */
 export async function ContentPage({
@@ -12,7 +13,7 @@ export async function ContentPage({
   locale: Locale;
 }) {
   const content = await getLivePageContent(slug, locale);
-  if (!content) return null;
+  if (!content) notFound();
   return (
     <article className="bg-page py-[clamp(40px,5vw,72px)]">
       <Container className="max-w-[880px]">

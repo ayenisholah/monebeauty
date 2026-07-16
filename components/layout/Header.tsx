@@ -38,7 +38,7 @@ export async function Header() {
               {link.label}
             </Link>
           ))}
-          <Link className="hr-btn dark small" href="/#booking">
+          <Link className="hr-btn dark small" href="/booking">
             {t("common.bookOnline")}
           </Link>
           <LanguageSwitcher />

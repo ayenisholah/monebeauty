@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (!message) return bad("message_required");
 
   const knowledge = await retrieveKnowledge(locale, message);
-  const service = detectBookingService(locale, message);
+  const service = await detectBookingService(locale, message);
 
   const { answer, degraded, sources } = await answerReliably({
     locale,
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     degraded,
     sources,
     booking: service
-      ? { serviceKey: service.key, href: `/booking?service=${service.key}` }
+      ? { serviceKey: service.slug, href: `/booking?service=${service.slug}` }
       : null,
   });
 }

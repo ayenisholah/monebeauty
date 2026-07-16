@@ -97,6 +97,8 @@ export async function GET(req: NextRequest) {
       end: appt.end.toISOString(),
       status: appt.status,
       serviceSlug: appt.service.slug,
+      procedureTitle: appt.procedureTitle,
+      procedurePrice: appt.procedurePrice,
       clientName: appt.client.fullName,
       clientPhone: appt.client.phone,
       clientEmail: appt.client.email,

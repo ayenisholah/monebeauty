@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   const lines: { product: Product; qty: number; lineTotal: number }[] = [];
   for (const [slug, qty] of qtyBySlug.entries()) {
-    const product = await getLiveProduct(slug);
+    const product = await getLiveProduct(slug, locale);
     if (!product || product.price == null) continue;
     const normalizedQty = normalizeQty(qty);
     lines.push({
@@ -93,11 +93,7 @@ export async function POST(req: NextRequest) {
     const orderItems = [];
     for (const line of lines) {
       const productId = await ensureProduct(line.product);
-      const name =
-        line.product.i18n[locale]?.name ??
-        line.product.i18n.en?.name ??
-        line.product.i18n.fi?.name ??
-        line.product.slug;
+      const name = line.product.i18n[locale]?.name ?? line.product.slug;
       orderItems.push({
         productId,
         name,
@@ -109,6 +105,7 @@ export async function POST(req: NextRequest) {
     const order = await prisma.order.create({
       data: {
         clientId: client.id,
+        locale,
         status: "PENDING",
         subtotal: total,
         total,
@@ -118,7 +115,10 @@ export async function POST(req: NextRequest) {
         consentGdpr: true,
         items: { create: orderItems },
       },
-      include: { items: true },
+      include: {
+        items: true,
+        client: { select: { fullName: true, email: true, phone: true } },
+      },
     });
 
     await prisma.consent.create({

@@ -19,69 +19,14 @@ import {
 } from "@phosphor-icons/react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
-import { PRODUCTS } from "@/content/products";
+import type { Product } from "@/content/products";
 import { CONTACT, SOCIALS } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import { cormorant } from "@/lib/fonts";
-
-const services = [
-  [
-    "facial",
-    "60 min",
-    "/media/home/unsplash-photo-1643684391140-c5056cfd3436.jpg",
-    "/services/face",
-  ],
-  ["body", "60 min", "/media/home/endospheres.jpg", "/services/body"],
-  [
-    "endospheres",
-    "45 min",
-    "/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg",
-    "/instrumental/endosphere",
-  ],
-  [
-    "laser",
-    "30 min",
-    "/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg",
-    "/services/laser",
-  ],
-  [
-    "rf",
-    "60 min",
-    "/media/files/land/280/21b80358547be97456baf00ac6a98ac9.jpeg",
-    "/services/mikroneulanrf",
-  ],
-  [
-    "trichology",
-    "45 min",
-    "/media/files/land/303/8b2e9288e47ba7705d700a8d7edb596e.jpeg",
-    "/services/tricho",
-  ],
-  ["brows", "30 min", "/media/home/brows.jpg", "/services/eyebrows"],
-  ["packages", "90 min", "/media/home/packages.jpg", "/services/packages"],
-] as const;
-
-const tech = [
-  [
-    "endospheres",
-    "/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg",
-    "/instrumental/endosphere",
-  ],
-  [
-    "laser",
-    "/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg",
-    "/instrumental/laser",
-  ],
-  [
-    "rf",
-    "/media/files/land/268/297aa1aad5ec0dffb2a6e1aad8ff6d76.png",
-    "/instrumental/mikroneulanrf",
-  ],
-  [
-    "trichology",
-    "/media/files/land/301/a214b208578ca13b2e31ba04ca3074f1.jpg",
-    "/trichology",
-  ],
-] as const;
+import {
+  BOOKING_HANDOFF_KEY,
+  createBookingHandoff,
+} from "@/lib/booking-handoff";
 
 const productOrder = {
   AROSHA_BODY: [
@@ -106,7 +51,7 @@ const productOrder = {
   ],
 } as const;
 
-const productDescriptions: Record<Locale, Record<string, string>> = {
+export const productDescriptions: Record<Locale, Record<string, string>> = {
   en: {
     "stretch-marks-200ml-1": "Targeted cream for stretch marks.",
     "518-b-tone-100ml-3": "Firming body concentrate.",
@@ -174,7 +119,33 @@ function Marker({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function HomeReference() {
+type HomeService = {
+  key: string;
+  name: string;
+  description: string;
+  durationMin: number;
+  image: string | null;
+  href: string;
+};
+type HomeTechnology = {
+  key: string;
+  name: string;
+  specification: string | null;
+  body: string;
+  image: string | null;
+  href: string;
+  bookingKey: string | null;
+};
+
+export function HomeReference({
+  services,
+  technologies,
+  productCatalog,
+}: {
+  services: HomeService[];
+  technologies: HomeTechnology[];
+  productCatalog: Product[];
+}) {
   const t = useTranslations("HomeReference");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -183,10 +154,8 @@ export function HomeReference() {
   );
   const [selected, setSelected] = useState("");
   const products = productOrder[tab]
-    .map((slug) => PRODUCTS.find((product) => product.slug === slug))
-    .filter((product): product is (typeof PRODUCTS)[number] =>
-      Boolean(product),
-    );
+    .map((slug) => productCatalog.find((product) => product.slug === slug))
+    .filter((product): product is Product => Boolean(product));
   useEffect(() => {
     const elements = document.querySelectorAll<HTMLElement>(
       ".home-reference .hr-section-head, .home-reference .hr-care article, .home-reference .hr-services article, .home-reference .hr-tech article, .home-reference .hr-products article, .home-reference .hr-booking > *",
@@ -216,14 +185,26 @@ export function HomeReference() {
     ["standard", t("nav.standard")],
     ["booking", t("nav.consultation")],
   ];
-  const choose = (key: string) => {
-    setSelected(key);
-    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
-  };
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const key = String(fd.get("service") || selected || "facial");
+    const handoff = createBookingHandoff({
+      service: key,
+      preferredDate: String(fd.get("date") || ""),
+      fullName: String(fd.get("name") || ""),
+      phone: String(fd.get("phone") || ""),
+      email: String(fd.get("email") || ""),
+      notes: String(fd.get("notes") || ""),
+    });
+    try {
+      window.sessionStorage.setItem(
+        BOOKING_HANDOFF_KEY,
+        JSON.stringify(handoff),
+      );
+    } catch {
+      // Navigation still works when tab-scoped storage is unavailable.
+    }
     router.push({ pathname: "/booking", query: { service: key } });
   };
   return (
@@ -239,9 +220,9 @@ export function HomeReference() {
               <h1>{t("hero.title")}</h1>
               <p>{t("hero.lead")}</p>
               <div>
-                <a className="hr-btn dark" href="#booking">
+                <Link className="hr-btn dark" href="/booking">
                   {t("common.bookOnline")}
-                </a>
+                </Link>
                 <a className="hr-btn ghost" href="#treatments">
                   {t("hero.explore")}
                 </a>
@@ -314,31 +295,38 @@ export function HomeReference() {
           lead={t("treatments.lead")}
         >
           <div className="hr-services">
-            {services.map(([key, duration, image, href], i) => (
-              <article className={i === 0 ? "featured" : ""} key={key}>
+            {services.map((service, i) => (
+              <article className={i === 0 ? "featured" : ""} key={service.key}>
                 <div className="hr-card-image">
-                  <Image
-                    src={image}
-                    alt={t(`services.${key}.name`)}
-                    fill
-                    sizes="(min-width: 900px) 50vw, 100vw"
-                  />
+                  {service.image ? (
+                    <Image
+                      src={service.image}
+                      alt={service.name}
+                      fill
+                      sizes="(min-width: 900px) 50vw, 100vw"
+                    />
+                  ) : null}
                 </div>
                 <div className="hr-card-body">
                   <span>
-                    0{i + 1} · {duration}
+                    0{i + 1} · {service.durationMin} min
                   </span>
-                  <h3>{t(`services.${key}.name`)}</h3>
-                  <p>{t(`services.${key}.description`)}</p>
+                  <h3>{service.name}</h3>
+                  <p>{service.description}</p>
                   <div>
                     <button
                       className={`hr-btn ${i === 0 ? "dark" : "ghost"} small`}
-                      onClick={() => choose(key)}
+                      onClick={() =>
+                        router.push({
+                          pathname: "/booking",
+                          query: { service: service.key },
+                        })
+                      }
                     >
                       {t("common.book")}
                     </button>
                     <Link
-                      href={href}
+                      href={service.href}
                       className={i === 0 ? "hr-btn ghost small" : "hr-more"}
                     >
                       {t("common.readMore")}
@@ -368,35 +356,43 @@ export function HomeReference() {
           lead={t("technology.lead")}
         >
           <div className="hr-tech">
-            {tech.map(([key, image, href], i) => (
-              <article key={key} className={i % 2 ? "hr-tech-reverse" : ""}>
+            {technologies.map((technology, i) => (
+              <article
+                key={technology.key}
+                className={i % 2 ? "hr-tech-reverse" : ""}
+              >
                 <div className="hr-tech-image">
-                  <Image
-                    src={image}
-                    alt={t(`technology.items.${key}.name`)}
-                    fill
-                    sizes="(min-width: 860px) 50vw, 100vw"
-                  />
+                  {technology.image ? (
+                    <Image
+                      src={technology.image}
+                      alt={technology.name}
+                      fill
+                      sizes="(min-width: 860px) 50vw, 100vw"
+                    />
+                  ) : null}
                 </div>
                 <div className="hr-tech-body">
                   <b className={cormorant.className}>0{i + 1}</b>
                   <span className="hr-tech-spec">
-                    {t(`technology.items.${key}.spec`)}
+                    {technology.specification}
                   </span>
-                  <h3 className={cormorant.className}>
-                    {t(`technology.items.${key}.name`)}
-                  </h3>
-                  <p className="hr-tech-text">
-                    {t(`technology.items.${key}.body`)}
-                  </p>
+                  <h3 className={cormorant.className}>{technology.name}</h3>
+                  <p className="hr-tech-text">{technology.body}</p>
                   <div className="hr-tech-actions justify-between">
                     <button
                       className="hr-btn ghost small"
-                      onClick={() => choose(key)}
+                      onClick={() =>
+                        technology.bookingKey &&
+                        router.push({
+                          pathname: "/booking",
+                          query: { service: technology.bookingKey },
+                        })
+                      }
+                      disabled={!technology.bookingKey}
                     >
                       {t("common.book")}
                     </button>
-                    <Link href={href} className="hr-more">
+                    <Link href={technology.href} className="hr-more">
                       {t("common.readMore")}
                     </Link>
                   </div>
@@ -421,7 +417,9 @@ export function HomeReference() {
                 onClick={() => setTab(key)}
               >
                 {t(`products.tabs.${key}`)}{" "}
-                <span>{PRODUCTS.filter((p) => p.category === key).length}</span>
+                <span>
+                  {productCatalog.filter((p) => p.category === key).length}
+                </span>
               </button>
             ))}
           </div>
@@ -441,7 +439,7 @@ export function HomeReference() {
                 <div>
                   <small>{tab === "AROSHA_BODY" ? "AROSHA" : "DIXIDOX"}</small>
                   <h3>{p.i18n[locale].name}</h3>
-                  <p>{productDescriptions[locale][p.slug]}</p>
+                  <p>{p.i18n[locale]?.description}</p>
                   <strong>
                     {p.size} <em>{p.price ? `€${p.price}` : ""}</em>
                   </strong>
@@ -481,7 +479,10 @@ export function HomeReference() {
               {selected && (
                 <div className="hr-echo">
                   <span>{t("booking.requested")}</span>
-                  <strong>{t(`services.${selected}.name`)}</strong>
+                  <strong>
+                    {services.find((service) => service.key === selected)
+                      ?.name ?? selected}
+                  </strong>
                 </div>
               )}
               <div className="hr-contact">
@@ -525,9 +526,9 @@ export function HomeReference() {
                     required
                   >
                     <option value="">{t("booking.select")}</option>
-                    {services.map(([k]) => (
-                      <option key={k} value={k}>
-                        {t(`services.${k}.name`)}
+                    {services.map((service) => (
+                      <option key={service.key} value={service.key}>
+                        {service.name}
                       </option>
                     ))}
                   </select>

@@ -408,6 +408,12 @@
       "brows": "Brows & lashes",
       "packages": "Treatment packages"
     },
+    "context": {
+      "service": "Selected service",
+      "procedure": "Selected procedure",
+      "duration": "{minutes} min",
+      "priceFrom": "From {price}"
+    },
     "pickDate": "Choose a date",
     "pickTime": "Choose a time",
     "anyPractitioner": "No preference",
@@ -426,6 +432,7 @@
     "submitting": "Booking…",
     "summary": {
       "service": "Treatment",
+      "procedure": "Procedure",
       "practitioner": "Specialist",
       "time": "Time",
       "reference": "Reference"
@@ -560,6 +567,87 @@
       "You can decline analytics cookies and continue using the website. You can reset your choice by clearing this site's browser storage.",
       "Chat transcripts are stored only when you give GDPR consent in the chat widget."
     ]
+  },
+  "Admin": {
+    "appName": "Mone Beauty Admin",
+    "menu": "Open navigation",
+    "close": "Close navigation",
+    "logout": "Sign out",
+    "locale": "Interface language",
+    "nav": {
+      "dashboard": "Dashboard",
+      "clients": "Clients",
+      "services": "Clinical services",
+      "technologies": "Technologies",
+      "content": "Content pages",
+      "products": "Professional products",
+      "pricing": "Pricing",
+      "blog": "Articles",
+      "chat": "Conversations"
+    },
+    "login": {
+      "eyebrow": "Mone Beauty Clinic",
+      "title": "Admin sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "invalid": "The email or password is not valid for admin access."
+    },
+    "dashboard": {
+      "title": "Operations dashboard",
+      "subtitle": "Publication, client, booking, shop, and support overview.",
+      "warnings": "Publication warnings",
+      "noWarnings": "Every locale has published content for all active records.",
+      "recent": "Recent audit events",
+      "quick": "Quick create"
+    },
+    "common": {
+      "new": "New",
+      "save": "Save",
+      "delete": "Delete",
+      "archive": "Archive",
+      "restore": "Restore",
+      "edit": "Edit",
+      "search": "Search",
+      "empty": "No records found.",
+      "actions": "Actions",
+      "status": "Status",
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived",
+      "global": "Global settings",
+      "locales": "Localized content",
+      "slug": "Slug",
+      "publicPath": "Public path",
+      "order": "Order",
+      "images": "Media paths (one per line)",
+      "price": "Price",
+      "category": "Category",
+      "title": "Title",
+      "body": "Body",
+      "summary": "Summary",
+      "seoTitle": "SEO title",
+      "seoDescription": "SEO description",
+      "imageAlt": "Image alt text",
+      "label": "Label",
+      "unit": "Unit",
+      "preview": "Preview",
+      "back": "Back",
+      "confirmDelete": "Delete permanently when no historical records reference this item.",
+      "required": "Complete the required fields.",
+      "updated": "Changes saved.",
+      "notProvided": "Not provided"
+    },
+    "modules": {
+      "clients": "Clients",
+      "services": "Clinical services",
+      "technologies": "Clinical technologies",
+      "content": "Content pages",
+      "products": "Professional products",
+      "pricing": "Pricing",
+      "blog": "Articles",
+      "chat": "Conversations"
+    }
   },
   "NotFound": {
     "title": "Page not found",

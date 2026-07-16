@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getBookingService } from "@/content/booking-services";
 import { getServiceId, openSlots } from "@/lib/booking";
 import { notifyAppointmentConfirmation } from "@/lib/notifications";
 import { routing, type Locale } from "@/i18n/routing";
+import { resolveProcedure } from "@/lib/procedures";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,8 +32,28 @@ export async function POST(req: NextRequest) {
     : routing.defaultLocale;
   const consentGdpr = payload.consentGdpr === true;
 
-  const svc = getBookingService(service);
-  if (!svc || !svc.bookable) return bad("unknown_service");
+  const svc = await prisma.service.findFirst({
+    where: {
+      slug: service,
+      bookable: true,
+      archivedAt: null,
+      contents: { some: { locale, status: "PUBLISHED" } },
+    },
+    include: {
+      contents: {
+        where: { locale, status: "PUBLISHED" },
+        select: { whatItIs: true },
+        take: 1,
+      },
+    },
+  });
+  if (!svc) return bad("unknown_service");
+  const procedureRequested =
+    payload.procedureIndex !== undefined && payload.procedureIndex !== null;
+  const procedure = procedureRequested
+    ? resolveProcedure(svc.contents[0]?.whatItIs ?? "", payload.procedureIndex)
+    : null;
+  if (procedureRequested && !procedure) return bad("invalid_procedure");
   if (!start || Number.isNaN(Date.parse(start))) return bad("invalid_start");
   if (!fullName) return bad("name_required");
   if (!phone) return bad("phone_required");
@@ -49,6 +69,7 @@ export async function POST(req: NextRequest) {
       dateStr,
       serviceKey: service,
       practitionerId: practitioner === "any" ? "any" : practitioner,
+      locale,
     });
     const matchingSlot = available.find((slot) => slot.start === start);
     if (!matchingSlot) {
@@ -56,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     const practitionerId = matchingSlot.practitionerId;
-    const serviceId = await getServiceId(svc);
+    const serviceId = await getServiceId(svc.slug);
     const endDate = new Date(matchingSlot.end);
 
     // Double-book guard — any non-cancelled appointment overlapping this window.
@@ -89,11 +110,15 @@ export async function POST(req: NextRequest) {
         clientId: client.id,
         practitionerId,
         serviceId,
+        locale,
         start: startDate,
         end: endDate,
         status: "BOOKED",
         channel: "web",
         notes,
+        procedureIndex: procedure?.index ?? null,
+        procedureTitle: procedure?.procedure.title ?? null,
+        procedurePrice: procedure?.procedure.price ?? null,
       },
       include: {
         client: { select: { fullName: true, email: true, phone: true } },
@@ -122,7 +147,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       id: appointment.id,
       start: appointment.start.toISOString(),
-      serviceKey: svc.key,
+      serviceKey: svc.slug,
+      procedure: procedure
+        ? {
+            index: procedure.index,
+            title: procedure.procedure.title,
+            price: procedure.procedure.price,
+          }
+        : null,
     });
   } catch {
     // DB unavailable — signal the wizard to show its call/email fallback.

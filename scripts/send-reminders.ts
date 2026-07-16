@@ -3,8 +3,6 @@ import { notifyAppointmentReminder } from "../lib/notifications";
 import type { Locale } from "../i18n/routing";
 
 const WINDOW_MINUTES = Number(process.env.REMINDER_WINDOW_MINUTES ?? 60);
-const DEFAULT_LOCALE = (process.env.NOTIFICATION_DEFAULT_LOCALE ?? "fi") as Locale;
-
 type ReminderKind = "reminder_24h" | "reminder_2h";
 
 function windowFor(hoursAhead: number) {
@@ -23,10 +21,7 @@ async function alreadyHandled(appointmentId: string, kind: ReminderKind) {
       entity: "Appointment",
       entityId: appointmentId,
       action: {
-        in: [
-          `booking_${kind}_email_sent`,
-          `booking_${kind}_sms_sent`,
-        ],
+        in: [`booking_${kind}_email_sent`, `booking_${kind}_sms_sent`],
       },
     },
     select: { id: true },
@@ -59,7 +54,11 @@ async function sendWindow(kind: ReminderKind, hoursAhead: number) {
     }
 
     try {
-      await notifyAppointmentReminder(appointment, kind, DEFAULT_LOCALE);
+      await notifyAppointmentReminder(
+        appointment,
+        kind,
+        appointment.locale as Locale,
+      );
       sent++;
     } catch (error) {
       failed++;

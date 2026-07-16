@@ -66,7 +66,7 @@ export function MobileMenu({
               <span className={cormorant.className}>0{index + 1}</span>
             </Link>
           ))}
-          <Link href="/#booking" className="hr-btn dark" onClick={close}>
+          <Link href="/booking" className="hr-btn dark" onClick={close}>
             {bookOnline}
           </Link>
         </nav>

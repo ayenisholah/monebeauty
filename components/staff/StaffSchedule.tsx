@@ -12,13 +12,19 @@ import { ButtonAction } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 type Practitioner = { id: string; name: string; role: string };
-type Slot = { start: string; end: string; status: "open" | "closed" | "booked" };
+type Slot = {
+  start: string;
+  end: string;
+  status: "open" | "closed" | "booked";
+};
 type Appointment = {
   id: string;
   start: string;
   end: string;
   status: string;
   serviceSlug: string;
+  procedureTitle: string | null;
+  procedurePrice: string | null;
   clientName: string;
   clientPhone: string;
   clientEmail: string;
@@ -61,7 +67,8 @@ export function StaffSchedule() {
   });
 
   const timeFmt = useMemo(
-    () => new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }),
+    () =>
+      new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }),
     [locale],
   );
 
@@ -283,9 +290,7 @@ export function StaffSchedule() {
             <h2 className="font-display text-[clamp(26px,3vw,36px)] font-medium text-ink">
               {t("schedule")}
             </h2>
-            <p className="mt-[4px] font-sans text-[13px] text-muted">
-              {date}
-            </p>
+            <p className="mt-[4px] font-sans text-[13px] text-muted">{date}</p>
           </div>
           <div className="flex flex-wrap gap-[10px]">
             <ButtonAction
@@ -342,10 +347,16 @@ export function StaffSchedule() {
                             {appointment.clientName}
                           </div>
                           <div>
-                            {appointment.serviceSlug} · {appointment.status}
+                            {appointment.procedureTitle ??
+                              appointment.serviceSlug}
+                            {appointment.procedurePrice
+                              ? ` · ${appointment.procedurePrice}`
+                              : ""}
+                            {` · ${appointment.status}`}
                           </div>
                           <div className="text-muted">
-                            {appointment.clientPhone} · {appointment.clientEmail}
+                            {appointment.clientPhone} ·{" "}
+                            {appointment.clientEmail}
                           </div>
                           {appointment.notes ? (
                             <div className="mt-[4px] text-muted">
@@ -365,7 +376,7 @@ export function StaffSchedule() {
                           disabled={booked}
                           onClick={() => setSlotStatus(index, status)}
                           className={cn(
-                            "inline-flex min-h-[38px] items-center gap-[6px] rounded-[4px] border px-[12px] font-sans text-[12px] uppercase tracking-[.08em]",
+                            "inline-flex min-h-[38px] items-center gap-[6px] rounded-[4px] border px-[12px] font-sans text-[12px] tracking-[.08em] uppercase",
                             slot.status === status
                               ? "border-accent bg-btn-fill text-ink"
                               : "border-line-btn text-muted hover:border-line-btn-hover hover:text-ink",

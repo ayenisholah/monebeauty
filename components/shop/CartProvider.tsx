@@ -16,6 +16,7 @@ import {
   type CartItemInput,
   type CartLine,
 } from "@/lib/cart";
+import type { Product } from "@/content/products";
 
 type CartContextValue = {
   items: CartItemInput[];
@@ -43,7 +44,7 @@ function readStoredCart(): CartItemInput[] {
   }
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children, products }: { children: ReactNode; products: Product[] }) {
   const [items, setItems] = useState<CartItemInput[]>(readStoredCart);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const value = useMemo<CartContextValue>(() => {
-    const lines = resolveCartLines(items);
+    const lines = resolveCartLines(items, products);
     return {
       items,
       lines,
@@ -84,7 +85,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
       },
     };
-  }, [items]);
+  }, [items, products]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

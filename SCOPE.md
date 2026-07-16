@@ -1,4 +1,14 @@
 Project Overview
+Admin and runtime-content architecture (owner-approved, 2026-07-16): the custom Prisma admin
+is a responsive multilingual management application with a permanent desktop sidebar and an
+accessible mobile drawer. Admin path segments are Finnish in every interface locale: Finnish
+uses `/admin/...`, English `/en/admin/...`, and Russian `/ru/admin/...`; locale switching
+preserves the route, record, query, and editor context. Clinical services, clinical
+technologies, professional products, pricing, pages, and articles are distinct Prisma-backed
+types with independently publishable EN/FI/RU content. Public runtime rendering reads
+published content from PostgreSQL with no cross-locale fallback. Generated JSON and scraped
+content are bootstrap/import sources only and routine imports never overwrite admin edits.
+
 Homepage reference direction (owner-approved, 2026-07-12): the localized homepage reproduces
 the rendered design, composition, and approved copy of repository-root `index.html`. All
 medical, diagnostic, evidence-based, and licensing language in that reference is explicitly

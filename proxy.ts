@@ -4,6 +4,6 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Match public localized paths except admin, API, Next internals, and files with an extension.
-  matcher: ["/((?!admin|api|_next|_vercel|.*\\..*).*)"],
+  // Localize public and admin routes; API, internals, and static files stay untouched.
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };
