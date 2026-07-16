@@ -3,8 +3,6 @@ name: Mone Beauty CI/CD
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
   build:
@@ -39,22 +37,7 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
 
-      - name: Run database migrations
-        if: github.event_name == 'push'
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          if [ -d prisma/migrations ]; then
-            npx prisma migrate deploy
-          else
-            echo "No Prisma migrations directory found; skipping migrate deploy."
-          fi
-
-      - name: Build
-        run: npm run build
-
-      - name: Write production environment file
-        if: github.event_name == 'push'
+      - name: Write environment file
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
@@ -72,7 +55,7 @@ jobs:
           SINCH_SMS_SENDER: ${{ secrets.SINCH_SMS_SENDER }}
         run: |
           umask 077
-          env_file="$(mktemp .env.production.XXXXXX)"
+          env_file="$(mktemp .env.XXXXXX)"
           trap 'rm -f "$env_file"' EXIT
           {
             printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
@@ -93,11 +76,25 @@ jobs:
             printf 'PORT=%s\n' '5000'
           } > "$env_file"
           chmod 600 "$env_file"
-          mv -f "$env_file" .env.production
+          mv -f "$env_file" .env
           trap - EXIT
 
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -d prisma/migrations ]; then
+            npx prisma migrate deploy
+          else
+            echo "No Prisma migrations directory found; skipping migrate deploy."
+          fi
+
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run build
+
       - name: Restart app with PM2
-        if: github.event_name == 'push'
         run: |
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
