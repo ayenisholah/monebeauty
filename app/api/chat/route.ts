@@ -3,7 +3,9 @@ import { prisma } from "@/lib/db";
 import { completeChat, hasClaudeConfig, type ChatMessage } from "@/lib/ai";
 import { routing, type Locale } from "@/i18n/routing";
 import { detectBookingService, retrieveKnowledge } from "@/lib/chat-knowledge";
-import { answerReliably } from "@/lib/chat-reliability";
+import { sourceLinks } from "@/lib/chat-reliability";
+import { detectHumanHandoffIntent } from "@/lib/chat-intent";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 const MAX_MESSAGE = 1200;
 const MAX_HISTORY = 12;
@@ -45,22 +47,50 @@ export async function POST(req: NextRequest) {
   const consentGdpr = payload.consentGdpr === true;
   const history = normalizeMessages(payload.history);
   const sessionId = String(payload.sessionId ?? "").trim();
+  const currentPath = String(payload.currentPath ?? "")
+    .trim()
+    .slice(0, 300);
   if (!message) return bad("message_required");
 
-  const knowledge = await retrieveKnowledge(locale, message);
-  const service = await detectBookingService(locale, message);
+  if (detectHumanHandoffIntent(locale, message)) {
+    return NextResponse.json({ kind: "handoff" });
+  }
 
-  const { answer, degraded, sources } = await answerReliably({
-    locale,
-    knowledge,
-    configured: hasClaudeConfig(),
-    complete: () =>
-      completeChat({
-        locale,
-        snippets: knowledge.snippets,
-        messages: [...history, { role: "user", content: message }],
-      }),
-  });
+  let knowledge: Awaited<ReturnType<typeof retrieveKnowledge>>;
+  let service: Awaited<ReturnType<typeof detectBookingService>>;
+  try {
+    [knowledge, service] = await Promise.all([
+      retrieveKnowledge(locale, message, currentPath),
+      detectBookingService(locale, message),
+    ]);
+  } catch {
+    return NextResponse.json(
+      { error: "assistant_unavailable", retryable: true },
+      { status: 503 },
+    );
+  }
+
+  if (!hasClaudeConfig()) {
+    return NextResponse.json(
+      { error: "assistant_unavailable", retryable: true },
+      { status: 503 },
+    );
+  }
+
+  let answer: string;
+  try {
+    answer = await completeChat({
+      locale,
+      snippets: knowledge.snippets,
+      messages: [...history, { role: "user", content: message }],
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "assistant_unavailable", retryable: true },
+      { status: 503 },
+    );
+  }
+  const sources = knowledge.matched ? sourceLinks(knowledge.snippets) : [];
 
   let savedSessionId = sessionId || null;
   const nextMessages = [
@@ -91,12 +121,15 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
+    kind: "answer",
     answer,
     sessionId: savedSessionId,
-    degraded,
     sources,
     booking: service
-      ? { serviceKey: service.slug, href: `/booking?service=${service.slug}` }
+      ? {
+          serviceKey: service.slug,
+          href: `${PUBLIC_PATHS.booking}?service=${service.slug}`,
+        }
       : null,
   });
 }

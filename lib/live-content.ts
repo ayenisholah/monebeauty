@@ -17,6 +17,20 @@ export async function getLivePageContent(
   return content ?? undefined;
 }
 
+export async function getPublishedPages(locale: Locale) {
+  return prisma.contentPage.findMany({
+    where: { locale, status: "PUBLISHED" },
+    select: {
+      slug: true,
+      title: true,
+      hero: true,
+      body: true,
+      seoDescription: true,
+    },
+    orderBy: { slug: "asc" },
+  });
+}
+
 export async function getLiveProducts(locale: Locale): Promise<Product[]> {
   const rows = await prisma.product.findMany({
     where: {
@@ -159,6 +173,7 @@ export async function getPublishedArticles(locale: Locale) {
   const rows = await prisma.article.findMany({
     where: {
       archivedAt: null,
+      published: true,
       contents: { some: { locale, status: "PUBLISHED" } },
     },
     orderBy: [{ order: "asc" }, { publishedAt: "desc" }],

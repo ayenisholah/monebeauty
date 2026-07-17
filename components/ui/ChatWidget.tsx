@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowRight,
@@ -9,19 +9,22 @@ import {
   PaperPlaneTilt,
   X,
 } from "@phosphor-icons/react";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
+import { CONTACT } from "@/content/site";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-  degraded?: boolean;
   sources?: { title: string; href: string }[];
 };
 
 export function ChatWidget() {
   const t = useTranslations("Chat");
   const locale = useLocale();
+  const currentPath = usePathname();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -29,6 +32,8 @@ export function ChatWidget() {
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const [failedMessage, setFailedMessage] = useState<string | null>(null);
   const [booking, setBooking] = useState<{
     serviceKey: string;
     href: string;
@@ -43,15 +48,46 @@ export function ChatWidget() {
   });
 
   const panelTitle = useMemo(() => t("title"), [t]);
+  const handoffReady = Boolean(
+    consent &&
+    handoff.name.trim() &&
+    handoff.message.trim() &&
+    (handoff.email.trim() || handoff.phone.trim()),
+  );
 
-  async function sendMessage() {
-    const text = input.trim();
+  useEffect(() => {
+    if (handoffOpen) nameRef.current?.focus();
+  }, [handoffOpen]);
+
+  function openHandoff(prefill?: string) {
+    const latestUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === "user")?.content;
+    const message = prefill?.trim() || latestUserMessage || "";
+    setHandoff((current) => ({
+      ...current,
+      message: current.message || message,
+    }));
+    setHandoffSent(false);
+    setHandoffOpen(true);
+  }
+
+  async function sendMessage(retryMessage?: string) {
+    const text = retryMessage?.trim() || input.trim();
     if (!text || loading) return;
-    setInput("");
+    const retrying = Boolean(retryMessage);
+    const priorMessages =
+      retrying &&
+      messages.at(-1)?.role === "user" &&
+      messages.at(-1)?.content === text
+        ? messages.slice(0, -1)
+        : messages;
+    if (!retrying) setInput("");
     setError(null);
+    setUnavailable(false);
     setBooking(null);
     const nextMessages = [
-      ...messages,
+      ...priorMessages,
       { role: "user" as const, content: text },
     ];
     setMessages(nextMessages);
@@ -64,23 +100,39 @@ export function ChatWidget() {
           sessionId,
           locale,
           message: text,
-          history: messages.map(({ role, content }) => ({ role, content })),
+          currentPath,
+          history: priorMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
           consentGdpr: consent,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error("chat_failed");
+      if (!res.ok) {
+        if (data.error === "assistant_unavailable") {
+          setUnavailable(true);
+          setFailedMessage(text);
+          return;
+        }
+        throw new Error("chat_failed");
+      }
+      if (data.kind === "handoff") {
+        setFailedMessage(null);
+        openHandoff(text);
+        return;
+      }
       setMessages([
         ...nextMessages,
         {
           role: "assistant",
           content: String(data.answer ?? ""),
-          degraded: data.degraded === true,
           sources: Array.isArray(data.sources) ? data.sources : [],
         },
       ]);
       setSessionId(data.sessionId ?? sessionId);
       setBooking(data.booking ?? null);
+      setFailedMessage(null);
     } catch {
       setError(t("error"));
     } finally {
@@ -90,6 +142,10 @@ export function ChatWidget() {
 
   async function sendHandoff() {
     setError(null);
+    if (!handoffReady) {
+      setError(t("handoffValidation"));
+      return;
+    }
     try {
       const res = await fetch("/api/chat/handoff", {
         method: "POST",
@@ -98,14 +154,30 @@ export function ChatWidget() {
           sessionId,
           locale,
           ...handoff,
+          history: messages.map(({ role, content }) => ({ role, content })),
           consentGdpr: consent,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error("handoff_failed");
+      if (!res.ok) {
+        const validationErrors = new Set([
+          "consent_required",
+          "name_required",
+          "message_required",
+          "contact_required",
+          "email_invalid",
+          "phone_invalid",
+        ]);
+        if (validationErrors.has(String(data.error ?? ""))) {
+          setError(t("handoffValidation"));
+          return;
+        }
+        throw new Error("handoff_failed");
+      }
       setSessionId(data.id ?? sessionId);
       setHandoffSent(true);
       setHandoffOpen(false);
+      setUnavailable(false);
     } catch {
       setError(t("handoffError"));
     }
@@ -152,11 +224,6 @@ export function ChatWidget() {
                   )}
                 >
                   <p className="whitespace-pre-line">{message.content}</p>
-                  {message.role === "assistant" && message.degraded ? (
-                    <p className="mt-[8px] border-t border-line-hair pt-[7px] text-[11px] text-muted">
-                      {t("groundedFallback")}
-                    </p>
-                  ) : null}
                   {message.role === "assistant" && message.sources?.length ? (
                     <div className="mt-[8px] border-t border-line-hair pt-[7px]">
                       <div className="mb-[4px] text-[10px] tracking-[.1em] text-muted uppercase">
@@ -184,10 +251,51 @@ export function ChatWidget() {
                 </div>
               ) : null}
             </div>
+            {unavailable ? (
+              <div
+                role="alert"
+                className="mt-[12px] rounded-[8px] border border-line-btn bg-btn-fill p-[12px]"
+              >
+                <p className="font-sans text-[13px] leading-[1.55] text-ink">
+                  {t("assistantUnavailable")}
+                </p>
+                <div className="mt-[10px] flex flex-wrap gap-[8px]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      failedMessage && void sendMessage(failedMessage)
+                    }
+                    disabled={!failedMessage || loading}
+                    className="min-h-[38px] rounded-[4px] bg-accent px-[12px] font-sans text-[11px] tracking-[.1em] text-page uppercase disabled:opacity-50"
+                  >
+                    {t("retry")}
+                  </button>
+                  <Link
+                    href={PUBLIC_PATHS.booking}
+                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                  >
+                    {t("bookOnline")}
+                  </Link>
+                  <a
+                    href={CONTACT.emailHref}
+                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                  >
+                    {t("contactClinic")}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => openHandoff(failedMessage ?? undefined)}
+                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                  >
+                    {t("humanFollowUp")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {booking ? (
               <Link
                 href={{
-                  pathname: "/booking",
+                  pathname: PUBLIC_PATHS.booking,
                   query: { service: booking.serviceKey },
                 }}
                 className="mt-[12px] inline-flex min-h-[42px] items-center gap-[8px] rounded-[4px] bg-accent px-[14px] font-sans text-[11px] tracking-[.12em] text-page uppercase"
@@ -211,6 +319,7 @@ export function ChatWidget() {
             <div className="border-t border-line-hair bg-card px-[14px] py-[12px]">
               <div className="grid gap-[8px]">
                 <input
+                  ref={nameRef}
                   value={handoff.name}
                   onChange={(e) =>
                     setHandoff({ ...handoff, name: e.target.value })
@@ -243,12 +352,21 @@ export function ChatWidget() {
                   rows={2}
                   className={inputCls}
                 />
+                <label className="flex items-start gap-[8px] font-sans text-[12px] leading-[1.45] text-body">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-[2px] h-[16px] w-[16px] accent-[var(--accent)]"
+                  />
+                  <span>{t("consent")}</span>
+                </label>
               </div>
               <div className="mt-[10px] flex gap-[8px]">
                 <button
                   type="button"
                   onClick={() => void sendHandoff()}
-                  disabled={!consent}
+                  disabled={!handoffReady}
                   className="min-h-[40px] flex-1 rounded-[4px] bg-accent px-[12px] font-sans text-[11px] tracking-[.12em] text-page uppercase disabled:opacity-50"
                 >
                   {t("sendHandoff")}
@@ -298,7 +416,7 @@ export function ChatWidget() {
               </div>
               <button
                 type="button"
-                onClick={() => setHandoffOpen(true)}
+                onClick={() => openHandoff()}
                 className="mt-[10px] inline-flex min-h-[36px] items-center gap-[7px] font-sans text-[12px] text-accent"
               >
                 <EnvelopeSimple size={15} weight="thin" />

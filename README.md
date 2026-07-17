@@ -111,6 +111,8 @@ NEXT_PUBLIC_GA_ID=G-...                # Google Analytics 4
 | `npm run build` / `npm run start` | Production build / serve               |
 | `npm run lint`                    | ESLint                                 |
 | `npm run db:seed`                 | Seed the database                      |
+| `npm run chat:check-provider`     | Verify Claude credentials/model access |
+| `npm run chat:smoke`              | Verify a native grounded chat response |
 | `npm run test`                    | Run tests (booking/availability logic) |
 
 ## Internationalization
@@ -217,7 +219,8 @@ Acceptance checks:
 - Logs no longer show missing `.next`.
 - `.next/BUILD_ID` exists inside PM2's `cwd`.
 - Local VPS curl and external curl both return the Next.js app.
-- `node scripts/smoke-chat.mjs` reports a non-empty answer with `degraded: false`.
+- `npm run chat:check-provider` reports `ok: true` for `claude-sonnet-5`.
+- `npm run chat:smoke` reports a non-empty answer with `nativeAnswer: true`.
 
 If VPS-local curl works but public access fails, check the listener and firewall:
 

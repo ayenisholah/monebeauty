@@ -89,6 +89,9 @@ jobs:
             echo "No Prisma migrations directory found; skipping migrate deploy."
           fi
 
+      - name: Verify Claude credentials and model access
+        run: npm run chat:check-provider
+
       - name: Build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -98,3 +101,6 @@ jobs:
         run: |
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
+
+      - name: Verify website-grounded chat after deployment
+        run: npm run chat:smoke

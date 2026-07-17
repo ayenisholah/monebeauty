@@ -52,14 +52,14 @@ try {
 
 const answerPresent =
   typeof body?.answer === "string" && body.answer.trim().length > 0;
-const degraded = body?.degraded === true;
-if (!response.ok || !answerPresent || degraded) {
+const nativeAnswer = body?.kind === "answer";
+if (!response.ok || !answerPresent || !nativeAnswer) {
   console.error(
     JSON.stringify({
       check: "chat_smoke",
       status: response.status,
       answerPresent,
-      degraded,
+      nativeAnswer,
     }),
   );
   process.exit(1);
@@ -70,6 +70,6 @@ console.log(
     check: "chat_smoke",
     status: response.status,
     answerPresent: true,
-    degraded: false,
+    nativeAnswer: true,
   }),
 );

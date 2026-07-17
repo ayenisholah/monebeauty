@@ -1,8 +1,22 @@
 import "server-only";
 
-import { prisma } from "@/lib/db";
 import { CONTACT } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
+import {
+  getBookableServices,
+  getLiveProducts,
+  getPublishedArticles,
+  getPublishedPages,
+  getPublishedPricing,
+  getPublishedServices,
+  getPublishedTechnologies,
+} from "@/lib/live-content";
+import {
+  articlePath,
+  canonicalInternalHref,
+  productPath,
+  PUBLIC_PATHS,
+} from "@/lib/public-routes";
 
 export type KnowledgeSnippet = {
   title: string;
@@ -15,7 +29,7 @@ export type KnowledgeResult = {
   matched: boolean;
 };
 
-const MAX_BODY = 900;
+const MAX_BODY = 1_800;
 const MAX_SNIPPETS = 8;
 const QUERY_STOP_TERMS = new Set([
   "about",
@@ -56,10 +70,14 @@ const QUERY_STOP_TERMS = new Set([
 function cleanText(value: string) {
   return value
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/\[[^\]]+\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[#*_>`~-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function body(value: string) {
+  return cleanText(value).slice(0, MAX_BODY);
 }
 
 function terms(value: string) {
@@ -69,124 +87,165 @@ function terms(value: string) {
     .filter((term) => term.length > 2 && !QUERY_STOP_TERMS.has(term));
 }
 
-function scoreSnippet(queryTerms: string[], snippet: KnowledgeSnippet) {
+function normalizedContextPath(value: string | undefined) {
+  if (!value?.startsWith("/") || value.startsWith("//")) return null;
+  return canonicalInternalHref(value.split(/[?#]/, 1)[0]);
+}
+
+function scoreSnippet(
+  queryTerms: string[],
+  snippet: KnowledgeSnippet,
+  currentPath: string | null,
+) {
   const haystack = `${snippet.title} ${snippet.body}`.toLowerCase();
-  return queryTerms.reduce(
+  const termScore = queryTerms.reduce(
     (score, term) => score + (haystack.includes(term) ? 1 : 0),
     0,
   );
+  const snippetPath = snippet.url?.split(/[?#]/, 1)[0];
+  const routeScore =
+    currentPath && snippetPath && currentPath === snippetPath ? 3 : 0;
+  return termScore + routeScore;
 }
 
-function publicPath(slug: string) {
-  if (slug === "home") return "/";
-  return `/${slug}`;
-}
-
-async function pageSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-    const rows = await prisma.contentPage.findMany({
-      where: { locale, status: "PUBLISHED" },
-      select: { slug: true, title: true, body: true },
-      orderBy: { slug: "asc" },
-    });
-    return rows.map((row) => ({
-        title: row.title,
-        body: cleanText(row.body).slice(0, MAX_BODY),
-        url: publicPath(row.slug),
-      }));
-}
-
-async function productSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-    const rows = await prisma.product.findMany({
-      where: { published: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
-      include: { contents: { where: { locale, status: "PUBLISHED" } } },
-      orderBy: [{ order: "asc" }, { slug: "asc" }],
-      take: 40,
-    });
-      const snippets: KnowledgeSnippet[] = [];
-      for (const row of rows) {
-        const content = row.contents[0];
-        if (!content) continue;
-        snippets.push({
-          title: content.name,
-          body: cleanText(
-            `${content.description} Price: ${Number(row.price).toFixed(2)} ${row.currency}. Size: ${row.size ?? ""}`,
-          ).slice(0, MAX_BODY),
-          url: `/catalog/${row.slug}`,
-        });
-      }
-      return snippets;
-}
-
-async function articleSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-    const rows = await prisma.articleContent.findMany({
-      where: { locale, status: "PUBLISHED", article: { published: true, archivedAt: null } },
-      include: { article: { select: { slug: true } } },
-      take: 20,
-    });
-    return rows.map((row) => ({
-      title: row.title,
-      body: cleanText(`${row.excerpt ?? ""} ${row.body}`).slice(0, MAX_BODY),
-      url: `/blog/${row.article.slug}`,
-    }));
-}
-
-async function serviceSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
-  const services = await prisma.service.findMany({
-    where: { bookable: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
-    include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
-    orderBy: [{ order: "asc" }, { slug: "asc" }],
-  });
-  return services.map((service) => ({
-    title: service.contents[0].h1,
-    body: cleanText(`${service.contents[0].shortDesc} ${service.contents[0].whatItIs} Duration: ${service.durationMin} minutes.`).slice(0, MAX_BODY),
-    url: `/booking?service=${service.slug}`,
-  }));
-}
-
-function contactSnippet(): KnowledgeSnippet {
-  return {
-    title: "Mone Beauty Clinic contact",
-    body: `Address: ${CONTACT.address.street}, ${CONTACT.address.postalCode} ${CONTACT.address.city}, ${CONTACT.address.country}. Phone: ${CONTACT.phone}. Email: ${CONTACT.email}. Opening hours: by appointment.`,
-    url: "/about",
-  };
-}
-
-export async function retrieveKnowledge(locale: Locale, query: string) {
-  const all = [
-    contactSnippet(),
-    ...(await serviceSnippets(locale)),
-    ...(await pageSnippets(locale)),
-    ...(await productSnippets(locale)),
-    ...(await articleSnippets(locale)),
-  ];
-  const queryTerms = terms(query);
-  if (queryTerms.length === 0) {
-    return { snippets: all.slice(0, MAX_SNIPPETS), matched: false };
+function jsonText(value: unknown) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "";
   }
+}
 
+async function websiteSnippets(locale: Locale): Promise<KnowledgeSnippet[]> {
+  const [services, technologies, products, pricing, pages, articles] =
+    await Promise.all([
+      getPublishedServices(locale),
+      getPublishedTechnologies(locale),
+      getLiveProducts(locale),
+      getPublishedPricing(locale),
+      getPublishedPages(locale),
+      getPublishedArticles(locale),
+    ]);
+
+  const serviceSnippets = services.map(({ content, ...service }) => ({
+    title: content.h1,
+    body: body(
+      [
+        content.shortDesc,
+        content.whatItIs,
+        `Suitable for: ${content.suitableFor.join("; ")}`,
+        `Benefits: ${content.benefits.join("; ")}`,
+        `Process: ${content.processSteps.join("; ")}`,
+        `Safety: ${content.safety}`,
+        `Before treatment: ${content.preCare}`,
+        `After treatment: ${content.postCare}`,
+        `Contraindications: ${content.contraindications.join("; ")}`,
+        `Sessions: ${content.sessions}`,
+        `Expected results: ${content.results}`,
+        `FAQ: ${jsonText(content.faq)}`,
+        `Duration: ${service.durationMin} minutes.`,
+        service.priceFrom === null
+          ? ""
+          : `Price from: ${service.priceFrom} EUR.`,
+      ].join(" "),
+    ),
+    url: service.publicPath
+      ? canonicalInternalHref(service.publicPath)
+      : `${PUBLIC_PATHS.booking}?service=${service.slug}`,
+  }));
+
+  const technologySnippets = technologies.map(({ content, ...technology }) => ({
+    title: content.name,
+    body: body(
+      [content.specification, content.summary, content.body]
+        .filter(Boolean)
+        .join(" "),
+    ),
+    url: canonicalInternalHref(technology.publicPath),
+  }));
+
+  const productSnippets = products.map((product) => {
+    const content = product.i18n[locale];
+    return {
+      title: content?.name ?? product.slug,
+      body: body(
+        `${content?.description ?? ""}${product.price === null ? "" : ` Price: ${product.price.toFixed(2)} EUR.`} Size: ${product.size ?? ""}`,
+      ),
+      url: productPath(product.slug),
+    };
+  });
+
+  const pricingSnippets = pricing.map(({ content, ...item }) => ({
+    title: content.label,
+    body: body(
+      `Published clinic price: ${Number(item.price).toFixed(2)} EUR${content.unit ? ` per ${content.unit}` : ""}.`,
+    ),
+    url: PUBLIC_PATHS.pricing,
+  }));
+
+  const pageSnippets = pages.map((page) => ({
+    title: page.title,
+    body: body(
+      [page.hero, page.body, page.seoDescription].filter(Boolean).join(" "),
+    ),
+    url:
+      page.slug === "home"
+        ? PUBLIC_PATHS.home
+        : canonicalInternalHref(`/${page.slug}`),
+  }));
+
+  const articleSnippets = articles.map(({ content, ...article }) => ({
+    title: content.title,
+    body: body([content.excerpt, content.body].filter(Boolean).join(" ")),
+    url: articlePath(article.slug),
+  }));
+
+  return [
+    {
+      title: "Mone Beauty Clinic contact",
+      body: `Address: ${CONTACT.address.street}, ${CONTACT.address.postalCode} ${CONTACT.address.city}, ${CONTACT.address.country}. Phone: ${CONTACT.phone}. Email: ${CONTACT.email}. Opening hours: by appointment.`,
+      url: PUBLIC_PATHS.clinic,
+    },
+    ...serviceSnippets,
+    ...technologySnippets,
+    ...productSnippets,
+    ...pricingSnippets,
+    ...pageSnippets,
+    ...articleSnippets,
+  ];
+}
+
+export async function retrieveKnowledge(
+  locale: Locale,
+  query: string,
+  currentPath?: string,
+): Promise<KnowledgeResult> {
+  const all = await websiteSnippets(locale);
+  const queryTerms = terms(query);
+  const contextPath = normalizedContextPath(currentPath);
   const ranked = all
-    .map((snippet) => ({ snippet, score: scoreSnippet(queryTerms, snippet) }))
-    .sort((a, b) => b.score - a.score);
+    .map((snippet, index) => ({
+      snippet,
+      index,
+      score: scoreSnippet(queryTerms, snippet, contextPath),
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
   const matching = ranked.filter((item) => item.score > 0);
+  const selected = matching.length > 0 ? matching : ranked;
+
   return {
-    snippets: (matching.length > 0 ? matching : ranked)
-      .slice(0, MAX_SNIPPETS)
-      .map((item) => item.snippet),
+    snippets: selected.slice(0, MAX_SNIPPETS).map((item) => item.snippet),
     matched: matching.length > 0,
   };
 }
 
 export async function detectBookingService(locale: Locale, message: string) {
   const text = cleanText(message).toLowerCase();
-  const services = await prisma.service.findMany({
-    where: { bookable: true, archivedAt: null, contents: { some: { locale, status: "PUBLISHED" } } },
-    include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
-  });
+  const services = await getBookableServices(locale);
   return services.find((service) => {
-    const title = service.contents[0]?.h1.toLowerCase() ?? "";
-    return (
-      text.includes(service.slug.toLowerCase()) ||
-      Boolean(title && text.includes(title))
-    );
+    const title = service.content.h1.toLowerCase();
+    return text.includes(service.slug.toLowerCase()) || text.includes(title);
   });
 }
