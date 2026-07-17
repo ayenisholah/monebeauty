@@ -391,7 +391,6 @@
     "intro": "Valitse hoito, valitse aika ja vahvista — se vie alle minuutin.",
     "steps": {
       "service": "Hoito",
-      "practitioner": "Asiantuntija",
       "time": "Aika",
       "you": "Tiedot"
     },
@@ -413,8 +412,6 @@
     },
     "pickDate": "Valitse päivä",
     "pickTime": "Valitse aika",
-    "anyPractitioner": "Ei väliä",
-    "anyPractitionerHint": "Valitse ensimmäinen vapaa asiantuntija.",
     "pickDateFirst": "Valitse päivä nähdäksesi vapaat ajat.",
     "loading": "Ladataan vapaita aikoja…",
     "noTimes": "Tälle päivälle ei ole vapaita aikoja — valitse toinen päivä.",

@@ -25,13 +25,9 @@ import type {
 } from "@/lib/booking-context";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
 
-type Practitioner = { id: string; name: string; role: string };
 type Slot = {
   start: string;
-  end: string;
   label: string;
-  practitionerId: string;
-  practitionerName: string;
 };
 type Fallback = {
   phone: string;
@@ -40,7 +36,7 @@ type Fallback = {
   emailHref: string;
 };
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3;
 
 export function BookingWizard({
   services,
@@ -61,10 +57,6 @@ export function BookingWizard({
   const [procedure, setProcedure] = useState<BookingProcedureContext | null>(
     initialContext?.procedure ?? null,
   );
-  const [practitioner, setPractitioner] = useState<string>("any");
-  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
-  const [practitionersLoading, setPractitionersLoading] = useState(false);
-  const [practitionersDegraded, setPractitionersDegraded] = useState(false);
   const [date, setDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
 
@@ -85,6 +77,7 @@ export function BookingWizard({
   const [confirmation, setConfirmation] = useState<{
     id: string;
     start: string;
+    practitionerName: string;
   } | null>(null);
 
   const dateTimeFmt = new Intl.DateTimeFormat(locale, {
@@ -95,36 +88,26 @@ export function BookingWizard({
     minute: "2-digit",
   });
 
-  const loadPractitioners = useCallback(
-    async (svc: string) => {
-      setPractitionersLoading(true);
-      setPractitionersDegraded(false);
-      setPractitioners([]);
+  const loadSlots = useCallback(
+    async (d: string, svc: string) => {
+      setSlotsLoading(true);
+      setSlotsDegraded(false);
+      setSlots([]);
       try {
         const res = await fetch(
-          `/api/booking/practitioners?service=${encodeURIComponent(svc)}&locale=${encodeURIComponent(locale)}`,
+          `/api/booking/slots?date=${encodeURIComponent(d)}&service=${encodeURIComponent(svc)}&locale=${encodeURIComponent(locale)}`,
         );
         const data = await res.json();
-        setPractitioners(
-          Array.isArray(data.practitioners) ? data.practitioners : [],
-        );
-        setPractitionersDegraded(Boolean(data.degraded));
+        setSlots(Array.isArray(data.slots) ? data.slots : []);
+        setSlotsDegraded(Boolean(data.degraded));
       } catch {
-        setPractitionersDegraded(true);
+        setSlotsDegraded(true);
       } finally {
-        setPractitionersLoading(false);
+        setSlotsLoading(false);
       }
     },
     [locale],
   );
-
-  useEffect(() => {
-    if (!initialService) return;
-    const timer = window.setTimeout(() => {
-      void loadPractitioners(initialService);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [initialService, loadPractitioners]);
 
   useEffect(() => {
     let raw: string | null = null;
@@ -146,13 +129,16 @@ export function BookingWizard({
         email: text(handoff.email),
         notes: text(handoff.notes),
       });
-      if (isValidPreferredDate(handoff.preferredDate)) {
-        setDate(handoff.preferredDate!);
-      }
+
+      const preferredDate = isValidPreferredDate(handoff.preferredDate)
+        ? handoff.preferredDate!
+        : null;
+      if (preferredDate) setDate(preferredDate);
 
       const handoffService = services.find(
         (item) => item.key === handoff.service,
       )?.key;
+      const resolvedService = initialService ?? handoffService;
       if (!initialService && handoffService) {
         setService(handoffService);
         setProcedure(null);
@@ -161,62 +147,33 @@ export function BookingWizard({
           pathname: PUBLIC_PATHS.booking,
           query: { service: handoffService },
         });
-        void loadPractitioners(handoffService);
+      }
+      if (preferredDate && resolvedService) {
+        void loadSlots(preferredDate, resolvedService);
       }
     });
-  }, [initialService, loadPractitioners, router, services]);
-
-  const loadSlots = useCallback(
-    async (d: string, svc: string, pr: string) => {
-      setSlotsLoading(true);
-      setSlotsDegraded(false);
-      setSlots([]);
-      try {
-        const res = await fetch(
-          `/api/booking/slots?date=${encodeURIComponent(d)}&service=${encodeURIComponent(svc)}&practitioner=${encodeURIComponent(pr)}&locale=${encodeURIComponent(locale)}`,
-        );
-        const data = await res.json();
-        setSlots(Array.isArray(data.slots) ? data.slots : []);
-        setSlotsDegraded(Boolean(data.degraded));
-      } catch {
-        setSlotsDegraded(true);
-      } finally {
-        setSlotsLoading(false);
-      }
-    },
-    [locale],
-  );
+  }, [initialService, loadSlots, router, services]);
 
   function pickService(key: string) {
     setService(key);
     setProcedure(null);
-    setPractitioner("any");
-    setPractitioners([]);
     setSlot(null);
     setSlots([]);
     setStep(2);
     router.replace({ pathname: PUBLIC_PATHS.booking, query: { service: key } });
-    void loadPractitioners(key);
-  }
-
-  function pickPractitioner(id: string) {
-    setPractitioner(id);
-    setSlot(null);
-    setSlots([]);
-    setStep(3);
-    if (date && service) void loadSlots(date, service, id);
+    if (date) void loadSlots(date, key);
   }
 
   function pickDate(value: string) {
     setDate(value);
     setSlot(null);
-    if (service) void loadSlots(value, service, practitioner);
+    if (service) void loadSlots(value, service);
   }
 
   function pickSlot(s: Slot) {
     setSlot(s);
     setError(null);
-    setStep(4);
+    setStep(3);
   }
 
   async function submit() {
@@ -230,7 +187,6 @@ export function BookingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service,
-          practitionerId: practitioner,
           start: slot.start,
           locale,
           fullName: form.fullName,
@@ -253,13 +209,17 @@ export function BookingWizard({
               }
             : null,
         );
-        setConfirmation({ id: data.id, start: data.start });
+        setConfirmation({
+          id: data.id,
+          start: data.start,
+          practitionerName: data.practitionerName,
+        });
         return;
       }
       if (res.status === 409) {
         setError(t("errors.slotTaken"));
-        setStep(3);
-        if (date && service) loadSlots(date, service, practitioner);
+        setStep(2);
+        if (date && service) loadSlots(date, service);
         return;
       }
       if (data?.degraded) {
@@ -281,8 +241,6 @@ export function BookingWizard({
     setStep(1);
     setService(null);
     setProcedure(null);
-    setPractitioner("any");
-    setPractitioners([]);
     setDate(null);
     setSlot(null);
     setForm({ fullName: "", phone: "", email: "", notes: "" });
@@ -318,7 +276,7 @@ export function BookingWizard({
           ) : null}
           <SummaryRow
             label={t("summary.practitioner")}
-            value={slot?.practitionerName ?? ""}
+            value={confirmation.practitionerName}
           />
           <SummaryRow
             label={t("summary.time")}
@@ -340,12 +298,7 @@ export function BookingWizard({
     );
   }
 
-  const stepLabels = [
-    t("steps.service"),
-    t("steps.practitioner"),
-    t("steps.time"),
-    t("steps.you"),
-  ];
+  const stepLabels = [t("steps.service"), t("steps.time"), t("steps.you")];
   const selectedService = services.find((item) => item.key === service);
 
   return (
@@ -439,34 +392,6 @@ export function BookingWizard({
       )}
 
       {step === 2 && (
-        <div className="mt-[clamp(20px,3vw,32px)]">
-          {practitionersLoading ? (
-            <p className="font-sans text-[13px] text-muted">{t("loading")}</p>
-          ) : practitionersDegraded || practitioners.length === 0 ? (
-            <FallbackBlock t={t} fallback={fallback} />
-          ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-[12px]">
-              <PractitionerButton
-                active={practitioner === "any"}
-                title={t("anyPractitioner")}
-                subtitle={t("anyPractitionerHint")}
-                onClick={() => pickPractitioner("any")}
-              />
-              {practitioners.map((p) => (
-                <PractitionerButton
-                  key={p.id}
-                  active={practitioner === p.id}
-                  title={p.name}
-                  subtitle={p.role}
-                  onClick={() => pickPractitioner(p.id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {step === 3 && (
         <div className="mt-[clamp(20px,3vw,32px)] flex flex-col gap-[28px] md:flex-row md:gap-[32px]">
           <div>
             <p className="mb-[12px] font-sans text-[13px] font-medium tracking-[.04em] text-muted uppercase">
@@ -489,17 +414,12 @@ export function BookingWizard({
               <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-[8px]">
                 {slots.map((s) => (
                   <button
-                    key={`${s.practitionerId}-${s.start}`}
+                    key={s.start}
                     type="button"
                     onClick={() => pickSlot(s)}
                     className={cn(chip, "text-center", chipIdle)}
                   >
                     <span className="block">{s.label}</span>
-                    {practitioner === "any" && (
-                      <span className="mt-[3px] block truncate text-[11px] text-muted">
-                        {s.practitionerName}
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>
@@ -512,7 +432,7 @@ export function BookingWizard({
         </div>
       )}
 
-      {step === 4 && slot && (
+      {step === 3 && slot && (
         <form
           className="mt-[clamp(20px,3vw,32px)] max-w-[520px]"
           onSubmit={(e) => {
@@ -524,11 +444,6 @@ export function BookingWizard({
             {t("summary.time")}:{" "}
             <span className="font-medium text-ink">
               {dateTimeFmt.format(new Date(slot.start))}
-            </span>
-            <br />
-            {t("summary.practitioner")}:{" "}
-            <span className="font-medium text-ink">
-              {slot.practitionerName}
             </span>
           </p>
 
@@ -670,34 +585,6 @@ function SelectedContext({
         </div>
       </div>
     </article>
-  );
-}
-
-function PractitionerButton({
-  active,
-  title,
-  subtitle,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  subtitle: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "min-h-[74px] rounded-[4px] border px-[16px] py-[12px] text-left font-sans text-[13px] transition-colors",
-        active
-          ? "border-accent bg-btn-fill text-ink"
-          : "border-line-btn text-ink hover:border-line-btn-hover hover:bg-btn-fill",
-      )}
-    >
-      <span className="block font-medium">{title}</span>
-      <span className="mt-[4px] block text-[12px] text-muted">{subtitle}</span>
-    </button>
   );
 }
 

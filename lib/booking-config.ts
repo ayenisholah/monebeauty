@@ -12,3 +12,6 @@ export const BUSINESS_HOURS = {
   /** How many days ahead clients can book. */
   daysAhead: 60,
 };
+
+/** Permanent server-resolved provider for every new public booking. */
+export const DEFAULT_BOOKING_PRACTITIONER_NAME = "Mone Beauty Clinic";

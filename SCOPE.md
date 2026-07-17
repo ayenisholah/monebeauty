@@ -1,4 +1,10 @@
 Project Overview
+Public booking assignment (owner-approved, 2026-07-17): the customer flow is simplified to
+Service -> Time -> You. Customers do not select or see a specialist before confirming. Every
+new public booking is assigned server-side to the exact "Mone Beauty Clinic" practitioner.
+Practitioner-aware availability, overlap protection, staff scheduling, CRM history,
+rescheduling, confirmations, and notifications remain in place internally.
+
 Public URL architecture (owner-approved, 2026-07-17): every user-facing route uses the same
 Finnish path segments in FI, EN, and RU; only the locale prefix changes. Finnish remains
 unprefixed, while English and Russian use `/en` and `/ru`. Canonical shop paths are
@@ -168,7 +174,7 @@ Online Booking button
 Online Booking
 This is one of the most important features. Client Features
 Select treatment
-Select practitioner
+Automatic clinic assignment (no public specialist selection)
 Choose date and time
 24/7 online booking
 Email confirmation

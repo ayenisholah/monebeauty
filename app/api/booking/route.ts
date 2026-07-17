@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServiceId, openSlots } from "@/lib/booking";
+import { getServiceId, openPublicSlots } from "@/lib/booking";
 import { notifyAppointmentConfirmation } from "@/lib/notifications";
 import { routing, type Locale } from "@/i18n/routing";
 import { resolveProcedure } from "@/lib/procedures";
@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
   const fullName = String(payload.fullName ?? "").trim();
   const phone = String(payload.phone ?? "").trim();
   const email = String(payload.email ?? "").trim();
-  const practitioner = String(payload.practitionerId ?? "any");
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const locale = routing.locales.includes(payload.locale as Locale)
     ? (payload.locale as Locale)
@@ -65,10 +64,9 @@ export async function POST(req: NextRequest) {
   const dateStr = start.slice(0, 10);
 
   try {
-    const available = await openSlots({
+    const available = await openPublicSlots({
       dateStr,
       serviceKey: service,
-      practitionerId: practitioner === "any" ? "any" : practitioner,
       locale,
     });
     const matchingSlot = available.find((slot) => slot.start === start);
@@ -147,6 +145,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       id: appointment.id,
       start: appointment.start.toISOString(),
+      practitionerName: appointment.practitioner.name,
       serviceKey: svc.slug,
       procedure: procedure
         ? {

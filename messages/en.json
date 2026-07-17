@@ -399,7 +399,6 @@
     "intro": "Choose a treatment, pick a time, and confirm — it takes under a minute.",
     "steps": {
       "service": "Service",
-      "practitioner": "Specialist",
       "time": "Time",
       "you": "You"
     },
@@ -421,8 +420,6 @@
     },
     "pickDate": "Choose a date",
     "pickTime": "Choose a time",
-    "anyPractitioner": "No preference",
-    "anyPractitionerHint": "Choose the first available specialist.",
     "pickDateFirst": "Select a date to see available times.",
     "loading": "Loading available times…",
     "noTimes": "No open times on this day — please pick another date.",

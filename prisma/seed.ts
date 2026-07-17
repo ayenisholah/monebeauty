@@ -4,6 +4,7 @@ import { PrismaClient, type ServiceCategory } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const scryptAsync = promisify(scrypt);
+const DEFAULT_BOOKING_PRACTITIONER_NAME = "Mone Beauty Clinic";
 
 // Keep in sync with content/booking-services.ts (kept inline so `prisma db seed` via tsx
 // needs no path-alias resolution). The booking API also self-heals these rows if missing.
@@ -65,10 +66,16 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
-  let practitioner = await prisma.practitioner.findFirst();
+  let practitioner = await prisma.practitioner.findFirst({
+    where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
+    orderBy: { id: "asc" },
+  });
   if (!practitioner) {
     practitioner = await prisma.practitioner.create({
-      data: { name: "Mone Beauty Clinic", role: "Specialist" },
+      data: {
+        name: DEFAULT_BOOKING_PRACTITIONER_NAME,
+        role: "Specialist",
+      },
     });
   }
 

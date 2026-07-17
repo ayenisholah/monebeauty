@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
-import { BUSINESS_HOURS } from "@/lib/booking-config";
+import {
+  BUSINESS_HOURS,
+  DEFAULT_BOOKING_PRACTITIONER_NAME,
+} from "@/lib/booking-config";
 import type { Locale } from "@/i18n/routing";
 
 /**
@@ -73,7 +76,9 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
       slug: serviceKey,
       bookable: true,
       archivedAt: null,
-      ...(locale ? { contents: { some: { locale, status: "PUBLISHED" } } } : {}),
+      ...(locale
+        ? { contents: { some: { locale, status: "PUBLISHED" } } }
+        : {}),
     },
     select: { id: true, slug: true, durationMin: true },
   });
@@ -222,16 +227,50 @@ export async function openSlots({
   return [...unique.values()];
 }
 
+/** Public availability is always owned by the clinic's stable default practitioner. */
+export async function openPublicSlots({
+  dateStr,
+  serviceKey,
+  locale,
+}: {
+  dateStr: string;
+  serviceKey: string;
+  locale?: Locale;
+}): Promise<SlotDto[]> {
+  const record = await serviceRecord(serviceKey, locale);
+  if (!record) return [];
+  const practitionerId = await getDefaultPractitionerId(record.serviceId);
+  return openSlots({ dateStr, serviceKey, practitionerId, locale });
+}
+
 /** Find-or-create the single shared default practitioner (self-heals if unseeded). */
-export async function getDefaultPractitionerId(): Promise<string> {
+export async function getDefaultPractitionerId(
+  serviceId?: string,
+): Promise<string> {
   const existing = await prisma.practitioner.findFirst({
+    where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
     orderBy: { id: "asc" },
+    select: { id: true },
   });
-  if (existing) return existing.id;
-  const created = await prisma.practitioner.create({
-    data: { name: "Mone Beauty Clinic", role: "Specialist" },
-  });
-  return created.id;
+  const practitionerId = existing
+    ? existing.id
+    : (
+        await prisma.practitioner.create({
+          data: {
+            name: DEFAULT_BOOKING_PRACTITIONER_NAME,
+            role: "Specialist",
+          },
+          select: { id: true },
+        })
+      ).id;
+
+  if (serviceId) {
+    await prisma.practitioner.update({
+      where: { id: practitionerId },
+      data: { services: { connect: { id: serviceId } } },
+    });
+  }
+  return practitionerId;
 }
 
 /** Resolve an existing database-owned booking service; runtime never self-seeds content. */

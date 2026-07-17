@@ -1,5 +1,16 @@
 # Implementation Plan — Mone Beauty
 
+## Public specialist selection removal (owner-approved, 2026-07-17)
+
+The public wizard is **Service -> Time -> You**. Contextual links and valid homepage
+handoffs open directly at Time; service changes retain the chosen date, clear the slot, and
+reload availability. Public slot lookup and appointment creation ignore legacy
+practitioner values and resolve the exact **Mone Beauty Clinic** practitioner server-side,
+connecting it to the requested bookable service when needed. Practitioner IDs remain stored
+for availability, overlap prevention, staff schedules, CRM, rescheduling, and notifications.
+The compatibility practitioner endpoint, additional internal practitioners, and historical
+appointments remain intact. No Prisma migration is required.
+
 ## Homepage reference match (owner-approved, 2026-07-12)
 
 The localized homepage uses `index.html` as its superseding visual/content specification,
@@ -181,20 +192,24 @@ Ships ahead of the full Phase 3, reusing that data model at reduced scope.
   select-and-advance, `?service=<key>` preselect, GDPR consent, on-screen confirmation.
 - **One-click entry points**: `Book` buttons on `/services/[slug]` + a home "Choose a
   service" selectable grid deep-linking `/booking?service=<key>`; trim homepage length.
-- **Upgraded in Phase 3**: practitioner/no-preference selection, `Availability`-aware slots,
-  and lightweight reschedule/cancel endpoints. Email/SMS confirmations and reminders are
+- **Upgraded in Phase 3**: `Availability`-aware slots and lightweight reschedule/cancel
+  endpoints while the public flow retains automatic clinic assignment. Email/SMS
+  confirmations and reminders are
   implemented in Phase 6. **Verify:** e2e a booking persists; double-book rejected; 390px
   first.
 
 ## Phase 3 — Booking (client wizard) ✅ implemented
 
-Booking data model (Practitioner, Availability, Appointment, Client). Wizard per
-`05-platform-features.md §1`: treatment → practitioner/no preference → date/time (open slots
-only) → details (create/match client) → confirm + consent → confirmation. Slot lookup uses
-`Availability.slots` when present, falls back to generated business-hours slots while staff
-UI is absent, and rejects appointment overlaps. Lightweight cancel/reschedule endpoints exist
-using appointment reference + matching contact detail. **Verify:** slot generation,
-double-booking prevention, e2e booking, cancel, and reschedule.
+Booking data model (Practitioner, Availability, Appointment, Client). Public wizard:
+treatment → date/time (open slots only) → details (create/match client) → confirm + consent
+→ confirmation. New public bookings use the exact **Mone Beauty Clinic** practitioner;
+specialist selection remains removed even when additional practitioners exist internally.
+Slot lookup uses `Availability.slots` when present, falls back to generated business-hours
+slots while staff UI is absent, and rejects appointment overlaps. Lightweight
+cancel/reschedule endpoints remain practitioner-aware for existing appointments and use the
+appointment reference + matching contact detail. **Verify:** slot generation, forced default
+assignment despite forged practitioner input, double-booking prevention, e2e booking,
+cancel, and reschedule.
 
 ### Dedicated booking routing and procedure context
 

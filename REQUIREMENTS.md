@@ -1,5 +1,14 @@
 # Requirements — Mone Beauty
 
+## Owner-approved public booking assignment (2026-07-17)
+
+The public booking wizard is **Service -> Time -> You**. Contextual booking links and valid
+homepage handoffs open directly at Time. Customers do not choose or see a specialist before
+submitting; the server assigns every new public booking to the exact **Mone Beauty Clinic**
+practitioner and ignores client-supplied practitioner IDs. Internal practitioner-aware
+availability, staff scheduling, overlap prevention, historical appointments, rescheduling,
+CRM, confirmations, and notifications remain unchanged.
+
 ## Owner-approved homepage direction (2026-07-12)
 
 Reproduce root `index.html` as the homepage visual and content reference. Its medical,
@@ -113,8 +122,8 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 - `/laitehoidot/{endospheres,laserkarvanpoisto,mikroneula-rf}`
 - `/trikologia`, `/arosha`
 - `/palvelut` (index) + `/palvelut/{kasvohoidot,vartalohoidot,endospheres-terapia,
-  laserkarvanpoisto,mikroneula-rf,trikologia,kulmat-ja-ripset,hoitopaketit,lahjakortit,
-  injektiohoidot,konsultaatio}`
+laserkarvanpoisto,mikroneula-rf,trikologia,kulmat-ja-ripset,hoitopaketit,lahjakortit,
+injektiohoidot,konsultaatio}`
 
 **Shop:** `/verkkokauppa` (31 AROSHA/DIXIDOX products, grouped by category),
 `/verkkokauppa/[slug]` (product detail: image, price, size, real description, related),
@@ -186,8 +195,9 @@ Locale switching preserves valid booking context.
 The compact homepage booking form remains as a safe handoff. It transfers name, phone,
 email, notes, preferred date, and service through a versioned tab-scoped `sessionStorage`
 record with a 30-minute expiry. Personal data must never be placed in the URL; the booking
-wizard consumes and removes the record once. Contextual URLs advance directly to specialist
-selection, while changing service clears procedure context and updates the URL.
+wizard consumes and removes the record once. Contextual URLs advance directly to Time, while
+changing service clears procedure context, reloads availability for a retained valid date,
+and updates the URL.
 
 Booking context is resolved only from the requested locale's published Prisma service
 content. The booking page shows a concise approved-content service/procedure summary. Unknown
@@ -203,18 +213,21 @@ service.
 > advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
 > pick date/time (open slots only, single shared default practitioner) → client details
 > (create/match CRM `Client`) → **GDPR consent** → **on-screen confirmation**, persisted via
-> Prisma (`Appointment` + `Consent`). The full spec below adds practitioner-aware
-> availability, reschedule/cancel, and Phase 6 email/SMS confirmations + reminders.
+> Prisma (`Appointment` + `Consent`). Practitioner-aware availability remains internal for
+> scheduling, persistence, conflict prevention, reschedule/cancel, and Phase 6 email/SMS
+> confirmations + reminders.
 > Mobile-first; 44px+ tap targets; clear progress indicator.
 
-**Client wizard (24/7):** select treatment → select practitioner (or "no preference",
-name + role only, no public bio) → choose date/time (only open slots) → client details
-(create/match CRM client) → confirm + GDPR consent → on-screen confirmation. The upgraded
-Phase 3 flow is implemented with practitioner-aware availability and lightweight
-cancel/reschedule endpoints. Email + SMS confirmations, reminders at 24h + 2h, and staff
-alerts are implemented through the Phase 6 notification layer; richer cutoff policy remains
-deferred to a future admin policy pass. Mobile-first; 44px+ tap targets; clear progress
-indicator; accent selected-state calendar.
+**Client wizard (24/7):** select treatment → choose date/time (only open slots) → client
+details (create/match CRM client) → confirm + GDPR consent → on-screen confirmation. New
+public bookings always resolve the exact **Mone Beauty Clinic** practitioner server-side;
+legacy practitioner query/body values never control assignment. The resolved provider may
+appear after completion and in confirmations. Practitioner-aware availability and
+lightweight cancel/reschedule endpoints remain implemented internally. Email + SMS
+confirmations, reminders at 24h + 2h, and staff alerts are implemented through the Phase 6
+notification layer; richer cutoff policy remains deferred to a future admin policy pass.
+Mobile-first; 44px+ tap targets; clear three-step progress indicator; accent selected-state
+calendar.
 
 **Staff flow (`/staff`):** implemented as an internal schedule surface with practitioner/date
 selection, working-hour range application, open/closed slot controls, and appointment details
