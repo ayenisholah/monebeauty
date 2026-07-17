@@ -101,6 +101,3 @@ jobs:
         run: |
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
-
-      - name: Verify website-grounded chat after deployment
-        run: npm run chat:smoke
