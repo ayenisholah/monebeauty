@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
       locale,
     });
     return NextResponse.json({ slots });
-  } catch {
+  } catch (err) {
     // DB unavailable — empty slots so the wizard shows its call/email fallback.
+    console.error("[booking/slots] failed", err);
     return NextResponse.json({ slots: [], degraded: true });
   }
 }

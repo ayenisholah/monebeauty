@@ -89,6 +89,11 @@ jobs:
             echo "No Prisma migrations directory found; skipping migrate deploy."
           fi
 
+      - name: Seed booking baseline (practitioner, services, availability)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run db:seed
+
       - name: Verify Claude credentials and model access
         run: npm run chat:check-provider
 

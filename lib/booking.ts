@@ -101,10 +101,15 @@ export async function eligiblePractitioners(
 
   if (practitioners.length === 0) {
     const defaultId = await getDefaultPractitionerId();
-    await prisma.practitioner.update({
-      where: { id: defaultId },
-      data: { services: { connect: { id: record.serviceId } } },
-    });
+    // Best-effort service link; a failed write must never break slot reads.
+    try {
+      await prisma.practitioner.update({
+        where: { id: defaultId },
+        data: { services: { connect: { id: record.serviceId } } },
+      });
+    } catch (err) {
+      console.error("[booking] service link skipped", err);
+    }
     practitioners = await prisma.practitioner.findMany({
       where: { id: defaultId },
       select: { id: true, name: true, role: true },
@@ -252,9 +257,11 @@ export async function getDefaultPractitionerId(
     orderBy: { id: "asc" },
     select: { id: true },
   });
-  const practitionerId = existing
-    ? existing.id
-    : (
+
+  let practitionerId = existing?.id;
+  if (!practitionerId) {
+    try {
+      practitionerId = (
         await prisma.practitioner.create({
           data: {
             name: DEFAULT_BOOKING_PRACTITIONER_NAME,
@@ -263,12 +270,28 @@ export async function getDefaultPractitionerId(
           select: { id: true },
         })
       ).id;
+    } catch (err) {
+      // A concurrent request may have created it; re-resolve before giving up.
+      const again = await prisma.practitioner.findFirst({
+        where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
+        orderBy: { id: "asc" },
+        select: { id: true },
+      });
+      if (!again) throw err;
+      practitionerId = again.id;
+    }
+  }
 
   if (serviceId) {
-    await prisma.practitioner.update({
-      where: { id: practitionerId },
-      data: { services: { connect: { id: serviceId } } },
-    });
+    // Best-effort service link; a failed write must never break slot reads.
+    try {
+      await prisma.practitioner.update({
+        where: { id: practitionerId },
+        data: { services: { connect: { id: serviceId } } },
+      });
+    } catch (err) {
+      console.error("[booking] service link skipped", err);
+    }
   }
   return practitionerId;
 }
