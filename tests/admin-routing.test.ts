@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ADMIN_SEGMENTS, LEGACY_ADMIN_SEGMENTS, adminBase, adminHref } from "../lib/admin-routing";
+import {
+  ADMIN_SEGMENTS,
+  LEGACY_ADMIN_SEGMENTS,
+  adminBase,
+  adminHref,
+  isUnprefixedAdminPath,
+} from "../lib/admin-routing";
 
 test("admin paths use Finnish segments in every locale", () => {
   assert.equal(adminBase("fi"), "/admin");
@@ -28,3 +34,10 @@ test("legacy English modules map to Finnish segments", () => {
   }
 });
 
+test("only unprefixed Finnish admin paths bypass locale rewriting", () => {
+  assert.equal(isUnprefixedAdminPath("/admin"), true);
+  assert.equal(isUnprefixedAdminPath("/admin/palvelut"), true);
+  assert.equal(isUnprefixedAdminPath("/administrator"), false);
+  assert.equal(isUnprefixedAdminPath("/en/admin"), false);
+  assert.equal(isUnprefixedAdminPath("/ru/admin/asiakkaat"), false);
+});

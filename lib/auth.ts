@@ -8,7 +8,11 @@ import type { Role, User } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 const scryptAsync = promisify(scrypt);
-const SESSION_COOKIE = "mone_session";
+const LEGACY_SESSION_COOKIE = "mone_session";
+const SESSION_COOKIE =
+  process.env.NODE_ENV === "production"
+    ? "__Host-mone_session"
+    : LEGACY_SESSION_COOKIE;
 const SESSION_DAYS = 14;
 
 export type AuthUser = Pick<User, "id" | "email" | "name" | "role">;
@@ -39,6 +43,12 @@ export async function createSession(userId: string) {
     data: { userId, tokenHash: tokenHash(token), expiresAt },
   });
   const jar = await cookies();
+  if (SESSION_COOKIE !== LEGACY_SESSION_COOKIE) {
+    // Clear cookies issued by older deployments. A stale cookie with the same
+    // name but a different path can otherwise shadow a newly issued session.
+    jar.set(LEGACY_SESSION_COOKIE, "", { path: "/", maxAge: 0 });
+    jar.set(LEGACY_SESSION_COOKIE, "", { path: "/admin", maxAge: 0 });
+  }
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -54,7 +64,15 @@ export async function destroySession() {
   if (token) {
     await prisma.session.deleteMany({ where: { tokenHash: tokenHash(token) } });
   }
-  jar.delete(SESSION_COOKIE);
+  jar.set(SESSION_COOKIE, "", {
+    path: "/",
+    maxAge: 0,
+    secure: process.env.NODE_ENV === "production",
+  });
+  if (SESSION_COOKIE !== LEGACY_SESSION_COOKIE) {
+    jar.set(LEGACY_SESSION_COOKIE, "", { path: "/", maxAge: 0 });
+    jar.set(LEGACY_SESSION_COOKIE, "", { path: "/admin", maxAge: 0 });
+  }
 }
 
 export async function currentUser(): Promise<AuthUser | null> {
@@ -70,7 +88,11 @@ export async function currentUser(): Promise<AuthUser | null> {
   });
   if (!session || session.expiresAt <= new Date()) {
     if (session) await prisma.session.delete({ where: { id: session.id } });
-    jar.delete(SESSION_COOKIE);
+    jar.set(SESSION_COOKIE, "", {
+      path: "/",
+      maxAge: 0,
+      secure: process.env.NODE_ENV === "production",
+    });
     return null;
   }
 

@@ -32,6 +32,10 @@ export function adminBase(locale: Locale): string {
   return locale === "fi" ? "/admin" : `/${locale}/admin`;
 }
 
+export function isUnprefixedAdminPath(pathname: string): boolean {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 export function adminHref(
   locale: Locale,
   module: AdminModule,
@@ -49,4 +53,3 @@ export function localeFromAdminPath(pathname: string): Locale {
   if (pathname.startsWith("/ru/")) return "ru";
   return "fi";
 }
-
