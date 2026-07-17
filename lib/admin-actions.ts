@@ -13,6 +13,7 @@ import {
   audit,
   createSession,
   currentUser,
+  destroySession,
   requireUser,
   verifyPassword,
 } from "@/lib/auth";
@@ -115,6 +116,14 @@ export async function adminLoginAction(formData: FormData) {
   await createSession(user.id);
   if (user.role === "STAFF") redirect(localizedPublicPath(locale, PUBLIC_PATHS.staff));
   redirect(adminBase(locale));
+}
+
+export async function adminLogoutAction(formData: FormData) {
+  const rawLocale = value(formData, "locale");
+  const locale: AppLocale =
+    rawLocale === "en" || rawLocale === "ru" ? rawLocale : "fi";
+  await destroySession();
+  redirect(adminHref(locale, "login"));
 }
 
 export async function saveServiceAction(formData: FormData) {

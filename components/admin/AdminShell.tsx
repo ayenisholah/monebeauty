@@ -18,6 +18,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/routing";
+import { adminLogoutAction } from "@/lib/admin-actions";
 import { adminBase, adminHref, type AdminModule } from "@/lib/admin-routing";
 
 type Labels = {
@@ -167,13 +168,16 @@ export function AdminShell({
             <option value="ru">Русский</option>
           </select>
         </label>
-        <Link
-          href={`${adminBase(locale)}/ulos`}
-          className="flex min-h-[44px] items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[13px] text-body hover:bg-btn-fill hover:text-ink"
-        >
-          <SignOut size={20} weight="thin" aria-hidden="true" />
-          {labels.logout}
-        </Link>
+        <form action={adminLogoutAction}>
+          <input type="hidden" name="locale" value={locale} />
+          <button
+            type="submit"
+            className="flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[13px] text-body hover:bg-btn-fill hover:text-ink"
+          >
+            <SignOut size={20} weight="thin" aria-hidden="true" />
+            {labels.logout}
+          </button>
+        </form>
       </div>
     </aside>
   );
