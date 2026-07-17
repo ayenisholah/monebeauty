@@ -19,7 +19,7 @@ export function Markdown({
   const technology = variant === "technology";
 
   return (
-    <div className={technology ? "mx-auto max-w-[760px]" : "max-w-none"}>
+    <div className="max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -59,7 +59,7 @@ export function Markdown({
             <p
               className={
                 technology
-                  ? "mt-[14px] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light text-body"
+                  ? "mt-[14px] max-w-[70ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light text-body"
                   : "mt-[16px] font-sans text-[15px] leading-[1.8] font-light text-body"
               }
             >
@@ -70,7 +70,7 @@ export function Markdown({
             <ul
               className={
                 technology
-                  ? "mt-[14px] flex flex-col gap-[8px]"
+                  ? "mt-[14px] flex max-w-[70ch] flex-col gap-[8px]"
                   : "mt-[16px] flex flex-col gap-[10px]"
               }
             >
@@ -79,7 +79,7 @@ export function Markdown({
           ),
           ol: ({ children }) => (
             <ol
-              className={`${technology ? "mt-[14px] gap-[8px]" : "mt-[16px] gap-[10px]"} flex list-decimal flex-col pl-[20px] marker:text-accent`}
+              className={`${technology ? "mt-[14px] max-w-[70ch] gap-[8px]" : "mt-[16px] gap-[10px]"} flex list-decimal flex-col pl-[20px] marker:text-accent`}
             >
               {children}
             </ol>
@@ -119,7 +119,7 @@ export function Markdown({
                 loading="lazy"
                 className={
                   technology
-                    ? "mx-auto mt-[22px] h-auto max-h-[460px] w-auto max-w-full rounded-[var(--radius)] object-contain"
+                    ? "mt-[28px] w-full rounded-[var(--radius)] object-cover"
                     : "mt-[24px] w-full rounded-[var(--radius)] object-cover"
                 }
               />

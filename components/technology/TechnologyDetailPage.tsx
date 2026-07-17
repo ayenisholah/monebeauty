@@ -21,53 +21,99 @@ export async function TechnologyDetailPage({
   if (!technology) notFound();
   const common = await getTranslations("Common");
   const image = technology.images[0];
+  const bookable = technology.relatedService?.bookable;
+  const bookHref = {
+    pathname: PUBLIC_PATHS.booking,
+    query: { service: technology.relatedService?.slug ?? technology.slug },
+  } as const;
+
   return (
     <article className="bg-page">
-      <section className="border-b border-line-card bg-alt py-[clamp(40px,6vw,72px)]">
-        <Container width="narrow">
-          <div className="grid overflow-hidden rounded-[var(--radius)] border border-line-card bg-card min-[860px]:grid-cols-2">
-            {image ? (
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-alt min-[860px]:aspect-auto min-[860px]:h-full min-[860px]:max-h-[340px] min-[860px]:min-h-[300px]">
-                <Image
-                  src={image}
-                  alt={technology.content.imageAlt || technology.content.name}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(min-width: 860px) 50vw, 100vw"
-                />
-              </div>
-            ) : null}
-            <div className="flex flex-col justify-center p-[clamp(26px,3.4vw,46px)]">
-              <Eyebrow className="mb-[12px]">
-                {technology.content.specification}
-              </Eyebrow>
-              <h1 className="font-display text-[clamp(34px,4.2vw,56px)] leading-[1.04] font-medium text-ink">
-                {technology.content.name}
-              </h1>
-              <p className="mt-[14px] max-w-[48ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light text-body">
-                {technology.content.summary}
-              </p>
-              {technology.relatedService?.bookable ? (
-                <div className="mt-[24px]">
-                  <Button
-                    href={{
-                      pathname: PUBLIC_PATHS.booking,
-                      query: { service: technology.relatedService.slug },
-                    }}
-                    iconRight={ArrowRight}
-                  >
-                    {common("bookThis")}
-                  </Button>
-                </div>
-              ) : null}
+      <section className="relative isolate min-h-[clamp(380px,56vh,600px)] overflow-hidden">
+        {image ? (
+          <>
+            <Image
+              src={image}
+              alt={technology.content.imageAlt || technology.content.name}
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,30,27,.82)] via-[rgba(34,30,27,.34)] to-[rgba(34,30,27,.12)]" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-alt" />
+        )}
+        <Container className="absolute inset-x-0 bottom-0 pb-[clamp(28px,4.5vw,64px)]">
+          <Eyebrow
+            tone={image ? "gold" : "accent"}
+            tracking="wide"
+            className="mb-[14px]"
+          >
+            {technology.content.specification}
+          </Eyebrow>
+          <h1
+            className={`font-display text-[clamp(34px,4.6vw,64px)] leading-[1.03] font-medium ${
+              image ? "text-cta-heading" : "text-ink"
+            }`}
+          >
+            {technology.content.name}
+          </h1>
+          <p
+            className={`mt-[16px] max-w-[52ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light ${
+              image ? "text-cta-body" : "text-body"
+            }`}
+          >
+            {technology.content.summary}
+          </p>
+          {bookable ? (
+            <div className="mt-[26px]">
+              <Button
+                href={bookHref}
+                variant={image ? "primaryOnDark" : "primary"}
+                iconRight={ArrowRight}
+              >
+                {common("bookThis")}
+              </Button>
             </div>
-          </div>
+          ) : null}
         </Container>
       </section>
+
       <section className="py-[clamp(40px,6vw,76px)]">
-        <Container className="max-w-[872px]">
-          <Markdown variant="technology">{technology.content.body}</Markdown>
+        <Container>
+          <div className="grid gap-[clamp(28px,4vw,56px)] nav:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            <aside className="nav:sticky nav:top-[104px] nav:self-start">
+              <div className="rounded-[var(--radius)] border border-line-card bg-card p-[clamp(22px,2.4vw,30px)]">
+                <Eyebrow className="mb-[12px]">
+                  {technology.content.specification}
+                </Eyebrow>
+                <p className="font-display text-[clamp(22px,2.4vw,28px)] leading-[1.12] font-medium text-ink">
+                  {technology.content.name}
+                </p>
+                <p className="mt-[14px] font-sans text-[14.5px] leading-[1.7] font-light text-body">
+                  {technology.content.summary}
+                </p>
+                {bookable ? (
+                  <div className="mt-[24px]">
+                    <Button
+                      href={bookHref}
+                      iconRight={ArrowRight}
+                      className="w-full justify-center"
+                    >
+                      {common("bookThis")}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </aside>
+            <div className="min-w-0">
+              <Markdown variant="technology">
+                {technology.content.body}
+              </Markdown>
+            </div>
+          </div>
         </Container>
       </section>
     </article>

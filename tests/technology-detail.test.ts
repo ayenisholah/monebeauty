@@ -8,24 +8,32 @@ const detail = readFileSync(
 );
 const markdown = readFileSync("components/Markdown.tsx", "utf8");
 
-test("technology detail uses the homepage editorial card composition", () => {
-  assert.match(detail, /<Container width="narrow">/);
-  assert.match(detail, /aspect-\[16\/10\]/);
-  assert.match(detail, /min-\[860px\]:grid-cols-2/);
-  assert.match(detail, /min-\[860px\]:max-h-\[340px\]/);
-  assert.match(detail, /p-\[clamp\(26px,3\.4vw,46px\)\]/);
-  assert.match(detail, /text-\[clamp\(34px,4\.2vw,56px\)\]/);
+test("technology detail leads with a full-bleed hero", () => {
+  assert.match(detail, /relative isolate/);
+  assert.match(detail, /min-h-\[clamp\(380px,56vh,600px\)\]/);
+  assert.match(detail, /fill\s+priority/);
+  assert.match(detail, /sizes="100vw"/);
+  assert.match(detail, /bg-gradient-to-t from-\[rgba\(34,30,27/);
+  assert.match(detail, /text-cta-heading/);
+  assert.match(detail, /variant=\{image \? "primaryOnDark"/);
+  assert.doesNotMatch(detail, /Container width="narrow"/);
+  assert.doesNotMatch(detail, /aspect-\[16\/10\]/);
   assert.doesNotMatch(detail, /shadow-card/);
 });
 
-test("technology article opts into bounded editorial markdown", () => {
+test("technology body uses a two-column layout with a sticky rail", () => {
+  assert.match(detail, /nav:grid-cols-\[minmax\(0,320px\)_minmax\(0,1fr\)\]/);
+  assert.match(detail, /<aside className="nav:sticky/);
   assert.match(detail, /<Markdown variant="technology">/);
+});
+
+test("technology markdown fills the column with full-width imagery", () => {
   assert.match(markdown, /variant\?: MarkdownVariant/);
   assert.match(markdown, /variant = "default"/);
-  assert.match(markdown, /mx-auto max-w-\[760px\]/);
-  assert.match(markdown, /max-h-\[460px\]/);
-  assert.match(markdown, /w-auto max-w-full/);
-  assert.match(markdown, /object-contain/);
+  assert.match(markdown, /className="max-w-none"/);
+  assert.doesNotMatch(markdown, /max-w-\[760px\]/);
+  assert.doesNotMatch(markdown, /object-contain/);
+  assert.match(markdown, /w-full rounded-\[var\(--radius\)\] object-cover/);
   assert.match(markdown, /loading="lazy"/);
 });
 
