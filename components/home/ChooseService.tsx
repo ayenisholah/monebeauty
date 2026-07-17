@@ -10,6 +10,7 @@ import { bookableServices } from "@/content/booking-services";
 import { getPageContent } from "@/content/pages";
 import type { Locale } from "@/i18n/routing";
 import { excerpt } from "@/lib/seo";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 /**
  * Single home services section: the browse list AND the one-click booking entry.
@@ -45,7 +46,7 @@ export async function ChooseService() {
                 className="group flex flex-col overflow-hidden rounded-[var(--radius)] border border-line-card bg-card transition-all duration-300 hover:-translate-y-[6px] hover:border-line-card-hover hover:shadow-card"
               >
                 <Link
-                  href={{ pathname: "/booking", query: { service: s.key } }}
+                  href={{ pathname: PUBLIC_PATHS.booking, query: { service: s.key } }}
                   className="relative block h-[248px] w-full overflow-hidden"
                   aria-label={title}
                 >
@@ -78,7 +79,7 @@ export async function ChooseService() {
                   </p>
                   <div className="mt-[18px] flex items-center justify-between gap-[12px]">
                     <Button
-                      href={{ pathname: "/booking", query: { service: s.key } }}
+                      href={{ pathname: PUBLIC_PATHS.booking, query: { service: s.key } }}
                       variant="primary"
                       size="sm"
                       iconRight={ArrowRight}
@@ -98,7 +99,7 @@ export async function ChooseService() {
         </div>
 
         <div className="mt-[clamp(28px,3vw,40px)]">
-          <Button href="/services" variant="outline" iconRight={ArrowRight}>
+          <Button href={PUBLIC_PATHS.services} variant="outline" iconRight={ArrowRight}>
             {t("allServices")}
           </Button>
         </div>

@@ -20,26 +20,27 @@ import { excerpt } from "@/lib/seo";
 import type { Locale } from "@/i18n/routing";
 import { ProductTabs } from "./ProductTabs";
 import { ServicePicker } from "./ServicePicker";
+import { PUBLIC_PATHS, TECHNOLOGY_PUBLIC_PATHS } from "@/lib/public-routes";
 
 const technologyRows = [
   [
     "instrumental/endosphere",
-    "/instrumental/endosphere",
+    TECHNOLOGY_PUBLIC_PATHS.endospheres,
     "/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg",
   ],
   [
     "instrumental/laser",
-    "/instrumental/laser",
+    TECHNOLOGY_PUBLIC_PATHS.laser,
     "/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg",
   ],
   [
     "instrumental/mikroneulanrf",
-    "/instrumental/mikroneulanrf",
+    TECHNOLOGY_PUBLIC_PATHS.rf,
     "/media/files/land/280/21b80358547be97456baf00ac6a98ac9.jpeg",
   ],
   [
     "trichology",
-    "/trichology",
+    TECHNOLOGY_PUBLIC_PATHS.trichology,
     "/media/files/land/303/8b2e9288e47ba7705d700a8d7edb596e.jpeg",
   ],
 ] as const;
@@ -104,7 +105,7 @@ export async function ClinicalServices() {
               {t("services.heading")}
             </h2>
           </div>
-          <Button href="/services" variant="textLink" iconRight={ArrowRight}>
+          <Button href={PUBLIC_PATHS.services} variant="textLink" iconRight={ArrowRight}>
             {tc("allServices")}
           </Button>
         </div>
@@ -131,7 +132,7 @@ export async function ClinicalServices() {
             <div className="mt-[28px]">
               <Button
                 href={{
-                  pathname: "/booking",
+                  pathname: PUBLIC_PATHS.booking,
                   query: { service: featured.key },
                 }}
                 iconRight={ArrowRight}
@@ -163,7 +164,7 @@ export async function ClinicalServices() {
                 {service.bookable ? (
                   <Link
                     href={{
-                      pathname: "/booking",
+                      pathname: PUBLIC_PATHS.booking,
                       query: { service: service.key },
                     }}
                     className="mt-[20px] inline-flex items-center gap-[8px] text-[11px] font-medium tracking-[.15em] text-accent uppercase"
@@ -265,7 +266,7 @@ export async function ProductShowcase() {
           intoBasket={cat("intoBasket")}
         />
         <div className="mt-[36px] text-center">
-          <Button href="/catalog" variant="outline" iconRight={ArrowRight}>
+          <Button href={PUBLIC_PATHS.shop} variant="outline" iconRight={ArrowRight}>
             {t("products.all")}
           </Button>
         </div>

@@ -3,6 +3,7 @@ import { ArrowRight, MapPin, Clock, Heart } from "@phosphor-icons/react/ssr";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export async function HomeHero() {
   const t = await getTranslations("HomeEditorial");
@@ -27,10 +28,10 @@ export async function HomeHero() {
           {t("hero.lead")}
         </p>
         <div className="mt-[30px] flex flex-wrap justify-center gap-[12px]">
-          <Button href="/booking" iconRight={ArrowRight}>
+          <Button href={PUBLIC_PATHS.booking} iconRight={ArrowRight}>
             {t("hero.book")}
           </Button>
-          <Button href="/services" variant="outline">
+          <Button href={PUBLIC_PATHS.services} variant="outline">
             {t("hero.services")}
           </Button>
         </div>

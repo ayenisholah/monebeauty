@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { formatPrice, type Product } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
+import { productPath } from "@/lib/public-routes";
 
 /** AROSHA / DIXIDOX product card (image, name, size, price, basket button). */
 export function ProductCard({
@@ -17,7 +18,7 @@ export function ProductCard({
   const localized = product.i18n[locale];
   if (!localized) return null;
   const name = localized.name;
-  const href = `/catalog/${product.slug}`;
+  const href = productPath(product.slug);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-[var(--radius)] border border-line-card bg-card transition-all duration-300 hover:-translate-y-[4px] hover:border-line-card-hover hover:shadow-[var(--shadow-card)]">

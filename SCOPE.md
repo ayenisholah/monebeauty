@@ -1,4 +1,13 @@
 Project Overview
+Public URL architecture (owner-approved, 2026-07-17): every user-facing route uses the same
+Finnish path segments in FI, EN, and RU; only the locale prefix changes. Finnish remains
+unprefixed, while English and Russian use `/en` and `/ru`. Canonical shop paths are
+`/verkkokauppa`, `/ostoskori`, `/kassa`, and `/tilaus`; booking is `/ajanvaraus`, services
+are under `/palvelut`, device treatments are under `/laitehoidot`, and the staff portal is
+`/henkilosto`. Existing English public paths permanently redirect to their Finnish
+equivalents. API paths, admin paths, product/article slugs, database identifiers, and booking
+query values remain stable.
+
 Admin and runtime-content architecture (owner-approved, 2026-07-16): the custom Prisma admin
 is a responsive multilingual management application with a permanent desktop sidebar and an
 accessible mobile drawer. Admin path segments are Finnish in every interface locale: Finnish
@@ -15,7 +24,7 @@ medical, diagnostic, evidence-based, and licensing language in that reference is
 owner-approved for homepage use and supersedes the previous homepage composition. Order:
 centered real-video hero with three facts;
 Standard of Care; clinical services (including `[CLINIC TO PROVIDE]` medical stubs);
-alternating technologies; AROSHA/DIXIDOX tabs; compact `/booking?service=<key>` handoff; and
+alternating technologies; AROSHA/DIXIDOX tabs; compact `/ajanvaraus?service=<key>` handoff; and
 clinic standard/contact. The working booking wizard remains the only appointment flow.
 
 Develop a website from scratch for Mone Beauty Clinic, an aesthetic medicine clinic. The website should be more than just a corporate presentation—it should serve as a comprehensive platform for:

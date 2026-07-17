@@ -3,13 +3,13 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
   CART_STORAGE_KEY,
+  cartItemCount,
   cartSubtotal,
   normalizeQty,
   resolveCartLines,
@@ -30,59 +30,104 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
+const CART_CHANGE_EVENT = "monebeauty:cart-change";
 
-function readStoredCart(): CartItemInput[] {
-  if (typeof window === "undefined") return [];
+function parseStoredCart(serialized: string): CartItemInput[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) ?? "[]");
+    const parsed = JSON.parse(serialized);
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((item) => typeof item?.slug === "string")
-      .map((item) => ({ slug: item.slug, qty: normalizeQty(Number(item.qty)) }));
+      .map((item) => ({
+        slug: item.slug,
+        qty: normalizeQty(Number(item.qty)),
+      }));
   } catch {
     return [];
   }
 }
 
-export function CartProvider({ children, products }: { children: ReactNode; products: Product[] }) {
-  const [items, setItems] = useState<CartItemInput[]>(readStoredCart);
+function cartSnapshot() {
+  return typeof window === "undefined"
+    ? "[]"
+    : (localStorage.getItem(CART_STORAGE_KEY) ?? "[]");
+}
 
-  useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+function serverCartSnapshot() {
+  return "[]";
+}
+
+function subscribeToCart(onStoreChange: () => void) {
+  const storage = (event: StorageEvent) => {
+    if (event.key === CART_STORAGE_KEY) onStoreChange();
+  };
+  window.addEventListener("storage", storage);
+  window.addEventListener(CART_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", storage);
+    window.removeEventListener(CART_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function writeStoredCart(items: CartItemInput[]) {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  window.dispatchEvent(new Event(CART_CHANGE_EVENT));
+}
+
+export function CartProvider({
+  children,
+  products,
+}: {
+  children: ReactNode;
+  products: Product[];
+}) {
+  const serializedItems = useSyncExternalStore(
+    subscribeToCart,
+    cartSnapshot,
+    serverCartSnapshot,
+  );
+  const items = useMemo(
+    () => parseStoredCart(serializedItems),
+    [serializedItems],
+  );
 
   const value = useMemo<CartContextValue>(() => {
     const lines = resolveCartLines(items, products);
     return {
       items,
       lines,
-      count: lines.reduce((sum, line) => sum + line.qty, 0),
+      count: cartItemCount(lines),
       subtotal: cartSubtotal(lines),
       add(slug, qty = 1) {
-        setItems((current) => {
-          const existing = current.find((item) => item.slug === slug);
-          if (existing) {
-            return current.map((item) =>
-              item.slug === slug
-                ? { ...item, qty: normalizeQty(item.qty + qty) }
-                : item,
-            );
-          }
-          return [...current, { slug, qty: normalizeQty(qty) }];
-        });
+        const current = parseStoredCart(cartSnapshot());
+        writeStoredCart(
+          (() => {
+            const existing = current.find((item) => item.slug === slug);
+            if (existing) {
+              return current.map((item) =>
+                item.slug === slug
+                  ? { ...item, qty: normalizeQty(item.qty + qty) }
+                  : item,
+              );
+            }
+            return [...current, { slug, qty: normalizeQty(qty) }];
+          })(),
+        );
       },
       setQty(slug, qty) {
-        setItems((current) =>
+        const current = parseStoredCart(cartSnapshot());
+        writeStoredCart(
           current.map((item) =>
             item.slug === slug ? { ...item, qty: normalizeQty(qty) } : item,
           ),
         );
       },
       remove(slug) {
-        setItems((current) => current.filter((item) => item.slug !== slug));
+        const current = parseStoredCart(cartSnapshot());
+        writeStoredCart(current.filter((item) => item.slug !== slug));
       },
       clear() {
-        setItems([]);
+        writeStoredCart([]);
       },
     };
   }, [items, products]);

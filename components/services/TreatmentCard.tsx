@@ -6,6 +6,7 @@ import { ArrowRight } from "@phosphor-icons/react";
 import { Markdown } from "@/components/Markdown";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export type TreatmentCardItem = {
   group: string | null;
@@ -88,7 +89,7 @@ export function TreatmentCard({
         <div className="mt-[22px]">
           <Button
             href={{
-              pathname: "/booking",
+              pathname: PUBLIC_PATHS.booking,
               query: { service: bookingKey, procedure: index + 1 },
             }}
             iconRight={ArrowRight}

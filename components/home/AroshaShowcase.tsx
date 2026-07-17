@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { getProduct, HOME_PRODUCT_SLUGS } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export async function AroshaShowcase() {
   const t = await getTranslations("Home");
@@ -40,7 +41,7 @@ export async function AroshaShowcase() {
         </div>
 
         <div className="mt-[clamp(32px,3vw,44px)] flex justify-center">
-          <Button href="/catalog" iconRight={ArrowRight}>
+          <Button href={PUBLIC_PATHS.shop} iconRight={ArrowRight}>
             {tc("seeMore")}
           </Button>
         </div>

@@ -23,6 +23,7 @@ import type {
   BookingProcedureContext,
   BookingServiceOption,
 } from "@/lib/booking-context";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 type Practitioner = { id: string; name: string; role: string };
 type Slot = {
@@ -157,7 +158,7 @@ export function BookingWizard({
         setProcedure(null);
         setStep(2);
         router.replace({
-          pathname: "/booking",
+          pathname: PUBLIC_PATHS.booking,
           query: { service: handoffService },
         });
         void loadPractitioners(handoffService);
@@ -194,7 +195,7 @@ export function BookingWizard({
     setSlot(null);
     setSlots([]);
     setStep(2);
-    router.replace({ pathname: "/booking", query: { service: key } });
+    router.replace({ pathname: PUBLIC_PATHS.booking, query: { service: key } });
     void loadPractitioners(key);
   }
 
@@ -288,7 +289,7 @@ export function BookingWizard({
     setConsent(false);
     setError(null);
     setShowFallback(false);
-    router.replace("/booking");
+    router.replace(PUBLIC_PATHS.booking);
   }
 
   const chip =

@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { useCart } from "@/components/shop/CartProvider";
 import { formatPrice } from "@/content/products";
 import type { Locale } from "@/i18n/routing";
+import { PUBLIC_PATHS, productPath } from "@/lib/public-routes";
 
 export function BasketClient() {
   const t = useTranslations("Basket");
@@ -19,7 +20,7 @@ export function BasketClient() {
         <p className="font-sans text-lead font-light text-body">{t("empty")}</p>
         <div className="mt-[28px]">
           <Link
-            href="/catalog"
+            href={PUBLIC_PATHS.shop}
             className="inline-flex min-h-[44px] items-center justify-center rounded-[4px] bg-accent px-[30px] py-[14px] font-sans text-[12px] font-medium tracking-[.16em] text-page uppercase transition-colors hover:[background:color-mix(in_srgb,var(--accent)_86%,#000)]"
           >
             {t("browse")}
@@ -41,7 +42,7 @@ export function BasketClient() {
               className="grid gap-[16px] rounded-[var(--radius)] border border-line-card bg-card p-[16px] sm:grid-cols-[116px_1fr_auto]"
             >
               <Link
-                href={`/catalog/${product.slug}`}
+                href={productPath(product.slug)}
                 className="relative h-[116px] overflow-hidden rounded-[8px] bg-page"
               >
                 {product.image ? (
@@ -56,7 +57,7 @@ export function BasketClient() {
               </Link>
               <div>
                 <Link
-                  href={`/catalog/${product.slug}`}
+                  href={productPath(product.slug)}
                   className="font-display text-[20px] leading-[1.2] font-medium text-ink transition-colors hover:text-accent"
                 >
                   {name}
@@ -132,7 +133,7 @@ export function BasketClient() {
           </div>
         </dl>
         <Link
-          href="/checkout"
+          href={PUBLIC_PATHS.checkout}
           className="mt-[24px] inline-flex min-h-[44px] w-full items-center justify-center gap-[9px] rounded-[4px] bg-accent px-[24px] py-[14px] font-sans text-[12px] font-medium tracking-[.16em] text-page uppercase transition-colors hover:[background:color-mix(in_srgb,var(--accent)_86%,#000)]"
         >
           {t("checkout")}

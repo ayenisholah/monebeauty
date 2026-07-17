@@ -1,5 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Link } from "@/i18n/navigation";
+import { canonicalInternalHref } from "@/lib/public-routes";
 
 /**
  * Renders real page-body markdown (from scraped_content) with the design system.
@@ -44,14 +46,21 @@ export function Markdown({ children }: { children: string }) {
               {children}
             </li>
           ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              className="text-accent underline decoration-line-underline underline-offset-2 transition-colors hover:decoration-accent"
-            >
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const canonicalHref = href ? canonicalInternalHref(href) : "";
+            const className =
+              "text-accent underline decoration-line-underline underline-offset-2 transition-colors hover:decoration-accent";
+            return canonicalHref.startsWith("/") &&
+              !canonicalHref.startsWith("//") ? (
+              <Link href={canonicalHref} className={className}>
+                {children}
+              </Link>
+            ) : (
+              <a href={href} className={className}>
+                {children}
+              </a>
+            );
+          },
           strong: ({ children }) => (
             <strong className="font-medium text-ink">{children}</strong>
           ),

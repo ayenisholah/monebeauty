@@ -12,6 +12,8 @@ import {
   adminHref,
   type AdminModule,
 } from "@/lib/admin-routing";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { localizedPath } from "@/lib/seo";
 import {
   adminLoginAction,
   anonymizeClientAction,
@@ -179,7 +181,7 @@ export async function AdminRouter({
   const user = await currentUser();
   if (!user) redirect(adminHref(locale, "login"));
   if (user.role !== "ADMIN")
-    redirect(locale === "fi" ? "/staff" : `/${locale}/staff`);
+    redirect(localizedPath(PUBLIC_PATHS.staff, locale));
 
   const adminModule = moduleFromSegment(first);
   if (!adminModule || adminModule === "login") notFound();
@@ -757,7 +759,7 @@ function ServiceEditor({ row, copy }: { row: ServiceRow | null; copy: Copy }) {
               name="publicPath"
               required
               defaultValue={row?.publicPath ?? ""}
-              placeholder="/services/..."
+              placeholder="/palvelut/..."
               className={inputCls}
             />
           </Field>

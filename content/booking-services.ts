@@ -124,7 +124,7 @@ export function bookingKeyForContentSlug(
   contentSlug: string,
 ): string | undefined {
   return BOOKING_SERVICES.find(
-    (s) => s.contentSlug === contentSlug && s.bookable,
+    (s) => (s.contentSlug === contentSlug || s.key === contentSlug) && s.bookable,
   )?.key;
 }
 

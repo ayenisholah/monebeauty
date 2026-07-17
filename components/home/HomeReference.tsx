@@ -27,6 +27,7 @@ import {
   BOOKING_HANDOFF_KEY,
   createBookingHandoff,
 } from "@/lib/booking-handoff";
+import { PUBLIC_PATHS, productPath } from "@/lib/public-routes";
 
 const productOrder = {
   AROSHA_BODY: [
@@ -205,7 +206,7 @@ export function HomeReference({
     } catch {
       // Navigation still works when tab-scoped storage is unavailable.
     }
-    router.push({ pathname: "/booking", query: { service: key } });
+    router.push({ pathname: PUBLIC_PATHS.booking, query: { service: key } });
   };
   return (
     <div className="home-reference" id="top">
@@ -220,7 +221,7 @@ export function HomeReference({
               <h1>{t("hero.title")}</h1>
               <p>{t("hero.lead")}</p>
               <div>
-                <Link className="hr-btn dark" href="/booking">
+                <Link className="hr-btn dark" href={PUBLIC_PATHS.booking}>
                   {t("common.bookOnline")}
                 </Link>
                 <a className="hr-btn ghost" href="#treatments">
@@ -318,7 +319,7 @@ export function HomeReference({
                       className={`hr-btn ${i === 0 ? "dark" : "ghost"} small`}
                       onClick={() =>
                         router.push({
-                          pathname: "/booking",
+                          pathname: PUBLIC_PATHS.booking,
                           query: { service: service.key },
                         })
                       }
@@ -384,7 +385,7 @@ export function HomeReference({
                       onClick={() =>
                         technology.bookingKey &&
                         router.push({
-                          pathname: "/booking",
+                          pathname: PUBLIC_PATHS.booking,
                           query: { service: technology.bookingKey },
                         })
                       }
@@ -449,7 +450,7 @@ export function HomeReference({
                       label={t("products.add")}
                       className="hr-add"
                     />
-                    <Link href={`/catalog/${p.slug}`} className="hr-more">
+                    <Link href={productPath(p.slug)} className="hr-more">
                       {t("common.readMore")}
                     </Link>
                   </div>
@@ -461,7 +462,7 @@ export function HomeReference({
             <p>
               <Flask /> {t("products.note")}
             </p>
-            <Link className="hr-btn ghost small" href="/catalog">
+            <Link className="hr-btn ghost small" href={PUBLIC_PATHS.shop}>
               {t("products.all")}
             </Link>
           </div>
@@ -592,18 +593,18 @@ export function HomeReference({
             ))}
           </FooterCol>
           <FooterCol title={t("footer.legal")}>
-            <Link href="/privacy-policy">{t("footer.privacy")}</Link>
-            <Link href="/terms-of-use">{t("footer.terms")}</Link>
-            <Link href="/cookies-policy">{t("footer.cookies")}</Link>
+            <Link href={PUBLIC_PATHS.privacy}>{t("footer.privacy")}</Link>
+            <Link href={PUBLIC_PATHS.terms}>{t("footer.terms")}</Link>
+            <Link href={PUBLIC_PATHS.cookies}>{t("footer.cookies")}</Link>
           </FooterCol>
         </div>
         <div className="hr-footer-bar">
           <div className="hr-container hr-footer-bar-inner">
             <span>© {new Date().getFullYear()} Mone Beauty Clinic</span>
             <div>
-              <Link href="/privacy-policy">{t("footer.privacy")}</Link>
-              <Link href="/terms-of-use">{t("footer.terms")}</Link>
-              <Link href="/cookies-policy">{t("footer.cookies")}</Link>
+              <Link href={PUBLIC_PATHS.privacy}>{t("footer.privacy")}</Link>
+              <Link href={PUBLIC_PATHS.terms}>{t("footer.terms")}</Link>
+              <Link href={PUBLIC_PATHS.cookies}>{t("footer.cookies")}</Link>
             </div>
           </div>
         </div>

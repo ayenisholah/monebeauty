@@ -9,6 +9,15 @@ alternating technologies, accessible AROSHA/DIXIDOX tabs, compact one-click book
 and clinic standard/contact. Preserve localization, generated content/media, cart, booking,
 chatbot, SEO, and the global shell. This supersedes older homepage section-order language.
 
+## Owner-approved Finnish public routes (2026-07-17)
+
+All user-facing routes use Finnish path segments in every locale. FI has no prefix; EN and RU
+use `/en` and `/ru`. Canonical bases are `/klinikka`, `/laitehoidot`, `/palvelut`,
+`/verkkokauppa`, `/ostoskori`, `/kassa`, `/tilaus`, `/ajanvaraus`, `/hinnasto`,
+`/artikkelit`, `/tietosuojaseloste`, `/kayttoehdot`, `/evastekaytanto`, and `/henkilosto`.
+Legacy English public paths permanently redirect. API/admin paths and dynamic product/article
+slugs remain unchanged.
+
 > **This document is binding.** It is the distilled, authoritative requirements spec for
 > the project. Together with [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) it is the
 > contract the build must follow. Do not deviate without updating these documents first.
@@ -44,7 +53,8 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 ### Locked decisions
 
 - **Brand: Mone Beauty Clinic** — real `public/logo.svg` + `app/favicon.ico`.
-- **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/catalog`, `/catalog/[slug]`, `/basket`);
+- **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/verkkokauppa`,
+  `/verkkokauppa/[slug]`, `/ostoskori`);
   Phase 2 cart/checkout persists order requests through Prisma. Payment capture is deferred.
 - **Custom admin on Prisma — no Payload CMS.**
 - **Stack is locked** (§2).
@@ -94,24 +104,25 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 - Content authored **per-locale** in the admin — **do not auto-translate** medical or legal
   copy; each language is clinic-approved. `scraped_content/{fi,en,ru}/` provides starting copy.
 
-## 4. Site map / pages (mirrors the live site, locale-prefixed en/fi/ru)
+## 4. Site map / pages (Finnish segments, locale-prefixed en/fi/ru)
 
 **Content pages** (real copy from `scraped_content`, rendered via `react-markdown`):
 
 - `/` Home — real hero video + serif brand heading, 3 featured services, AROSHA product grid
-- `/about` About Us (incl. real Club Rules / cancellation / return copy)
-- `/instrumental/endosphere`, `/instrumental/laser`, `/instrumental/mikroneulanrf`
-- `/trichology`, `/arosha`
-- `/services` (index) + `/services/{face,body,tricho,laser,mikroneulanrf,eyebrows,packages,gift-cards}`
+- `/klinikka` About Us (incl. real Club Rules / cancellation / return copy)
+- `/laitehoidot/{endospheres,laserkarvanpoisto,mikroneula-rf}`
+- `/trikologia`, `/arosha`
+- `/palvelut` (index) + `/palvelut/{kasvohoidot,vartalohoidot,endospheres-terapia,
+  laserkarvanpoisto,mikroneula-rf,trikologia,kulmat-ja-ripset,hoitopaketit,lahjakortit,
+  injektiohoidot,konsultaatio}`
 
-**Shop:** `/catalog` (31 AROSHA/DIXIDOX products, grouped by category), `/catalog/[slug]`
-(product detail: image, price, size, real description, related), `/basket` (real cart),
-`/checkout`, `/order/[id]` confirmation.
+**Shop:** `/verkkokauppa` (31 AROSHA/DIXIDOX products, grouped by category),
+`/verkkokauppa/[slug]` (product detail: image, price, size, real description, related),
+`/ostoskori` (real cart), `/kassa`, `/tilaus/[id]` confirmation.
 
-**App / authenticated (later phases):** `/booking` (lean booking implemented), `/account`,
-`/staff`, `/admin`.
+**App / authenticated:** `/ajanvaraus` (booking), `/henkilosto` (staff), `/admin`.
 
-**Legal (footer):** `/privacy-policy`, `/terms-of-use`, `/cookies-policy`.
+**Legal (footer):** `/tietosuojaseloste`, `/kayttoehdot`, `/evastekaytanto`.
 
 **Global elements:** sticky blurred header (real logo, dropdown nav for Instrumental &
 Services, cart, language switcher, Book time); footer (nav + contacts + opening hours "By
@@ -166,9 +177,9 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 
 ## 8. Online booking
 
-All active public **Book** and **Book Online** CTAs open the localized dedicated `/booking`
+All active public **Book** and **Book Online** CTAs open the localized dedicated `/ajanvaraus`
 flow. Generic CTAs open service selection; service and technology CTAs use
-`/booking?service=<service-slug>`; procedure cards additionally use a validated, one-based
+`/ajanvaraus?service=<service-slug>`; procedure cards additionally use a validated, one-based
 `procedure` index. The ordinary Consultation navigation link may remain an in-page anchor.
 Locale switching preserves valid booking context.
 

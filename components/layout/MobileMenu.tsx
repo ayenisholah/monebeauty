@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { HeaderCartLink } from "@/components/shop/HeaderCartLink";
 import { cormorant } from "@/lib/fonts";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 type SectionLink = {
   href: string;
@@ -66,7 +67,7 @@ export function MobileMenu({
               <span className={cormorant.className}>0{index + 1}</span>
             </Link>
           ))}
-          <Link href="/booking" className="hr-btn dark" onClick={close}>
+          <Link href={PUBLIC_PATHS.booking} className="hr-btn dark" onClick={close}>
             {bookOnline}
           </Link>
         </nav>

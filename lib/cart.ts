@@ -36,3 +36,7 @@ export function resolveCartLines(items: CartItemInput[], products: Product[]): C
 export function cartSubtotal(lines: CartLine[]): number {
   return lines.reduce((sum, line) => sum + line.lineTotal, 0);
 }
+
+export function cartItemCount(lines: CartLine[]): number {
+  return lines.reduce((sum, line) => sum + line.qty, 0);
+}

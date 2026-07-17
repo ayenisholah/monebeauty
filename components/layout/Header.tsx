@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { MobileMenu } from "./MobileMenu";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { HeaderCartLink } from "@/components/shop/HeaderCartLink";
 
 export async function Header() {
   const t = await getTranslations("HomeReference");
@@ -38,9 +40,10 @@ export async function Header() {
               {link.label}
             </Link>
           ))}
-          <Link className="hr-btn dark small" href="/booking">
+          <Link className="hr-btn dark small" href={PUBLIC_PATHS.booking}>
             {t("common.bookOnline")}
           </Link>
+          <HeaderCartLink />
           <LanguageSwitcher />
         </nav>
 

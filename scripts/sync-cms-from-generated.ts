@@ -6,6 +6,10 @@ import {
   type ProductCategory,
   type ServiceCategory,
 } from "@prisma/client";
+import {
+  SERVICE_PUBLIC_PATHS,
+  TECHNOLOGY_PUBLIC_PATHS,
+} from "../lib/public-routes";
 
 const prisma = new PrismaClient();
 const root = process.cwd();
@@ -34,7 +38,7 @@ const SERVICES: Array<{
   {
     slug: "facial",
     page: "services/face",
-    publicPath: "/services/face",
+    publicPath: SERVICE_PUBLIC_PATHS.facial,
     category: "FACE",
     durationMin: 60,
     bookable: true,
@@ -43,7 +47,7 @@ const SERVICES: Array<{
   {
     slug: "body",
     page: "services/body",
-    publicPath: "/services/body",
+    publicPath: SERVICE_PUBLIC_PATHS.body,
     category: "BODY",
     durationMin: 60,
     bookable: true,
@@ -52,7 +56,7 @@ const SERVICES: Array<{
   {
     slug: "endospheres",
     page: "instrumental/endosphere",
-    publicPath: "/services/endospheres",
+    publicPath: SERVICE_PUBLIC_PATHS.endospheres,
     category: "DEVICE",
     durationMin: 45,
     bookable: true,
@@ -61,7 +65,7 @@ const SERVICES: Array<{
   {
     slug: "laser",
     page: "services/laser",
-    publicPath: "/services/laser",
+    publicPath: SERVICE_PUBLIC_PATHS.laser,
     category: "LASER",
     durationMin: 30,
     bookable: true,
@@ -70,7 +74,7 @@ const SERVICES: Array<{
   {
     slug: "rf",
     page: "services/mikroneulanrf",
-    publicPath: "/services/mikroneulanrf",
+    publicPath: SERVICE_PUBLIC_PATHS.rf,
     category: "DEVICE",
     durationMin: 60,
     bookable: true,
@@ -79,7 +83,7 @@ const SERVICES: Array<{
   {
     slug: "trichology",
     page: "services/tricho",
-    publicPath: "/services/tricho",
+    publicPath: SERVICE_PUBLIC_PATHS.trichology,
     category: "HAIR",
     durationMin: 45,
     bookable: true,
@@ -88,7 +92,7 @@ const SERVICES: Array<{
   {
     slug: "brows",
     page: "services/eyebrows",
-    publicPath: "/services/eyebrows",
+    publicPath: SERVICE_PUBLIC_PATHS.brows,
     category: "FACE",
     durationMin: 30,
     bookable: true,
@@ -97,7 +101,7 @@ const SERVICES: Array<{
   {
     slug: "packages",
     page: "services/packages",
-    publicPath: "/services/packages",
+    publicPath: SERVICE_PUBLIC_PATHS.packages,
     category: "BODY",
     durationMin: 90,
     bookable: true,
@@ -106,7 +110,7 @@ const SERVICES: Array<{
   {
     slug: "injectable",
     page: "",
-    publicPath: "/services/injectable",
+    publicPath: SERVICE_PUBLIC_PATHS.injectable,
     category: "INJECTABLE",
     durationMin: 45,
     bookable: false,
@@ -115,7 +119,7 @@ const SERVICES: Array<{
   {
     slug: "consultation",
     page: "",
-    publicPath: "/services/consultation",
+    publicPath: SERVICE_PUBLIC_PATHS.consultation,
     category: "CONSULTATION",
     durationMin: 30,
     bookable: false,
@@ -127,28 +131,28 @@ const TECHNOLOGIES = [
   {
     slug: "endospheres",
     page: "instrumental/endosphere",
-    publicPath: "/instrumental/endosphere",
+    publicPath: TECHNOLOGY_PUBLIC_PATHS.endospheres,
     service: "endospheres",
     images: ["/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg"],
   },
   {
     slug: "laser",
     page: "instrumental/laser",
-    publicPath: "/instrumental/laser",
+    publicPath: TECHNOLOGY_PUBLIC_PATHS.laser,
     service: "laser",
     images: ["/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg"],
   },
   {
     slug: "rf",
     page: "instrumental/mikroneulanrf",
-    publicPath: "/instrumental/mikroneulanrf",
+    publicPath: TECHNOLOGY_PUBLIC_PATHS.rf,
     service: "rf",
     images: ["/media/files/land/280/21b80358547be97456baf00ac6a98ac9.jpeg"],
   },
   {
     slug: "trichology",
     page: "trichology",
-    publicPath: "/trichology",
+    publicPath: TECHNOLOGY_PUBLIC_PATHS.trichology,
     service: "trichology",
     images: ["/media/files/land/301/a214b208578ca13b2e31ba04ca3074f1.jpg"],
   },

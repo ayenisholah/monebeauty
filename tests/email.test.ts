@@ -90,7 +90,7 @@ test("shared shell has an absolute logo, responsive 600px structure, contact foo
   assert.match(message.html, /info@monebeauty\.fi/);
   assert.match(message.text, /Mone Beauty Clinic/);
   assert.match(message.text, /Solvikinkatu 5/);
-  assert.match(message.text, /https:\/\/clinic\.example\/en\/booking/);
+  assert.match(message.text, /https:\/\/clinic\.example\/en\/ajanvaraus/);
 });
 
 test("all customer appointment messages are localized and use Helsinki time", () => {
@@ -155,9 +155,9 @@ test("customer and database values are escaped in HTML without damaging plain te
 
 test("order requests are localized with itemized line totals and localized links", () => {
   const expectedPaths: Record<Locale, string> = {
-    fi: "/order/order-12345678",
-    en: "/en/order/order-12345678",
-    ru: "/ru/order/order-12345678",
+    fi: "/tilaus/order-12345678",
+    en: "/en/tilaus/order-12345678",
+    ru: "/ru/tilaus/order-12345678",
   };
 
   for (const locale of ["fi", "en", "ru"] as const) {

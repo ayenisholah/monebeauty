@@ -6,6 +6,15 @@ The localized homepage uses `index.html` as its superseding visual/content speci
 including its owner-approved medical and licensing language. It retains the production cart,
 localized routes, booking handoff, legal links, and GDPR/AI chat beneath that presentation.
 
+## Finnish public route migration (owner-approved, 2026-07-17)
+
+Use the same Finnish path segments in FI/EN/RU for every user-facing route. Move public pages
+to the canonical Finnish IA, permanently redirect the legacy English IA, migrate Prisma
+service/technology `publicPath` values, and update navigation, content links, notifications,
+SEO, sitemap, and revalidation. Keep `/api`, `/admin`, dynamic product/article slugs, record
+IDs, and booking query values stable. The header cart links to `/ostoskori` and displays the
+persisted total quantity.
+
 > Binding build roadmap. Pairs with [`REQUIREMENTS.md`](./REQUIREMENTS.md). Phases run in
 > order; each builds on the last. **Commit after each phase.** Key direction: the app
 > realizes the **client brief** (`SCOPE.md` = **Mone Beauty Clinic**, aesthetic medicine);
@@ -35,6 +44,9 @@ localized routes, booking handoff, legal links, and GDPR/AI chat beneath that pr
 - Backfill existing localized content and real media. Verify migrations/seed, legacy
   redirects, locale isolation, CRUD/archive/delete/anonymization, booking/cart regressions,
   390/768/900/desktop sidebar access, lint, type-check, tests, and production build.
+- Migrate every public page to its canonical Finnish route, add locale-preserving 308 legacy
+  redirects, and centralize paths so public navigation, SEO, email/chat links, and Prisma
+  `publicPath` values cannot drift.
 
 ## Content & media pipeline (from the live site)
 
@@ -143,8 +155,9 @@ guard. **Verify:** `npm run dev` boots; theme tokens resolve; Prisma connects.
 
 ## Phase 2 — E-commerce (AROSHA shop) ✅ implemented
 
-Existing live IA routes are used: `/catalog`, `/catalog/[slug]`, `/basket`, `/checkout`,
-`/order/[id]`. The 31 products + images come from `scraped_content` via the generated
+Canonical Finnish shop routes are used: `/verkkokauppa`, `/verkkokauppa/[slug]`,
+`/ostoskori`, `/kassa`, `/tilaus/[id]`. The 31 products + images come from
+`scraped_content` via the generated
 registry. Cart state is client-side (`localStorage`), checkout captures GDPR consent,
 server-side totals are recalculated from the product registry, and Prisma persists `Client`,
 `Product`, `Order`, `OrderItem`, and `Consent`. Payment capture and confirmation email are

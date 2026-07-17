@@ -38,7 +38,7 @@ export function absoluteLocalizedUrl(site: string, path: string, locale: string)
   return `${base}${localizedPath(path, locale)}`;
 }
 
-/** hreflang + canonical for a locale-agnostic path (e.g. "/services/x"). */
+/** hreflang + canonical for a locale-agnostic path (e.g. "/palvelut/x"). */
 export function localeAlternates(path: string, locale: string) {
   const languages: Record<string, string> = {};
   for (const l of routing.locales) languages[l] = localizedPath(path, l);

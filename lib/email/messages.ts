@@ -2,6 +2,7 @@ import { BRAND, CONTACT } from "@/content/site";
 import { bookingServiceTitle } from "@/content/booking-services";
 import type { Locale } from "@/i18n/routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
+import { PUBLIC_PATHS, orderPath } from "@/lib/public-routes";
 import {
   escapeHtml,
   plainTextFooter,
@@ -293,7 +294,7 @@ export function renderCustomerAppointmentEmail(
   ];
   const cta =
     kind === "confirmation"
-      ? renderCta(copy.bookAnother, localizedUrl("/booking", locale))
+      ? renderCta(copy.bookAnother, localizedUrl(PUBLIC_PATHS.booking, locale))
       : "";
   const body = [
     paragraph(copy.greeting(appointment.client.fullName)),
@@ -310,7 +311,7 @@ export function renderCustomerAppointmentEmail(
     "",
     copy.appointmentNotice,
     ...(kind === "confirmation"
-      ? ["", `${copy.bookAnother}: ${localizedUrl("/booking", locale)}`]
+      ? ["", `${copy.bookAnother}: ${localizedUrl(PUBLIC_PATHS.booking, locale)}`]
       : []),
     "",
     plainTextFooter(locale),
@@ -349,7 +350,7 @@ export function renderCustomerOrderEmail(
   const reference = emailReference(order.id);
   const items = orderItems(order, locale);
   const total = formatEmailMoney(order.total, order.currency, locale);
-  const orderPage = localizedUrl(`/order/${order.id}`, locale);
+  const orderPage = localizedUrl(orderPath(order.id), locale);
   const greeting = order.client?.fullName
     ? paragraph(copy.greeting(order.client.fullName))
     : "";

@@ -1,3 +1,9 @@
+import {
+  PUBLIC_PATHS,
+  SERVICE_PUBLIC_PATHS,
+  TECHNOLOGY_PUBLIC_PATHS,
+} from "@/lib/public-routes";
+
 /**
  * Brand + global site constants — Mone Beauty Clinic (per SCOPE.md; aesthetic medicine).
  * Real NAP, nav, and hours from scraped_content. Logo/favicon are the real assets.
@@ -37,45 +43,45 @@ export type NavItem =
 
 /** Primary navigation (labels resolve to messages.Nav.*). Mirrors the live header. */
 export const NAV: NavItem[] = [
-  { key: "about", href: "/about" },
+  { key: "about", href: PUBLIC_PATHS.clinic },
   {
     key: "instrumental",
     children: [
-      { key: "endospheres", href: "/instrumental/endosphere" },
-      { key: "laser", href: "/instrumental/laser" },
-      { key: "rf", href: "/instrumental/mikroneulanrf" },
+      { key: "endospheres", href: TECHNOLOGY_PUBLIC_PATHS.endospheres },
+      { key: "laser", href: TECHNOLOGY_PUBLIC_PATHS.laser },
+      { key: "rf", href: TECHNOLOGY_PUBLIC_PATHS.rf },
     ],
   },
-  { key: "trichology", href: "/trichology" },
+  { key: "trichology", href: PUBLIC_PATHS.trichology },
   { key: "arosha", href: "/arosha" },
   {
     key: "services",
     children: [
-      { key: "face", href: "/services/face" },
-      { key: "body", href: "/services/body" },
-      { key: "serviceTricho", href: "/services/tricho" },
-      { key: "serviceLaser", href: "/services/laser" },
-      { key: "serviceRf", href: "/services/mikroneulanrf" },
-      { key: "eyebrows", href: "/services/eyebrows" },
-      { key: "packages", href: "/services/packages" },
-      { key: "giftCards", href: "/services/gift-cards" },
+      { key: "face", href: SERVICE_PUBLIC_PATHS.facial },
+      { key: "body", href: SERVICE_PUBLIC_PATHS.body },
+      { key: "serviceTricho", href: SERVICE_PUBLIC_PATHS.trichology },
+      { key: "serviceLaser", href: SERVICE_PUBLIC_PATHS.laser },
+      { key: "serviceRf", href: SERVICE_PUBLIC_PATHS.rf },
+      { key: "eyebrows", href: SERVICE_PUBLIC_PATHS.brows },
+      { key: "packages", href: SERVICE_PUBLIC_PATHS.packages },
+      { key: "giftCards", href: SERVICE_PUBLIC_PATHS.giftCards },
     ],
   },
-  { key: "catalog", href: "/catalog" },
+  { key: "catalog", href: PUBLIC_PATHS.shop },
 ];
 
 /** Footer navigation columns (mirrors the live footer). */
 export const FOOTER_NAV: NavChild[] = [
-  { key: "about", href: "/about" },
-  { key: "endospheres", href: "/instrumental/endosphere" },
-  { key: "trichology", href: "/trichology" },
+  { key: "about", href: PUBLIC_PATHS.clinic },
+  { key: "endospheres", href: TECHNOLOGY_PUBLIC_PATHS.endospheres },
+  { key: "trichology", href: PUBLIC_PATHS.trichology },
   { key: "arosha", href: "/arosha" },
-  { key: "services", href: "/services" },
-  { key: "catalog", href: "/catalog" },
+  { key: "services", href: PUBLIC_PATHS.services },
+  { key: "catalog", href: PUBLIC_PATHS.shop },
 ];
 
 export const LEGAL_NAV = [
-  { key: "privacy", href: "/privacy-policy" },
-  { key: "terms", href: "/terms-of-use" },
-  { key: "cookies", href: "/cookies-policy" },
+  { key: "privacy", href: PUBLIC_PATHS.privacy },
+  { key: "terms", href: PUBLIC_PATHS.terms },
+  { key: "cookies", href: PUBLIC_PATHS.cookies },
 ] as const;

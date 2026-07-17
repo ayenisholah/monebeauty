@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useRouter } from "@/i18n/navigation";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export function ServicePicker({
   services,
@@ -32,7 +33,7 @@ export function ServicePicker({
       </select>
       <button
         type="button"
-        onClick={() => router.push(`/booking?service=${service}`)}
+        onClick={() => router.push(`${PUBLIC_PATHS.booking}?service=${service}`)}
         className="inline-flex min-h-[52px] items-center justify-center gap-[10px] rounded-[4px] bg-accent px-[26px] font-sans text-[12px] font-medium tracking-[.16em] text-page uppercase transition-transform hover:-translate-y-px"
       >
         {labels.cta}

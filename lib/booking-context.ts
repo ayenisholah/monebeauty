@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { excerpt } from "@/lib/seo";
 import { resolveProcedure } from "@/lib/procedures";
 import type { Locale } from "@/i18n/routing";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export type BookingServiceOption = {
   key: string;
@@ -55,7 +56,7 @@ export async function getBookingServiceOptions(
         durationMin: service.durationMin,
         priceFrom:
           service.priceFrom === null ? null : Number(service.priceFrom),
-        publicPath: service.publicPath || "/services",
+        publicPath: service.publicPath || PUBLIC_PATHS.services,
       },
     ];
   });
@@ -92,7 +93,7 @@ export async function getBookingContext(
       shortDescription: excerpt(content.shortDesc || content.whatItIs, 180),
       durationMin: service.durationMin,
       priceFrom: service.priceFrom === null ? null : Number(service.priceFrom),
-      publicPath: service.publicPath || "/services",
+      publicPath: service.publicPath || PUBLIC_PATHS.services,
     },
     procedure: resolved
       ? {

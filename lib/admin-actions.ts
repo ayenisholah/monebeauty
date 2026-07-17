@@ -18,6 +18,11 @@ import {
 } from "@/lib/auth";
 import { adminBase, adminHref } from "@/lib/admin-routing";
 import type { Locale as AppLocale } from "@/i18n/routing";
+import {
+  PUBLIC_PATHS,
+  articlePath,
+  productPath,
+} from "@/lib/public-routes";
 
 const locales: Locale[] = ["fi", "en", "ru"];
 const serviceCategories: ServiceCategory[] = [
@@ -108,7 +113,7 @@ export async function adminLoginAction(formData: FormData) {
     redirect(`${adminHref(locale, "login")}?error=invalid`);
   }
   await createSession(user.id);
-  if (user.role === "STAFF") redirect(locale === "fi" ? "/staff" : `/${locale}/staff`);
+  if (user.role === "STAFF") redirect(localizedPublicPath(locale, PUBLIC_PATHS.staff));
   redirect(adminBase(locale));
 }
 
@@ -338,8 +343,8 @@ export async function saveProductAction(formData: FormData) {
     });
   }
   await mutationAudit(id ? "product_updated" : "product_created", "Product", saved.id);
-  revalidatePublic("/catalog");
-  revalidatePublic(`/catalog/${slug}`);
+  revalidatePublic(PUBLIC_PATHS.shop);
+  revalidatePublic(productPath(slug));
   revalidatePath(returnTo);
   if (!id) redirect(`${returnTo.replace(/\/uusi$/, "")}/${saved.id}?saved=1`);
 }
@@ -363,8 +368,8 @@ export async function removeProductAction(formData: FormData) {
     ]);
     await mutationAudit("product_deleted", "Product", id);
   }
-  revalidatePublic("/catalog");
-  revalidatePublic(`/catalog/${row.slug}`);
+  revalidatePublic(PUBLIC_PATHS.shop);
+  revalidatePublic(productPath(row.slug));
   revalidatePath(returnTo);
   redirect(returnTo);
 }
@@ -459,7 +464,7 @@ export async function savePricingAction(formData: FormData) {
     });
   }
   await mutationAudit(id ? "pricing_updated" : "pricing_created", "PricingItem", saved.id);
-  revalidatePublic("/pricing");
+  revalidatePublic(PUBLIC_PATHS.pricing);
   revalidatePath(returnTo);
   if (!id) redirect(`${returnTo.replace(/\/uusi$/, "")}/${saved.id}?saved=1`);
 }
@@ -470,7 +475,7 @@ export async function removePricingAction(formData: FormData) {
   const returnTo = safeReturnPath(formData);
   await prisma.pricingItem.delete({ where: { id } });
   await mutationAudit("pricing_deleted", "PricingItem", id);
-  revalidatePublic("/pricing");
+  revalidatePublic(PUBLIC_PATHS.pricing);
   revalidatePath(returnTo);
   redirect(returnTo);
 }
@@ -506,8 +511,8 @@ export async function saveArticleAction(formData: FormData) {
   }
   await prisma.article.update({ where: { id: saved.id }, data: { published: hasPublished, publishedAt: hasPublished ? new Date() : null } });
   await mutationAudit(id ? "article_updated" : "article_created", "Article", saved.id);
-  revalidatePublic(`/blog/${slug}`);
-  revalidatePublic("/blog");
+  revalidatePublic(articlePath(slug));
+  revalidatePublic(PUBLIC_PATHS.articles);
   revalidatePath(returnTo);
   if (!id) redirect(`${returnTo.replace(/\/uusi$/, "")}/${saved.id}?saved=1`);
 }
@@ -520,8 +525,8 @@ export async function removeArticleAction(formData: FormData) {
   if (!row) return;
   await prisma.article.delete({ where: { id } });
   await mutationAudit("article_deleted", "Article", id);
-  revalidatePublic(`/blog/${row.slug}`);
-  revalidatePublic("/blog");
+  revalidatePublic(articlePath(row.slug));
+  revalidatePublic(PUBLIC_PATHS.articles);
   revalidatePath(returnTo);
   redirect(returnTo);
 }

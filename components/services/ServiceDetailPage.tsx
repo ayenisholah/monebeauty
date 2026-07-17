@@ -12,39 +12,40 @@ import type { Locale } from "@/i18n/routing";
 import { excerpt } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { parseProcedures } from "@/lib/procedures";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 const SERVICE_IMAGES: Record<string, string[]> = {
-  "services/face": [
+  facial: [
     "/media/home/facial.jpg",
     "/media/files/land/104/760bda4adade7e51ab613436640590b3.jpg",
   ],
-  "services/body": [
+  body: [
     "/media/home/endospheres.jpg",
     "/media/files/land/122/262782e883ed1fd7968fd4ed737bb37f.jpeg",
     "/media/files/land/133/aee24846322a462b149cee1d4c9fbdb9.jpg",
   ],
-  "services/tricho": [
+  trichology: [
     "/media/files/land/303/8b2e9288e47ba7705d700a8d7edb596e.jpeg",
     "/media/files/land/303/5e7135aaffc757abe7dd5f3cb263e823.jpg",
   ],
-  "services/laser": [
+  laser: [
     "/media/files/land/252/c653b8462c5d40c9d6e4d5dae5b575e8.jpeg",
     "/media/files/land/253/41a8f8afce29bcfce17339e4d4e4fa11.jpg",
     "/media/files/land/255/21fb9e172f08b4966fbd887ca08b01a5.jpg",
   ],
-  "services/mikroneulanrf": [
+  rf: [
     "/media/files/land/280/21b80358547be97456baf00ac6a98ac9.jpeg",
     "/media/files/land/280/4786a56a1b037c521fe8acebe5c90a9c.jpeg",
   ],
-  "services/eyebrows": [
+  brows: [
     "/media/home/brows.jpg",
     "/media/files/land/303/fb364d611074112e8e9cdf3880b1369f.jpg",
   ],
-  "services/packages": [
+  packages: [
     "/media/home/packages.jpg",
     "/media/files/land/133/aee24846322a462b149cee1d4c9fbdb9.jpg",
   ],
-  "services/gift-cards": [
+  giftCards: [
     "/media/home/arosha.jpg",
     "/media/images/photo/5.jpg",
   ],
@@ -67,7 +68,7 @@ export async function ServiceDetailPage({
   const nav = await getTranslations("Nav");
   const images = service.images.length
     ? service.images
-    : (SERVICE_IMAGES[slug] ?? []);
+    : (SERVICE_IMAGES[service.slug] ?? []);
   const heroImage = images[0];
 
   if (!bookingKey || treatments.length === 0) {
@@ -84,7 +85,7 @@ export async function ServiceDetailPage({
             </div>
           </Container>
         </article>
-        <BookServiceCta contentSlug={slug} />
+        <BookServiceCta contentSlug={service.slug} />
       </>
     );
   }
@@ -105,7 +106,7 @@ export async function ServiceDetailPage({
               <div className="mt-[30px]">
                 <Button
                   href={{
-                    pathname: "/booking",
+                    pathname: PUBLIC_PATHS.booking,
                     query: { service: bookingKey },
                   }}
                   iconRight={ArrowRight}

@@ -9,6 +9,7 @@ import { ButtonAction } from "@/components/ui/Button";
 import { formatPrice } from "@/content/products";
 import { localizedPath } from "@/lib/seo";
 import { cn } from "@/lib/cn";
+import { PUBLIC_PATHS, orderPath } from "@/lib/public-routes";
 
 export function CheckoutForm() {
   const t = useTranslations("Checkout");
@@ -45,7 +46,7 @@ export function CheckoutForm() {
         return;
       }
       cart.clear();
-      window.location.assign(localizedPath(`/order/${data.id}`, locale));
+      window.location.assign(localizedPath(orderPath(data.id), locale));
     } catch {
       setError(t("errors.generic"));
     } finally {
@@ -58,7 +59,7 @@ export function CheckoutForm() {
       <div className="mx-auto max-w-[480px] rounded-[var(--radius)] border border-line-card bg-card p-[clamp(24px,4vw,40px)] text-center">
         <p className="font-sans text-[15px] text-body">{tb("empty")}</p>
         <Link
-          href="/catalog"
+          href={PUBLIC_PATHS.shop}
           className="mt-[22px] inline-flex min-h-[44px] items-center rounded-[4px] bg-accent px-[24px] font-sans text-[12px] font-medium tracking-[.16em] text-page uppercase"
         >
           {tb("browse")}
