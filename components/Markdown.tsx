@@ -7,42 +7,87 @@ import { canonicalInternalHref } from "@/lib/public-routes";
  * Renders real page-body markdown (from scraped_content) with the design system.
  * Images resolve from public/media/** (src rewritten by scripts/gen-content.mjs).
  */
-export function Markdown({ children }: { children: string }) {
+type MarkdownVariant = "default" | "technology";
+
+export function Markdown({
+  children,
+  variant = "default",
+}: {
+  children: string;
+  variant?: MarkdownVariant;
+}) {
+  const technology = variant === "technology";
+
   return (
-    <div className="max-w-none">
+    <div className={technology ? "mx-auto max-w-[760px]" : "max-w-none"}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h2 className="mt-[clamp(32px,4vw,48px)] font-display text-[clamp(26px,3.2vw,40px)] leading-[1.12] font-medium text-ink first:mt-0">
+            <h2
+              className={
+                technology
+                  ? "mt-[clamp(30px,4vw,44px)] font-display text-[clamp(26px,3.2vw,40px)] leading-[1.12] font-medium text-ink first:mt-0"
+                  : "mt-[clamp(32px,4vw,48px)] font-display text-[clamp(26px,3.2vw,40px)] leading-[1.12] font-medium text-ink first:mt-0"
+              }
+            >
               {children}
             </h2>
           ),
-          h2: ({ children }) => (
-            <h2 className="mt-[clamp(28px,3.5vw,44px)] font-display text-[clamp(23px,2.6vw,32px)] leading-[1.15] font-medium text-ink first:mt-0">
-              {children}
-            </h2>
-          ),
+          h2: ({ children }) =>
+            technology ? (
+              <h3 className="mt-[clamp(24px,3vw,34px)] font-display text-[clamp(22px,2.4vw,28px)] leading-[1.14] font-medium text-ink first:mt-0">
+                {children}
+              </h3>
+            ) : (
+              <h2 className="mt-[clamp(28px,3.5vw,44px)] font-display text-[clamp(23px,2.6vw,32px)] leading-[1.15] font-medium text-ink first:mt-0">
+                {children}
+              </h2>
+            ),
           h3: ({ children }) => (
-            <h3 className="mt-[clamp(22px,2.4vw,32px)] font-display text-[22px] font-semibold text-ink">
+            <h3
+              className={
+                technology
+                  ? "mt-[clamp(22px,2.6vw,30px)] font-display text-[clamp(20px,2.2vw,26px)] leading-[1.16] font-medium text-ink"
+                  : "mt-[clamp(22px,2.4vw,32px)] font-display text-[22px] font-semibold text-ink"
+              }
+            >
               {children}
             </h3>
           ),
           p: ({ children }) => (
-            <p className="mt-[16px] font-sans text-[15px] leading-[1.8] font-light text-body">
+            <p
+              className={
+                technology
+                  ? "mt-[14px] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light text-body"
+                  : "mt-[16px] font-sans text-[15px] leading-[1.8] font-light text-body"
+              }
+            >
               {children}
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="mt-[16px] flex flex-col gap-[10px]">{children}</ul>
+            <ul
+              className={
+                technology
+                  ? "mt-[14px] flex flex-col gap-[8px]"
+                  : "mt-[16px] flex flex-col gap-[10px]"
+              }
+            >
+              {children}
+            </ul>
           ),
           ol: ({ children }) => (
-            <ol className="mt-[16px] flex list-decimal flex-col gap-[10px] pl-[20px] marker:text-accent">
+            <ol
+              className={`${technology ? "mt-[14px] gap-[8px]" : "mt-[16px] gap-[10px]"} flex list-decimal flex-col pl-[20px] marker:text-accent`}
+            >
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="font-sans text-[15px] leading-[1.75] font-light text-body">
+            <li
+              className={`${technology ? "text-[clamp(14.5px,1.3vw,16px)]" : "text-[15px]"} font-sans leading-[1.75] font-light text-body`}
+            >
               {children}
             </li>
           ),
@@ -72,7 +117,11 @@ export function Markdown({ children }: { children: string }) {
                 src={src}
                 alt={alt ?? ""}
                 loading="lazy"
-                className="mt-[24px] w-full rounded-[var(--radius)] object-cover"
+                className={
+                  technology
+                    ? "mx-auto mt-[22px] h-auto max-h-[460px] w-auto max-w-full rounded-[var(--radius)] object-contain"
+                    : "mt-[24px] w-full rounded-[var(--radius)] object-cover"
+                }
               />
             ) : null,
           table: ({ children }) => (
