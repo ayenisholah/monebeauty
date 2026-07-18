@@ -342,15 +342,14 @@ export async function OrdersAdmin({
   const status = orderStatuses.includes(rawStatus as OrderStatus)
     ? (rawStatus as OrderStatus)
     : undefined;
-  const statusFilter = rawStatus === "ALL" ? undefined : status;
   const page = pageNumber(searchParams);
   const createdAt = operationsDateRange(from, to);
   const where: Prisma.OrderWhereInput = {
-    ...(statusFilter
-      ? { status: statusFilter }
-      : rawStatus === "ALL"
-        ? {}
-        : { status: { in: ["PENDING", "CONFIRMED", "PAID"] } }),
+    ...(status
+      ? { status }
+      : rawStatus === "ACTIVE"
+        ? { status: { in: ["PENDING", "CONFIRMED", "PAID"] } }
+        : {}),
     ...(createdAt ? { createdAt } : {}),
     ...(q
       ? {
@@ -386,7 +385,7 @@ export async function OrdersAdmin({
       <FilterForm
         locale={locale}
         q={q}
-        status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
+        status={rawStatus === "ACTIVE" ? "ACTIVE" : (status ?? "")}
         statuses={orderStatuses}
         from={from}
         to={to}
@@ -432,7 +431,12 @@ export async function OrdersAdmin({
         base={base}
         page={page}
         pages={Math.ceil(count / 25)}
-        params={{ q, status: rawStatus === "ALL" ? "ALL" : status, from, to }}
+        params={{
+          q,
+          status: rawStatus === "ACTIVE" ? "ACTIVE" : status,
+          from,
+          to,
+        }}
       />
     </div>
   );
@@ -686,9 +690,9 @@ export async function AppointmentsAdmin({
   const where: Prisma.AppointmentWhereInput = {
     ...(status
       ? { status }
-      : rawStatus === "ALL"
-        ? {}
-        : { status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] } }),
+      : rawStatus === "ACTIVE"
+        ? { status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] } }
+        : {}),
     ...(start ? { start } : {}),
     ...(q
       ? {
@@ -735,7 +739,7 @@ export async function AppointmentsAdmin({
       <FilterForm
         locale={locale}
         q={q}
-        status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
+        status={rawStatus === "ACTIVE" ? "ACTIVE" : (status ?? "")}
         statuses={appointmentStatuses}
         from={from}
         to={to}
@@ -784,7 +788,7 @@ export async function AppointmentsAdmin({
         pages={Math.ceil(count / 25)}
         params={{
           q,
-          status: rawStatus === "ALL" ? "ALL" : status,
+          status: rawStatus === "ACTIVE" ? "ACTIVE" : status,
           from,
           to,
         }}
@@ -857,8 +861,8 @@ function FilterForm({
       locale={locale}
       initial={{ q, status, from, to }}
       statusOptions={[
-        { value: "", label: t("active") },
-        { value: "ALL", label: t("all") },
+        { value: "", label: t("all") },
+        { value: "ACTIVE", label: t("active") },
         ...statuses.map((item) => ({
           value: item,
           label: t(`statusLabels.${item}`),

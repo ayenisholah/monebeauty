@@ -36,7 +36,8 @@ test("orders and appointments are first-class admin modules", () => {
   assert.match(operationsFilter, /<ThemedSelect/);
   assert.match(operations, /<DatePicker/);
   assert.match(operations, /<TimePicker/);
-  assert.match(operations, /value: "ALL"/);
+  assert.match(operations, /\{ value: "", label: t\("all"\) \}/);
+  assert.match(operations, /value: "ACTIVE", label: t\("active"\)/);
   assert.doesNotMatch(operationsFilter, /Apply filters|type="submit"/);
   assert.match(
     operationsFilter,
@@ -90,6 +91,22 @@ test("automatic operation filter URLs omit blanks and reset pagination", () => {
     operationsFilterQuery(filters),
     /page|practitioner|date=/,
   );
+});
+
+test("operation lists default to all statuses and keep active explicit", () => {
+  assert.match(
+    operations,
+    /rawStatus === "ACTIVE" \? "ACTIVE" : \(status \?\? ""\)/g,
+  );
+  assert.match(
+    operations,
+    /rawStatus === "ACTIVE"[\s\S]*?\["PENDING", "CONFIRMED", "PAID"\]/,
+  );
+  assert.match(
+    operations,
+    /rawStatus === "ACTIVE"[\s\S]*?\["BOOKED", "CONFIRMED", "RESCHEDULED"\]/,
+  );
+  assert.doesNotMatch(operations, /rawStatus === "ALL"/);
 });
 
 test("operation lifecycle data and delivery attempts are durable", () => {
