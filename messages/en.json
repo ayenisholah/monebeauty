@@ -611,6 +611,15 @@
       "submit": "Sign in",
       "invalid": "The email or password is not valid for admin access."
     },
+    "media": {
+      "uploadMultiple": "Upload images",
+      "uploadSingle": "Upload image",
+      "uploading": "Uploading {current}/{total}",
+      "success": "{count, plural, one {Image uploaded.} other {# images uploaded.}}",
+      "typeError": "Use JPG, PNG, WebP, AVIF, or GIF images.",
+      "sizeError": "Each image must be 25 MB or smaller.",
+      "uploadError": "Upload failed. Try again."
+    },
     "dashboard": {
       "title": "Operations dashboard",
       "subtitle": "Publication, client, booking, shop, and support overview.",

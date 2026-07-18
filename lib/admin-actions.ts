@@ -32,6 +32,10 @@ import {
 import { smsSegments } from "@/lib/sms";
 import { PROCEDURE_MEDIA_SEED } from "@/content/procedure-media";
 import { Prisma } from "@prisma/client";
+import {
+  isAllowedMediaReference,
+  isCloudinaryMediaReference,
+} from "@/lib/media-reference";
 
 const locales: Locale[] = ["fi", "en", "ru"];
 const serviceCategories: ServiceCategory[] = [
@@ -63,9 +67,7 @@ function mediaPaths(formData: FormData, key = "images") {
     .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
-  if (
-    paths.some((path) => !path.startsWith("/media/") || path.includes(".."))
-  ) {
+  if (paths.some((path) => !isAllowedMediaReference(path))) {
     throw new Error("invalid_media_path");
   }
   return paths;
@@ -188,18 +190,21 @@ export async function saveServiceAction(formData: FormData) {
     );
     if (!definition) redirect(`${returnTo}?error=validation`);
     const image = value(formData, `procedureImage_${key}`);
-    if (!image || !image.startsWith("/media/") || image.includes(".."))
+    if (!image || !isAllowedMediaReference(image))
       redirect(`${returnTo}?error=media`);
     const selectedDefinition = PROCEDURE_MEDIA_SEED.find(
       (item) => item.image === image,
     );
-    const selectedSourceUrl =
-      selectedDefinition?.sourceUrl ??
-      (image.startsWith("/media/files/") || image.startsWith("/media/images/")
-        ? `https://monebeauty.fi${image.replace(/^\/media/, "")}`
-        : "https://monebeauty.fi/");
-    const selectedSourceLicense =
-      selectedDefinition?.sourceLicense ?? "CLINIC_ARCHIVE";
+    const uploadedToCloudinary = isCloudinaryMediaReference(image);
+    const selectedSourceUrl = uploadedToCloudinary
+      ? image
+      : (selectedDefinition?.sourceUrl ??
+        (image.startsWith("/media/files/") || image.startsWith("/media/images/")
+          ? `https://monebeauty.fi${image.replace(/^\/media/, "")}`
+          : "https://monebeauty.fi/"));
+    const selectedSourceLicense = uploadedToCloudinary
+      ? "CLINIC_UPLOAD"
+      : (selectedDefinition?.sourceLicense ?? "CLINIC_ARCHIVE");
     await prisma.procedureMedia.upsert({
       where: { serviceId_key: { serviceId: saved.id, key } },
       update: {
@@ -643,10 +648,7 @@ export async function saveArticleAction(formData: FormData) {
   const returnTo = safeReturnPath(formData);
   if (!validSlug(slug)) redirect(`${returnTo}?error=validation`);
   const coverImage = value(formData, "coverImage");
-  if (
-    coverImage &&
-    (!coverImage.startsWith("/media/") || coverImage.includes(".."))
-  )
+  if (coverImage && !isAllowedMediaReference(coverImage))
     redirect(`${returnTo}?error=media`);
   const saved = id
     ? await prisma.article.update({

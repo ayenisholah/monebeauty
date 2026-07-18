@@ -53,6 +53,9 @@ jobs:
           SINCH_ACCESS_KEY_SECRET: ${{ secrets.SINCH_ACCESS_KEY_SECRET }}
           SINCH_PROJECT_ID: ${{ secrets.SINCH_PROJECT_ID }}
           SINCH_SMS_SENDER: ${{ secrets.SINCH_SMS_SENDER }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
           umask 077
           env_file="$(mktemp .env.XXXXXX)"
@@ -73,6 +76,9 @@ jobs:
             printf 'SINCH_ACCESS_KEY_SECRET=%s\n' "$SINCH_ACCESS_KEY_SECRET"
             printf 'SINCH_PROJECT_ID=%s\n' "$SINCH_PROJECT_ID"
             printf 'SINCH_SMS_SENDER=%s\n' "$SINCH_SMS_SENDER"
+            printf 'CLOUDINARY_CLOUD_NAME=%s\n' "$CLOUDINARY_CLOUD_NAME"
+            printf 'CLOUDINARY_API_KEY=%s\n' "$CLOUDINARY_API_KEY"
+            printf 'CLOUDINARY_API_SECRET=%s\n' "$CLOUDINARY_API_SECRET"
             printf 'PORT=%s\n' '5000'
           } > "$env_file"
           chmod 600 "$env_file"

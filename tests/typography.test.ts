@@ -34,7 +34,10 @@ test("public forms and reading content use the readable scale", () => {
 
 test("admin and staff controls avoid dense microcopy", () => {
   assert.match(admin, /const inputCls =\s*\n\s*"[^"]*text-compact/);
-  assert.match(admin, /min-w-\[720px\][^"]*text-\[14px\]/);
+  assert.match(
+    admin,
+    /text-\[14px\] font-medium text-body[\s\S]*activityAction\(entry\.action\)/,
+  );
   assert.match(admin, /const recordRow =\s*\n\s*"[^"]*text-\[14px\]/);
   assert.match(staff, /const inputCls =\s*\n\s*"[^"]*text-compact/);
 });

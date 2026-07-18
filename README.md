@@ -100,8 +100,20 @@ ANTHROPIC_API_KEY=sk-ant-...           # AI chatbot
 AUTH_SECRET=...                        # session/auth
 EMAIL_API_KEY=...                      # Resend/Postmark
 SMS_API_KEY=...                        # Twilio / FI gateway
+CLOUDINARY_CLOUD_NAME=...              # admin image uploads
+CLOUDINARY_API_KEY=...                 # server-side only
+CLOUDINARY_API_SECRET=...              # server-side only; never commit
 NEXT_PUBLIC_GA_ID=G-...                # Google Analytics 4
 ```
+
+Admin media fields accept existing `/media/...` paths or images uploaded to Cloudinary.
+Uploads are restricted to authenticated administrators and JPG, PNG, WebP, AVIF, or GIF
+files no larger than 25 MB. Store Cloudinary credentials in `.env` locally and as GitHub
+Actions secrets in production. Rotate any credential that has been shared outside the
+secret store before using it.
+
+If a reverse proxy sits in front of Next.js, configure its request-body limit above 25 MB
+(for example, Nginx `client_max_body_size 26m`) so permitted uploads reach the admin API.
 
 ### Scripts (planned)
 

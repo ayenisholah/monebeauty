@@ -603,6 +603,15 @@
       "submit": "Kirjaudu",
       "invalid": "Sähköposti tai salasana ei kelpaa hallintakäyttöön."
     },
+    "media": {
+      "uploadMultiple": "Lataa kuvia",
+      "uploadSingle": "Lataa kuva",
+      "uploading": "Ladataan {current}/{total}",
+      "success": "Ladattu {count} kuvaa.",
+      "typeError": "Käytä JPG-, PNG-, WebP-, AVIF- tai GIF-kuvia.",
+      "sizeError": "Kuvan koko saa olla enintään 25 Mt.",
+      "uploadError": "Lataus epäonnistui. Yritä uudelleen."
+    },
     "dashboard": {
       "title": "Toiminnan yhteenveto",
       "subtitle": "Julkaisujen, asiakkaiden, varausten, kaupan ja tuen tilanne.",
