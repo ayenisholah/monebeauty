@@ -80,7 +80,7 @@ export function CheckoutForm() {
         {error ? (
           <p
             role="alert"
-            className="mb-[18px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[13px] text-ink"
+            className="mb-[18px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[14px] text-ink"
           >
             {error}
           </p>
@@ -125,7 +125,7 @@ export function CheckoutForm() {
           </Field>
         </div>
 
-        <label className="mt-[18px] flex items-start gap-[10px] font-sans text-[13px] leading-[1.6] text-body">
+        <label className="mt-[18px] flex items-start gap-[10px] font-sans text-[14px] leading-[1.6] text-body">
           <input
             type="checkbox"
             checked={consent}
@@ -159,7 +159,7 @@ export function CheckoutForm() {
             return (
               <div
                 key={line.product.slug}
-                className="flex justify-between gap-[14px] border-b border-line-hair pb-[12px] font-sans text-[13px]"
+                className="flex justify-between gap-[14px] border-b border-line-hair pb-[12px] font-sans text-[14px]"
               >
                 <span className="text-body">
                   {line.qty} x {name}
@@ -181,7 +181,7 @@ export function CheckoutForm() {
 }
 
 const inputCls =
-  "w-full rounded-[4px] border border-line-btn bg-page px-[14px] py-[11px] font-sans text-[14px] text-ink outline-none focus:border-accent";
+  "w-full rounded-[4px] border border-line-btn bg-page px-[14px] py-[11px] font-sans text-copy text-ink outline-none focus:border-accent";
 
 function Field({
   label,
@@ -194,7 +194,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-[6px] block font-sans text-[12px] tracking-[.04em] text-muted uppercase">
+      <span className="mb-[6px] block font-sans text-label tracking-[.04em] text-muted uppercase">
         {label}
         {required ? <span className="text-accent"> *</span> : null}
       </span>

@@ -19,7 +19,11 @@ export function MediaField({
   const [paths, setPaths] = useState(defaultValue);
   const [selection, setSelection] = useState("");
   const preview = useMemo(
-    () => paths.split(/\r?\n/).map((path) => path.trim()).find(Boolean),
+    () =>
+      paths
+        .split(/\r?\n/)
+        .map((path) => path.trim())
+        .find(Boolean),
     [paths],
   );
 
@@ -27,7 +31,10 @@ export function MediaField({
     setSelection(path);
     if (!path) return;
     if (multiple) {
-      const current = paths.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      const current = paths
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
       if (!current.includes(path)) setPaths([...current, path].join("\n"));
     } else {
       setPaths(path);
@@ -37,7 +44,7 @@ export function MediaField({
   return (
     <div>
       <label className="block">
-        <span className="mb-[6px] block font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+        <span className="mb-[6px] block font-sans text-label tracking-[.08em] text-muted uppercase">
           {label}
         </span>
         {multiple ? (
@@ -46,14 +53,14 @@ export function MediaField({
             rows={3}
             value={paths}
             onChange={(event) => setPaths(event.target.value)}
-            className="w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-[13px] text-ink outline-none focus:border-accent"
+            className="w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-compact text-ink outline-none focus:border-accent"
           />
         ) : (
           <input
             name={name}
             value={paths}
             onChange={(event) => setPaths(event.target.value)}
-            className="w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-[13px] text-ink outline-none focus:border-accent"
+            className="w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-compact text-ink outline-none focus:border-accent"
           />
         )}
       </label>
@@ -62,18 +69,27 @@ export function MediaField({
           aria-label={`${label} media library`}
           value={selection}
           onChange={(event) => choose(event.target.value)}
-          className="min-h-[44px] min-w-0 rounded-[4px] border border-line-btn bg-card px-[10px] font-sans text-[12px] text-body"
+          className="min-h-[44px] min-w-0 rounded-[4px] border border-line-btn bg-card px-[10px] font-sans text-compact text-body"
         >
           <option value="">/media/…</option>
-          {assets.map((asset) => <option key={asset} value={asset}>{asset}</option>)}
+          {assets.map((asset) => (
+            <option key={asset} value={asset}>
+              {asset}
+            </option>
+          ))}
         </select>
         {preview?.startsWith("/media/") ? (
           <div className="relative h-[72px] overflow-hidden rounded-[4px] border border-line-card bg-page">
-            <Image src={preview} alt="" fill sizes="96px" className="object-cover" />
+            <Image
+              src={preview}
+              alt=""
+              fill
+              sizes="96px"
+              className="object-cover"
+            />
           </div>
         ) : null}
       </div>
     </div>
   );
 }
-

@@ -39,7 +39,7 @@ export function TreatmentCard({
     <article
       className={cn(
         "group flex min-h-full flex-col overflow-hidden rounded-[var(--radius)] border border-line-card bg-card transition-all duration-300 hover:-translate-y-[6px] hover:border-line-card-hover hover:shadow-card",
-        !expanded && "h-[560px]",
+        !expanded && "min-h-[590px]",
       )}
     >
       <div className="relative h-[248px] shrink-0 overflow-hidden">
@@ -56,19 +56,19 @@ export function TreatmentCard({
       </div>
       <div className="flex min-h-0 flex-1 flex-col p-[22px_22px_26px]">
         {item.group ? (
-          <p className="mb-[10px] font-sans text-[11px] font-medium tracking-[.2em] text-accent uppercase">
+          <p className="mb-[10px] font-sans text-meta font-medium tracking-[.2em] text-accent uppercase">
             {item.group}
           </p>
         ) : null}
         <h2 className="font-display text-[24px] leading-[1.1] font-semibold text-ink">
           {item.title}
         </h2>
-        <p className="mt-[14px] w-fit rounded-[4px] border border-line-card bg-alt px-[12px] py-[7px] font-sans text-[13px] font-medium text-ink">
+        <p className="mt-[14px] w-fit rounded-[4px] border border-line-card bg-alt px-[12px] py-[7px] font-sans text-[14px] font-medium text-ink">
           {item.price}
         </p>
         <div
           className={cn(
-            "relative mt-[16px] min-h-0 flex-1 [&_h2]:text-[22px] [&_h3]:text-[20px] [&_img]:hidden [&_li]:text-[13px] [&_li]:leading-[1.6] [&_p]:mt-[10px] [&_p]:text-[13px] [&_p]:leading-[1.65] [&_ul]:gap-[6px]",
+            "relative mt-[16px] min-h-0 flex-1 [&_h2]:text-[22px] [&_h3]:text-[20px] [&_img]:hidden [&_li]:text-compact [&_li]:leading-[1.65] [&_p]:mt-[10px] [&_p]:text-compact [&_p]:leading-[1.65] [&_ul]:gap-[6px]",
             canExpand && !expanded && "max-h-[132px] overflow-hidden",
           )}
         >
@@ -81,7 +81,7 @@ export function TreatmentCard({
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="mt-[12px] w-fit border-b border-line-underline pb-[3px] font-sans text-[11px] font-medium tracking-[.16em] text-accent uppercase transition-colors hover:border-accent"
+            className="mt-[12px] w-fit border-b border-line-underline pb-[3px] font-sans text-meta font-medium tracking-[.16em] text-accent uppercase transition-colors hover:border-accent"
           >
             {expanded ? seeLessLabel : seeMoreLabel}
           </button>

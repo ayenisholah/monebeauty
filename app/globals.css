@@ -70,6 +70,10 @@
   --text-h2-tech: clamp(26px, 3.2vw, 40px);
   --text-tech: clamp(20px, 2.4vw, 28px);
   --text-lead: clamp(14.5px, 1.3vw, 16px);
+  --text-copy: 16px;
+  --text-compact: 15px;
+  --text-label: 13px;
+  --text-meta: 12px;
 
   /* ---- Radii ---- */
   --radius-soft: 16px;
@@ -270,11 +274,11 @@ body:has(.home-reference) > footer {
 }
 .hr-btn.small {
   padding: 11px 18px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .hr-more {
   border-bottom: 1px solid var(--color-line-underline);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -289,7 +293,7 @@ body:has(.home-reference) > footer {
   gap: 12px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-line-hair);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -345,7 +349,7 @@ body:has(.home-reference) > footer {
   left: 16px;
   padding: 8px 12px;
   background: rgba(251, 248, 243, 0.84);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -361,7 +365,7 @@ body:has(.home-reference) > footer {
   border-top: 1px solid var(--color-line-card);
 }
 .hr-strip dt {
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -434,7 +438,7 @@ body:has(.home-reference) > footer {
 }
 .hr-care p {
   margin-top: 10px;
-  font-size: 14px;
+  font-size: 15px;
 }
 .hr-creds {
   display: flex;
@@ -442,7 +446,7 @@ body:has(.home-reference) > footer {
   justify-content: center;
   gap: 22px 36px;
   margin-top: 36px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -469,7 +473,7 @@ body:has(.home-reference) > footer {
   padding: 24px;
 }
 .hr-card-body > span {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -484,7 +488,7 @@ body:has(.home-reference) > footer {
 }
 .hr-card-body p {
   margin: 10px 0 20px;
-  font-size: 14px;
+  font-size: 15px;
 }
 .hr-card-body > div {
   display: flex;
@@ -495,7 +499,7 @@ body:has(.home-reference) > footer {
   display: grid;
   place-items: center;
   background: var(--color-alt);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -519,7 +523,7 @@ body:has(.home-reference) > footer {
 .hr-tech article > div:last-child > span {
   display: block;
   margin-top: 16px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -540,7 +544,7 @@ body:has(.home-reference) > footer {
 .hr-tabs button {
   padding: 16px clamp(14px, 3vw, 34px);
   border-bottom: 2px solid transparent;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.14em;
 }
@@ -572,29 +576,29 @@ body:has(.home-reference) > footer {
   padding: 16px;
 }
 .hr-products small {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--accent);
 }
 .hr-products h3 {
   min-height: 42px;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--color-ink);
 }
 .hr-products p {
-  height: 40px;
+  height: 44px;
   overflow: hidden;
   margin-top: 8px;
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.55;
 }
 .hr-products strong {
   display: flex;
   justify-content: space-between;
   margin-top: 12px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .hr-products em {
   font-style: normal;
@@ -617,7 +621,7 @@ body:has(.home-reference) > footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .hr-booking {
   display: grid;
@@ -637,7 +641,7 @@ body:has(.home-reference) > footer {
 }
 .hr-echo span {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -656,7 +660,7 @@ body:has(.home-reference) > footer {
   display: flex;
   gap: 10px;
   margin-top: 28px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .hr-booking form {
   display: grid;
@@ -665,7 +669,7 @@ body:has(.home-reference) > footer {
 .hr-booking label {
   display: grid;
   gap: 7px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -678,6 +682,8 @@ body:has(.home-reference) > footer {
   border: 1px solid var(--color-line-btn);
   background: var(--color-card);
   padding: 12px;
+  font-family: var(--font-sans);
+  font-size: 16px;
   color: var(--color-ink);
   text-transform: none;
 }
@@ -716,7 +722,7 @@ body:has(.home-reference) > footer {
 .hr-footer-grid > div:first-child > p {
   max-width: 250px;
   margin-top: 20px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .hr-social {
   display: flex;
@@ -735,11 +741,11 @@ body:has(.home-reference) > footer {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .hr-footer-col h4 {
   margin-bottom: 10px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-footer-heading);
@@ -906,8 +912,9 @@ body:has(.home-reference) > footer {
 }
 .home-reference .hr-care p {
   margin-top: 10px;
-  font-size: 13.5px;
+  font-size: 15px;
   line-height: 1.55;
+  font-weight: 400;
 }
 .home-reference .hr-creds {
   gap: 0;
@@ -955,7 +962,8 @@ body:has(.home-reference) > footer {
 .home-reference .hr-card-body p {
   flex: 1;
   margin: 7px 0 16px;
-  font-size: 13.5px;
+  font-size: 15px;
+  font-weight: 400;
 }
 .home-reference .hr-card-body > div {
   justify-content: space-between;
@@ -1128,7 +1136,7 @@ body:has(.home-reference) > footer {
   display: block;
   margin-top: 16px;
   color: var(--color-accent-sand);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -1173,11 +1181,11 @@ body:has(.home-reference) > footer {
   border: 0;
 }
 .home-reference .hr-products h3 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .home-reference .hr-products p {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--color-muted);
 }
 .home-reference .hr-products strong {

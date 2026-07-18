@@ -251,7 +251,7 @@ export function BookingWizard({
   }
 
   const chip =
-    "min-h-[44px] rounded-[4px] border px-[16px] py-[10px] font-sans text-[13px] transition-colors";
+    "min-h-[44px] rounded-[4px] border px-[16px] py-[10px] font-sans text-[14px] transition-colors";
   const chipIdle =
     "border-line-btn text-ink hover:border-line-btn-hover hover:bg-btn-fill";
 
@@ -356,7 +356,7 @@ export function BookingWizard({
       {error && (
         <p
           role="alert"
-          className="mt-[16px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[13px] text-ink"
+          className="mt-[16px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[14px] text-ink"
         >
           {error}
         </p>
@@ -405,11 +405,11 @@ export function BookingWizard({
               {t("pickTime")}
             </p>
             {!date ? (
-              <p className="font-sans text-[13px] text-muted">
+              <p className="font-sans text-[14px] text-muted">
                 {t("pickDateFirst")}
               </p>
             ) : slotsLoading ? (
-              <p className="font-sans text-[13px] text-muted">{t("loading")}</p>
+              <p className="font-sans text-[14px] text-muted">{t("loading")}</p>
             ) : slots.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-[8px]">
                 {slots.map((s) => (
@@ -426,7 +426,7 @@ export function BookingWizard({
             ) : slotsDegraded ? (
               <FallbackBlock t={t} fallback={fallback} />
             ) : (
-              <p className="font-sans text-[13px] text-muted">{t("noTimes")}</p>
+              <p className="font-sans text-[14px] text-muted">{t("noTimes")}</p>
             )}
           </div>
         </div>
@@ -488,7 +488,7 @@ export function BookingWizard({
             </Field>
           </div>
 
-          <label className="mt-[18px] flex items-start gap-[10px] font-sans text-[13px] leading-[1.6] text-body">
+          <label className="mt-[18px] flex items-start gap-[10px] font-sans text-[14px] leading-[1.6] text-body">
             <input
               type="checkbox"
               checked={consent}
@@ -517,7 +517,7 @@ export function BookingWizard({
 }
 
 const inputCls =
-  "w-full rounded-[4px] border border-line-btn bg-page px-[14px] py-[11px] font-sans text-[14px] text-ink outline-none focus:border-accent";
+  "w-full rounded-[4px] border border-line-btn bg-page px-[14px] py-[11px] font-sans text-copy text-ink outline-none focus:border-accent";
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
@@ -562,7 +562,7 @@ function SelectedContext({
         </div>
       ) : null}
       <div className="p-[clamp(18px,2.5vw,26px)]">
-        <p className="font-sans text-[11px] font-medium tracking-[.16em] text-accent uppercase">
+        <p className="font-sans text-meta font-medium tracking-[.16em] text-accent uppercase">
           {procedure ? t("context.procedure") : t("context.service")}
         </p>
         {procedure ? (
@@ -573,7 +573,7 @@ function SelectedContext({
         <h3 className="mt-[5px] font-display text-[clamp(24px,3vw,32px)] leading-[1.08] font-medium text-ink">
           {procedure?.title ?? service.name}
         </h3>
-        <p className="mt-[10px] font-sans text-[13px] leading-[1.65] font-light text-body">
+        <p className="mt-[10px] font-sans text-compact leading-[1.65] font-normal text-body">
           {procedure?.description ?? service.shortDescription}
         </p>
         <div className="mt-[14px] flex flex-wrap gap-x-[18px] gap-y-[6px] font-sans text-[12px] text-muted">
@@ -599,7 +599,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-[6px] block font-sans text-[12px] tracking-[.04em] text-muted uppercase">
+      <span className="mb-[6px] block font-sans text-label tracking-[.04em] text-muted uppercase">
         {label}
         {required && <span className="text-accent"> *</span>}
       </span>
@@ -617,7 +617,7 @@ function FallbackBlock({
 }) {
   return (
     <div className="mt-[16px] rounded-[var(--radius)] border border-line-card bg-card p-[18px]">
-      <p className="font-sans text-[13px] leading-[1.7] text-body">
+      <p className="font-sans text-[14px] leading-[1.7] text-body">
         {t("fallback")}
       </p>
       <div className="mt-[12px] flex flex-wrap gap-[10px]">

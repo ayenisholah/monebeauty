@@ -26,8 +26,8 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  md: "px-[30px] py-[16px] text-[12px] tracking-[.17em]",
-  sm: "px-[22px] py-[12px] text-[11px] tracking-[.16em]",
+  md: "px-[30px] py-[16px] text-label tracking-[.17em]",
+  sm: "px-[22px] py-[12px] text-meta tracking-[.16em]",
 };
 
 type CommonProps = {

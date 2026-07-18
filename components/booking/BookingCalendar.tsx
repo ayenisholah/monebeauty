@@ -93,7 +93,7 @@ export function BookingCalendar({
         {weekLabels.map((w, i) => (
           <div
             key={i}
-            className="grid h-[30px] place-items-center font-sans text-[11px] tracking-[.02em] text-muted uppercase"
+            className="grid h-[30px] place-items-center font-sans text-meta tracking-[.02em] text-muted uppercase"
           >
             {w.slice(0, 2)}
           </div>

@@ -192,9 +192,7 @@ export function ChatWidget() {
               <div className="font-display text-[20px] font-semibold text-ink">
                 {panelTitle}
               </div>
-              <p className="font-sans text-[12px] text-muted">
-                {t("subtitle")}
-              </p>
+              <p className="font-sans text-label text-muted">{t("subtitle")}</p>
             </div>
             <button
               type="button"
@@ -208,7 +206,7 @@ export function ChatWidget() {
 
           <div className="flex-1 overflow-y-auto px-[14px] py-[14px]">
             {messages.length === 0 ? (
-              <div className="rounded-[8px] border border-line-card bg-card p-[14px] font-sans text-[13px] leading-[1.6] text-body">
+              <div className="rounded-[8px] border border-line-card bg-card p-[14px] font-sans text-compact leading-[1.6] text-body">
                 {t("welcome")}
               </div>
             ) : null}
@@ -217,7 +215,7 @@ export function ChatWidget() {
                 <div
                   key={`${message.role}-${index}`}
                   className={cn(
-                    "max-w-[88%] rounded-[10px] px-[12px] py-[10px] font-sans text-[13px] leading-[1.55]",
+                    "max-w-[88%] rounded-[10px] px-[12px] py-[10px] font-sans text-compact leading-[1.55]",
                     message.role === "user"
                       ? "ml-auto bg-accent text-page"
                       : "mr-auto border border-line-card bg-card text-body",
@@ -226,7 +224,7 @@ export function ChatWidget() {
                   <p className="whitespace-pre-line">{message.content}</p>
                   {message.role === "assistant" && message.sources?.length ? (
                     <div className="mt-[8px] border-t border-line-hair pt-[7px]">
-                      <div className="mb-[4px] text-[10px] tracking-[.1em] text-muted uppercase">
+                      <div className="mb-[4px] text-meta tracking-[.1em] text-muted uppercase">
                         {t("sources")}
                       </div>
                       <ul className="grid gap-[3px]">
@@ -234,7 +232,7 @@ export function ChatWidget() {
                           <li key={source.href}>
                             <Link
                               href={source.href}
-                              className="text-[12px] text-accent underline decoration-line-btn underline-offset-2"
+                              className="text-label text-accent underline decoration-line-btn underline-offset-2"
                             >
                               {source.title}
                             </Link>
@@ -246,7 +244,7 @@ export function ChatWidget() {
                 </div>
               ))}
               {loading ? (
-                <div className="mr-auto rounded-[10px] border border-line-card bg-card px-[12px] py-[10px] font-sans text-[13px] text-muted">
+                <div className="mr-auto rounded-[10px] border border-line-card bg-card px-[12px] py-[10px] font-sans text-compact text-muted">
                   {t("thinking")}
                 </div>
               ) : null}
@@ -256,7 +254,7 @@ export function ChatWidget() {
                 role="alert"
                 className="mt-[12px] rounded-[8px] border border-line-btn bg-btn-fill p-[12px]"
               >
-                <p className="font-sans text-[13px] leading-[1.55] text-ink">
+                <p className="font-sans text-[14px] leading-[1.55] text-ink">
                   {t("assistantUnavailable")}
                 </p>
                 <div className="mt-[10px] flex flex-wrap gap-[8px]">
@@ -266,26 +264,26 @@ export function ChatWidget() {
                       failedMessage && void sendMessage(failedMessage)
                     }
                     disabled={!failedMessage || loading}
-                    className="min-h-[38px] rounded-[4px] bg-accent px-[12px] font-sans text-[11px] tracking-[.1em] text-page uppercase disabled:opacity-50"
+                    className="min-h-[40px] rounded-[4px] bg-accent px-[12px] font-sans text-meta tracking-[.1em] text-page uppercase disabled:opacity-50"
                   >
                     {t("retry")}
                   </button>
                   <Link
                     href={PUBLIC_PATHS.booking}
-                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                    className="inline-flex min-h-[40px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-meta tracking-[.1em] text-ink uppercase"
                   >
                     {t("bookOnline")}
                   </Link>
                   <a
                     href={CONTACT.emailHref}
-                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                    className="inline-flex min-h-[40px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-meta tracking-[.1em] text-ink uppercase"
                   >
                     {t("contactClinic")}
                   </a>
                   <button
                     type="button"
                     onClick={() => openHandoff(failedMessage ?? undefined)}
-                    className="inline-flex min-h-[38px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.1em] text-ink uppercase"
+                    className="inline-flex min-h-[40px] items-center rounded-[4px] border border-line-btn px-[12px] font-sans text-meta tracking-[.1em] text-ink uppercase"
                   >
                     {t("humanFollowUp")}
                   </button>
@@ -298,18 +296,18 @@ export function ChatWidget() {
                   pathname: PUBLIC_PATHS.booking,
                   query: { service: booking.serviceKey },
                 }}
-                className="mt-[12px] inline-flex min-h-[42px] items-center gap-[8px] rounded-[4px] bg-accent px-[14px] font-sans text-[11px] tracking-[.12em] text-page uppercase"
+                className="mt-[12px] inline-flex min-h-[44px] items-center gap-[8px] rounded-[4px] bg-accent px-[14px] font-sans text-meta tracking-[.12em] text-page uppercase"
               >
                 {t("book")} <ArrowRight size={14} weight="thin" />
               </Link>
             ) : null}
             {handoffSent ? (
-              <p className="mt-[12px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[9px] font-sans text-[13px] text-ink">
+              <p className="mt-[12px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[9px] font-sans text-[14px] text-ink">
                 {t("handoffSent")}
               </p>
             ) : null}
             {error ? (
-              <p className="mt-[12px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[9px] font-sans text-[13px] text-ink">
+              <p className="mt-[12px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[9px] font-sans text-[14px] text-ink">
                 {error}
               </p>
             ) : null}
@@ -352,7 +350,7 @@ export function ChatWidget() {
                   rows={2}
                   className={inputCls}
                 />
-                <label className="flex items-start gap-[8px] font-sans text-[12px] leading-[1.45] text-body">
+                <label className="flex items-start gap-[8px] font-sans text-[14px] leading-[1.5] text-body">
                   <input
                     type="checkbox"
                     checked={consent}
@@ -367,14 +365,14 @@ export function ChatWidget() {
                   type="button"
                   onClick={() => void sendHandoff()}
                   disabled={!handoffReady}
-                  className="min-h-[40px] flex-1 rounded-[4px] bg-accent px-[12px] font-sans text-[11px] tracking-[.12em] text-page uppercase disabled:opacity-50"
+                  className="min-h-[44px] flex-1 rounded-[4px] bg-accent px-[12px] font-sans text-meta tracking-[.12em] text-page uppercase disabled:opacity-50"
                 >
                   {t("sendHandoff")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setHandoffOpen(false)}
-                  className="min-h-[40px] rounded-[4px] border border-line-btn px-[12px] font-sans text-[11px] tracking-[.12em] text-ink uppercase"
+                  className="min-h-[44px] rounded-[4px] border border-line-btn px-[12px] font-sans text-meta tracking-[.12em] text-ink uppercase"
                 >
                   {t("cancel")}
                 </button>
@@ -382,7 +380,7 @@ export function ChatWidget() {
             </div>
           ) : (
             <footer className="border-t border-line-hair bg-card px-[14px] py-[12px]">
-              <label className="mb-[10px] flex items-start gap-[8px] font-sans text-[12px] leading-[1.45] text-body">
+              <label className="mb-[10px] flex items-start gap-[8px] font-sans text-[14px] leading-[1.5] text-body">
                 <input
                   type="checkbox"
                   checked={consent}
@@ -402,7 +400,7 @@ export function ChatWidget() {
                     }
                   }}
                   placeholder={t("placeholder")}
-                  className="min-h-[44px] flex-1 rounded-[4px] border border-line-btn bg-page px-[12px] font-sans text-[13px] text-ink outline-none focus:border-accent"
+                  className="min-h-[44px] flex-1 rounded-[4px] border border-line-btn bg-page px-[12px] font-sans text-copy text-ink outline-none focus:border-accent"
                 />
                 <button
                   type="button"
@@ -417,7 +415,7 @@ export function ChatWidget() {
               <button
                 type="button"
                 onClick={() => openHandoff()}
-                className="mt-[10px] inline-flex min-h-[36px] items-center gap-[7px] font-sans text-[12px] text-accent"
+                className="mt-[10px] inline-flex min-h-[40px] items-center gap-[7px] font-sans text-label text-accent"
               >
                 <EnvelopeSimple size={15} weight="thin" />
                 {t("handoff")}
@@ -427,10 +425,10 @@ export function ChatWidget() {
         </section>
       ) : (
         <div className="hidden rounded-[14px] bg-page px-[16px] py-[12px] shadow-[var(--shadow-bubble)] sm:block">
-          <div className="font-sans text-[12px] font-medium text-ink">
+          <div className="font-sans text-label font-medium text-ink">
             {t("title")}
           </div>
-          <div className="font-sans text-[12px] font-light text-muted">
+          <div className="font-sans text-label font-normal text-muted">
             {t("subtitle")}
           </div>
         </div>
@@ -458,4 +456,4 @@ export function ChatWidget() {
 }
 
 const inputCls =
-  "w-full rounded-[4px] border border-line-btn bg-page px-[10px] py-[9px] font-sans text-[13px] text-ink outline-none focus:border-accent";
+  "w-full rounded-[4px] border border-line-btn bg-page px-[10px] py-[9px] font-sans text-copy text-ink outline-none focus:border-accent";

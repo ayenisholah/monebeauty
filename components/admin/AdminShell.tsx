@@ -71,7 +71,7 @@ export function AdminShell({
     const focusable = () =>
       Array.from(
         drawer?.querySelectorAll<HTMLElement>(
-          'a[href],button:not([disabled]),select:not([disabled]),input:not([disabled])',
+          "a[href],button:not([disabled]),select:not([disabled]),input:not([disabled])",
         ) ?? [],
       );
     focusable()[0]?.focus();
@@ -115,7 +115,10 @@ export function AdminShell({
       className={`fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,292px)] flex-col border-r border-line-header bg-card shadow-card transition-transform duration-200 motion-reduce:transition-none [@media(min-width:900px)]:translate-x-0 [@media(min-width:900px)]:shadow-none ${open ? "translate-x-0" : "-translate-x-full"}`}
     >
       <div className="flex min-h-[76px] items-center justify-between border-b border-line-hair px-[20px]">
-        <Link href={adminBase(locale)} className="font-display text-[23px] font-medium">
+        <Link
+          href={adminBase(locale)}
+          className="font-display text-[23px] font-medium"
+        >
           {labels.appName}
         </Link>
         <button
@@ -152,16 +155,18 @@ export function AdminShell({
         <div className="mb-[12px] flex items-center gap-[10px]">
           <UserCircle size={26} weight="thin" aria-hidden="true" />
           <div className="min-w-0 font-sans">
-            <div className="truncate text-[13px] text-ink">{user.name || labels.appName}</div>
-            <div className="truncate text-[11px] text-muted">{user.email}</div>
+            <div className="truncate text-[14px] text-ink">
+              {user.name || labels.appName}
+            </div>
+            <div className="truncate text-label text-muted">{user.email}</div>
           </div>
         </div>
-        <label className="mb-[10px] block font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+        <label className="mb-[10px] block font-sans text-label tracking-[.08em] text-muted uppercase">
           {labels.locale}
           <select
             value={locale}
             onChange={(event) => switchLocale(event.target.value as Locale)}
-            className="mt-[6px] min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[10px] text-[13px] text-ink"
+            className="mt-[6px] min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[10px] text-compact text-ink"
           >
             <option value="fi">Suomi</option>
             <option value="en">English</option>
@@ -172,7 +177,7 @@ export function AdminShell({
           <input type="hidden" name="locale" value={locale} />
           <button
             type="submit"
-            className="flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[13px] text-body hover:bg-btn-fill hover:text-ink"
+            className="flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[14px] text-body hover:bg-btn-fill hover:text-ink"
           >
             <SignOut size={20} weight="thin" aria-hidden="true" />
             {labels.logout}
@@ -196,7 +201,9 @@ export function AdminShell({
         >
           <List size={23} weight="thin" />
         </button>
-        <span className="ml-[10px] font-display text-[22px] font-medium">{labels.appName}</span>
+        <span className="ml-[10px] font-display text-[22px] font-medium">
+          {labels.appName}
+        </span>
       </header>
       {sidebar}
       {open ? (

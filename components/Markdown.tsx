@@ -59,8 +59,8 @@ export function Markdown({
             <p
               className={
                 technology
-                  ? "mt-[14px] max-w-[70ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light text-body"
-                  : "mt-[16px] font-sans text-[15px] leading-[1.8] font-light text-body"
+                  ? "mt-[14px] max-w-[70ch] font-sans text-copy leading-[1.75] font-normal text-body"
+                  : "mt-[16px] font-sans text-copy leading-[1.8] font-normal text-body"
               }
             >
               {children}
@@ -85,9 +85,7 @@ export function Markdown({
             </ol>
           ),
           li: ({ children }) => (
-            <li
-              className={`${technology ? "text-[clamp(14.5px,1.3vw,16px)]" : "text-[15px]"} font-sans leading-[1.75] font-light text-body`}
-            >
+            <li className="font-sans text-copy leading-[1.75] font-normal text-body">
               {children}
             </li>
           ),
@@ -137,7 +135,7 @@ export function Markdown({
             </th>
           ),
           td: ({ children }) => (
-            <td className="border-b border-line-card px-[12px] py-[10px] font-light text-body">
+            <td className="border-b border-line-card px-[12px] py-[10px] font-normal text-body">
               {children}
             </td>
           ),

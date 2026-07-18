@@ -214,7 +214,7 @@ export async function AdminRouter({
       {feedback ? (
         <p
           role="status"
-          className="mb-[18px] rounded-[5px] border border-line-btn bg-btn-fill px-[14px] py-[11px] font-sans text-[13px] text-ink"
+          className="mb-[18px] rounded-[5px] border border-line-btn bg-btn-fill px-[14px] py-[11px] font-sans text-[14px] text-ink"
         >
           {feedback}
         </p>
@@ -251,7 +251,7 @@ async function Login({
         {searchParams.error ? (
           <p
             role="alert"
-            className="mt-[18px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[10px] font-sans text-[13px]"
+            className="mt-[18px] rounded-[4px] border border-line-btn bg-btn-fill px-[12px] py-[10px] font-sans text-[14px]"
           >
             {copy.login.invalid}
           </p>
@@ -414,7 +414,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
             href={adminHref(locale, card.module)}
             className={cardCls}
           >
-            <span className="font-sans text-[11px] tracking-[.1em] text-muted uppercase">
+            <span className="font-sans text-meta tracking-[.1em] text-muted uppercase">
               {card.key}
             </span>
             <strong className="mt-[10px] block font-display text-[36px] font-medium">
@@ -427,7 +427,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
         <section className={panelCls}>
           <h2 className={sectionTitle}>{copy.dashboard.warnings}</h2>
           {warnings.length ? (
-            <ul className="mt-[14px] grid gap-[8px] font-sans text-[13px] text-body">
+            <ul className="mt-[14px] grid gap-[8px] font-sans text-[14px] text-body">
               {warnings.map((warning) => (
                 <li
                   key={warning}
@@ -438,7 +438,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
               ))}
             </ul>
           ) : (
-            <p className="mt-[12px] font-sans text-[13px] text-muted">
+            <p className="mt-[12px] font-sans text-[14px] text-muted">
               {copy.dashboard.noWarnings}
             </p>
           )}
@@ -674,10 +674,13 @@ async function Clients({
             href={`${base}/${client.id}`}
             className={recordRow}
           >
-            <span>
-              <strong>{client.fullName}</strong>
-              <small>
-                {client.email} · {client.phone}
+            <span className="min-w-0">
+              <strong className="block text-compact leading-[1.35]">
+                {client.fullName}
+              </strong>
+              <small className="mt-[5px] flex flex-wrap gap-x-[12px] gap-y-[3px] text-label leading-[1.45] text-muted">
+                <span className="break-all">{client.email}</span>
+                <span className="whitespace-nowrap">{client.phone}</span>
               </small>
             </span>
             <Status archived={Boolean(client.archivedAt)} copy={copy} />
@@ -1654,7 +1657,7 @@ async function Chats({
           description={`${session.locale.toUpperCase()} · ${formatDate(session.updatedAt, locale)}`}
         />
         <section className={`${panelCls} mt-[20px]`}>
-          <dl className="grid gap-[10px] font-sans text-[13px] sm:grid-cols-3">
+          <dl className="grid gap-[10px] font-sans text-[14px] sm:grid-cols-3">
             <Contact label="Name" value={session.contactName} copy={copy} />
             <Contact label="Email" value={session.contactEmail} copy={copy} />
             <Contact label="Phone" value={session.contactPhone} copy={copy} />
@@ -1736,13 +1739,13 @@ async function Chats({
             href={`${base}/${session.id}`}
             className={recordRow}
           >
-            <span>
+            <span className="min-w-0">
               <strong>
                 {session.contactName ||
                   session.contactEmail ||
                   session.id.slice(-8)}
               </strong>
-              <small>
+              <small className="mt-[5px] block">
                 {session.locale.toUpperCase()} ·{" "}
                 {formatDate(session.updatedAt, locale)}
               </small>
@@ -1803,7 +1806,7 @@ function EntityForm({
             value={removeIdValue ?? id ?? ""}
           />
           <input type="hidden" name="returnTo" value={base} />
-          <p className="mb-[10px] font-sans text-[12px] text-muted">
+          <p className="mb-[10px] font-sans text-[14px] text-muted">
             {copy.common.confirmDelete}
           </p>
           <button className={dangerButton}>{copy.common.delete}</button>
@@ -1914,7 +1917,7 @@ function LocaleCard({
 }) {
   return (
     <fieldset className="min-w-0 rounded-[7px] border border-line-card bg-card p-[14px]">
-      <legend className="px-[6px] font-sans text-[12px] font-medium tracking-[.12em] uppercase">
+      <legend className="px-[6px] font-sans text-label font-medium tracking-[.12em] uppercase">
         {locale}
       </legend>
       <Field label={copy.common.status}>
@@ -2033,7 +2036,7 @@ function Field({
 }) {
   return (
     <label className="mt-[12px] block first:mt-0">
-      <span className="mb-[6px] block font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+      <span className="mb-[6px] block font-sans text-label tracking-[.08em] text-muted uppercase">
         {label}
       </span>
       {children}
@@ -2050,7 +2053,7 @@ function Check({
   checked: boolean;
 }) {
   return (
-    <label className="flex min-h-[44px] items-center gap-[9px] font-sans text-[13px] text-body">
+    <label className="flex min-h-[44px] items-center gap-[9px] font-sans text-[14px] text-body">
       <input
         name={name}
         type="checkbox"
@@ -2063,7 +2066,7 @@ function Check({
 }
 function Status({ archived, copy }: { archived: boolean; copy: Copy }) {
   return (
-    <span className="rounded-full bg-btn-fill px-[10px] py-[5px] text-[11px] text-muted">
+    <span className="shrink-0 self-center rounded-full bg-btn-fill px-[10px] py-[5px] text-meta text-muted">
       {archived ? copy.common.archived : copy.common.published}
     </span>
   );
@@ -2101,7 +2104,7 @@ function History({
         {has ? (
           children
         ) : (
-          <p className="font-sans text-[13px] text-muted">{empty}</p>
+          <p className="font-sans text-[14px] text-muted">{empty}</p>
         )}
       </div>
     </section>
@@ -2136,22 +2139,22 @@ function formatDate(date: Date, locale: Locale) {
 }
 
 const inputCls =
-  "min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-[13px] text-ink outline-none focus:border-accent";
+  "min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[11px] py-[10px] font-sans text-compact text-ink outline-none focus:border-accent";
 const primaryButton =
-  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] bg-accent px-[16px] font-sans text-[11px] font-medium tracking-[.1em] text-page uppercase hover:brightness-95";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] bg-accent px-[16px] font-sans text-meta font-medium tracking-[.1em] text-page uppercase hover:brightness-95";
 const secondaryButton =
-  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] border border-line-btn bg-card px-[14px] font-sans text-[11px] tracking-[.08em] text-ink uppercase hover:bg-btn-fill";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] border border-line-btn bg-card px-[14px] font-sans text-meta tracking-[.08em] text-ink uppercase hover:bg-btn-fill";
 const dangerButton =
-  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] border border-[#9b6b5f] px-[14px] font-sans text-[11px] tracking-[.08em] text-[#7c4438] uppercase hover:bg-btn-fill";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[4px] border border-[#9b6b5f] px-[14px] font-sans text-meta tracking-[.08em] text-[#7c4438] uppercase hover:bg-btn-fill";
 const panelCls =
   "rounded-[8px] border border-line-card bg-card p-[clamp(16px,2.5vw,24px)]";
 const cardCls =
   "rounded-[8px] border border-line-card bg-card p-[16px] transition hover:-translate-y-[2px] hover:shadow-card motion-reduce:transform-none";
 const sectionTitle = "font-display text-[26px] font-medium";
 const tableCls =
-  "w-full min-w-[620px] border-collapse font-sans text-left text-[12px] [&_td]:border-t [&_td]:border-line-hair [&_td]:px-[8px] [&_td]:py-[10px]";
+  "w-full min-w-[720px] border-collapse font-sans text-left text-[14px] [&_td]:border-t [&_td]:border-line-hair [&_td]:px-[10px] [&_td]:py-[12px]";
 const recordRow =
-  "flex min-h-[68px] items-center justify-between gap-[14px] border-b border-line-hair px-[16px] py-[12px] font-sans text-[13px] text-ink last:border-b-0 hover:bg-page [&_small]:mt-[3px] [&_small]:text-[11px] [&_small]:text-muted";
+  "flex min-h-[72px] items-start justify-between gap-[16px] border-b border-line-hair px-[16px] py-[14px] font-sans text-[14px] text-ink last:border-b-0 hover:bg-page sm:items-center [&_small]:text-label [&_small]:text-muted [&_strong]:block";
 const globalGrid = "grid gap-x-[14px] sm:grid-cols-2 xl:grid-cols-3";
 const historyRow =
-  "grid gap-[5px] rounded-[5px] border border-line-hair bg-page px-[12px] py-[10px] font-sans text-[12px] md:grid-cols-[170px_1fr_1fr_120px]";
+  "grid gap-[7px] rounded-[5px] border border-line-hair bg-page px-[14px] py-[12px] font-sans text-[14px] md:grid-cols-[170px_1fr_1fr_120px]";

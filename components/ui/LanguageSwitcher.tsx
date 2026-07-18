@@ -50,7 +50,7 @@ export function LanguageSwitcher({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          "flex items-center gap-[5px] px-[2px] py-[6px] font-sans text-[12px] font-medium tracking-[.1em] uppercase transition-colors",
+          "flex items-center gap-[5px] px-[2px] py-[6px] font-sans text-label font-medium tracking-[.1em] uppercase transition-colors",
           tone === "dark"
             ? "text-footer-link hover:text-footer-logo"
             : "text-nav hover:text-accent",
@@ -77,7 +77,7 @@ export function LanguageSwitcher({
                 type="button"
                 onClick={() => choose(l)}
                 className={cn(
-                  "block w-full px-[16px] py-[8px] text-left font-sans text-[12px] tracking-[.1em] uppercase transition-colors hover:bg-alt",
+                  "block w-full px-[16px] py-[8px] text-left font-sans text-label tracking-[.1em] uppercase transition-colors hover:bg-alt",
                   l === locale ? "text-accent" : "text-nav",
                 )}
               >

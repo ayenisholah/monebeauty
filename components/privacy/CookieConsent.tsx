@@ -68,21 +68,21 @@ export function CookieConsent() {
       <h2 className="font-display text-[22px] font-medium text-ink">
         {t("title")}
       </h2>
-      <p className="mt-[8px] font-sans text-[13px] leading-[1.6] text-body">
+      <p className="mt-[8px] font-sans text-compact leading-[1.6] text-body">
         {t("body")}
       </p>
       <div className="mt-[14px] flex flex-wrap gap-[10px]">
         <button
           type="button"
           onClick={() => choose("accepted")}
-          className="min-h-[42px] rounded-[4px] bg-accent px-[16px] font-sans text-[11px] font-medium tracking-[.14em] text-page uppercase"
+          className="min-h-[44px] rounded-[4px] bg-accent px-[16px] font-sans text-meta font-medium tracking-[.14em] text-page uppercase"
         >
           {t("accept")}
         </button>
         <button
           type="button"
           onClick={() => choose("declined")}
-          className="min-h-[42px] rounded-[4px] border border-line-btn px-[16px] font-sans text-[11px] font-medium tracking-[.14em] text-ink uppercase"
+          className="min-h-[44px] rounded-[4px] border border-line-btn px-[16px] font-sans text-meta font-medium tracking-[.14em] text-ink uppercase"
         >
           {t("decline")}
         </button>

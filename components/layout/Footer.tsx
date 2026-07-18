@@ -22,9 +22,9 @@ export async function Footer() {
   const t = await getTranslations();
 
   const colHeading =
-    "mb-[18px] font-sans text-[11px] font-medium uppercase tracking-[.2em] text-footer-heading";
+    "mb-[18px] font-sans text-meta font-medium uppercase tracking-[.2em] text-footer-heading";
   const linkCls =
-    "font-sans text-[13.5px] font-light text-footer-link transition-colors hover:text-footer-logo";
+    "font-sans text-[14.5px] font-normal text-footer-link transition-colors hover:text-footer-logo";
 
   return (
     <footer className="bg-footer">
@@ -96,7 +96,7 @@ export async function Footer() {
                   {CONTACT.email}
                 </a>
               </li>
-              <li className="flex items-start gap-[10px] font-sans text-[13.5px] font-light text-footer-link">
+              <li className="flex items-start gap-[10px] font-sans text-[14.5px] font-normal text-footer-link">
                 <MapPin
                   size={16}
                   weight="thin"
@@ -114,7 +114,7 @@ export async function Footer() {
           {/* Opening hours */}
           <div>
             <h4 className={colHeading}>{t("Footer.openingHours")}</h4>
-            <p className="inline-flex items-start gap-[10px] font-sans text-[13.5px] font-light text-footer-link">
+            <p className="inline-flex items-start gap-[10px] font-sans text-[14.5px] font-normal text-footer-link">
               <Clock
                 size={16}
                 weight="thin"

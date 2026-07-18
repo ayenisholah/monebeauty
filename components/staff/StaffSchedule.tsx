@@ -189,7 +189,7 @@ export function StaffSchedule() {
         </div>
 
         <div className="mt-[24px] border-t border-line-hair pt-[20px]">
-          <h3 className="font-sans text-[12px] tracking-[.14em] text-muted uppercase">
+          <h3 className="font-sans text-label tracking-[.14em] text-muted uppercase">
             {t("workingHours")}
           </h3>
           <div className="mt-[14px] grid grid-cols-2 gap-[12px]">
@@ -261,7 +261,7 @@ export function StaffSchedule() {
                     }))
                   }
                   className={cn(
-                    "min-h-[36px] rounded-[4px] border px-[10px] font-sans text-[12px]",
+                    "min-h-[40px] rounded-[4px] border px-[10px] font-sans text-label",
                     active
                       ? "border-accent bg-btn-fill text-ink"
                       : "border-line-btn text-muted",
@@ -290,7 +290,7 @@ export function StaffSchedule() {
             <h2 className="font-display text-[clamp(26px,3vw,36px)] font-medium text-ink">
               {t("schedule")}
             </h2>
-            <p className="mt-[4px] font-sans text-[13px] text-muted">{date}</p>
+            <p className="mt-[4px] font-sans text-[14px] text-muted">{date}</p>
           </div>
           <div className="flex flex-wrap gap-[10px]">
             <ButtonAction
@@ -314,7 +314,7 @@ export function StaffSchedule() {
         </div>
 
         {message ? (
-          <p className="mt-[16px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[13px] text-ink">
+          <p className="mt-[16px] rounded-[4px] border border-line-btn bg-btn-fill px-[14px] py-[10px] font-sans text-[14px] text-ink">
             {message}
           </p>
         ) : null}
@@ -340,7 +340,7 @@ export function StaffSchedule() {
                       {timeFmt.format(new Date(slot.start))}–
                       {timeFmt.format(new Date(slot.end))}
                     </div>
-                    <div className="font-sans text-[13px] text-body">
+                    <div className="font-sans text-[14px] text-body">
                       {booked && appointment ? (
                         <div>
                           <div className="font-medium text-ink">
@@ -376,7 +376,7 @@ export function StaffSchedule() {
                           disabled={booked}
                           onClick={() => setSlotStatus(index, status)}
                           className={cn(
-                            "inline-flex min-h-[38px] items-center gap-[6px] rounded-[4px] border px-[12px] font-sans text-[12px] tracking-[.08em] uppercase",
+                            "inline-flex min-h-[40px] items-center gap-[6px] rounded-[4px] border px-[12px] font-sans text-label tracking-[.08em] uppercase",
                             slot.status === status
                               ? "border-accent bg-btn-fill text-ink"
                               : "border-line-btn text-muted hover:border-line-btn-hover hover:text-ink",
@@ -402,7 +402,7 @@ export function StaffSchedule() {
 }
 
 const inputCls =
-  "w-full rounded-[4px] border border-line-btn bg-page px-[12px] py-[10px] font-sans text-[14px] text-ink outline-none focus:border-accent";
+  "w-full rounded-[4px] border border-line-btn bg-page px-[12px] py-[10px] font-sans text-compact text-ink outline-none focus:border-accent";
 
 function Field({
   label,
@@ -413,7 +413,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-[6px] block font-sans text-[12px] tracking-[.04em] text-muted uppercase">
+      <span className="mb-[6px] block font-sans text-label tracking-[.04em] text-muted uppercase">
         {label}
       </span>
       {children}

@@ -63,7 +63,7 @@ export function BasketClient() {
                   {name}
                 </Link>
                 {product.size ? (
-                  <p className="mt-[6px] font-sans text-[12px] tracking-[.06em] text-muted">
+                  <p className="mt-[6px] font-sans text-label tracking-[.06em] text-muted">
                     {product.size}
                   </p>
                 ) : null}

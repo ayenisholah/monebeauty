@@ -61,7 +61,7 @@ export async function TechnologyDetailPage({
             {technology.content.name}
           </h1>
           <p
-            className={`mt-[16px] max-w-[52ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-normal ${
+            className={`mt-[16px] max-w-[52ch] font-sans text-copy leading-[1.75] font-normal ${
               image
                 ? "text-cta-heading [text-shadow:0_1px_10px_rgba(58,42,28,.72)]"
                 : "text-body"
@@ -94,7 +94,7 @@ export async function TechnologyDetailPage({
                 <p className="font-display text-[clamp(22px,2.4vw,28px)] leading-[1.12] font-medium text-ink">
                   {technology.content.name}
                 </p>
-                <p className="mt-[14px] font-sans text-[14.5px] leading-[1.7] font-light text-body">
+                <p className="mt-[14px] font-sans text-copy leading-[1.7] font-normal text-body">
                   {technology.content.summary}
                 </p>
                 {bookable ? (

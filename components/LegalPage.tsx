@@ -21,7 +21,7 @@ export function LegalPage({
         <p className="mt-[12px] font-sans text-[12px] tracking-[.14em] text-muted uppercase">
           {lastUpdatedLabel}: {date}
         </p>
-        <div className="mt-[28px] grid gap-[16px] font-sans text-[15px] leading-[1.8] font-light text-body">
+        <div className="mt-[28px] grid gap-[16px] font-sans text-copy leading-[1.8] font-normal text-body">
           {body.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}

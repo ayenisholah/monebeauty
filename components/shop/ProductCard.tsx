@@ -44,7 +44,7 @@ export function ProductCard({
           {name}
         </Link>
         {product.size ? (
-          <div className="mt-[6px] font-sans text-[12px] tracking-[.06em] text-muted">
+          <div className="mt-[6px] font-sans text-label tracking-[.06em] text-muted">
             {product.size}
           </div>
         ) : null}
