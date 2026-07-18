@@ -17,11 +17,15 @@ export async function POST(
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
   if (payload.confirm !== "ERASE") {
-    return NextResponse.json({ error: "confirmation_required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "confirmation_required" },
+      { status: 400 },
+    );
   }
 
   const client = await prisma.client.findUnique({ where: { id } });
-  if (!client) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!client)
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   await prisma.$transaction([
     prisma.chatSession.updateMany({
@@ -39,11 +43,29 @@ export async function POST(
       data: {
         email: `erased-${id}@privacy.local`,
         phone: null,
+        notes: null,
+        cancellationReason: null,
       },
     }),
     prisma.appointment.updateMany({
       where: { clientId: id },
-      data: { notes: null },
+      data: { notes: null, cancellationReason: null },
+    }),
+    prisma.appointmentEvent.updateMany({
+      where: { appointment: { clientId: id } },
+      data: { reason: null, actor: "privacy-erased" },
+    }),
+    prisma.outboundMessage.updateMany({
+      where: {
+        OR: [{ order: { clientId: id } }, { appointment: { clientId: id } }],
+      },
+      data: {
+        recipient: "privacy-erased",
+        subject: null,
+        body: "[redacted]",
+        html: null,
+        actor: "privacy-erased",
+      },
     }),
     prisma.cart.deleteMany({ where: { clientId: id } }),
     prisma.consent.create({

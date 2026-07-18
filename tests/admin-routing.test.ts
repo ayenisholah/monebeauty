@@ -13,14 +13,24 @@ test("admin paths use Finnish segments in every locale", () => {
   assert.equal(adminBase("en"), "/en/admin");
   assert.equal(adminBase("ru"), "/ru/admin");
   assert.equal(adminHref("fi", "clients"), "/admin/asiakkaat");
-  assert.equal(adminHref("en", "technologies", "uusi"), "/en/admin/teknologiat/uusi");
-  assert.equal(adminHref("ru", "chat", "record-id"), "/ru/admin/keskustelut/record-id");
+  assert.equal(adminHref("fi", "appointments"), "/admin/ajanvaraukset");
+  assert.equal(adminHref("en", "orders"), "/en/admin/tilaukset");
+  assert.equal(
+    adminHref("en", "technologies", "uusi"),
+    "/en/admin/teknologiat/uusi",
+  );
+  assert.equal(
+    adminHref("ru", "chat", "record-id"),
+    "/ru/admin/keskustelut/record-id",
+  );
 });
 
 test("legacy English modules map to Finnish segments", () => {
   const expected = {
     login: ADMIN_SEGMENTS.login,
     clients: ADMIN_SEGMENTS.clients,
+    appointments: ADMIN_SEGMENTS.appointments,
+    orders: ADMIN_SEGMENTS.orders,
     services: ADMIN_SEGMENTS.services,
     technologies: ADMIN_SEGMENTS.technologies,
     content: ADMIN_SEGMENTS.content,

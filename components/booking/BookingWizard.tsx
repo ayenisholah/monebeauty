@@ -463,6 +463,7 @@ export function BookingWizard({
                 type="tel"
                 required
                 autoComplete="tel"
+                placeholder="+358 40 123 4567"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className={inputCls}

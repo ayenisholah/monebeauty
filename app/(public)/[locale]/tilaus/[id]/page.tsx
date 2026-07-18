@@ -36,12 +36,16 @@ export default async function OrderPage({
     <section className="bg-page py-[clamp(60px,8vw,120px)]">
       <Container className="max-w-[760px]">
         <div className="rounded-[var(--radius)] border border-line-card bg-card p-[clamp(24px,4vw,48px)] text-center">
-          <CheckCircle size={52} weight="thin" className="mx-auto text-accent" />
+          <CheckCircle
+            size={52}
+            weight="thin"
+            className="mx-auto text-accent"
+          />
           <h1 className="mt-[16px] font-display text-h2 leading-[1.06] font-medium text-ink">
-            {t("heading")}
+            {t(`states.${order.status}`)}
           </h1>
           <p className="mx-auto mt-[14px] max-w-[520px] font-sans text-[15px] leading-[1.75] font-light text-body">
-            {t("intro")}
+            {t(`stateDescriptions.${order.status}`)}
           </p>
           <div className="mx-auto mt-[24px] max-w-[520px] text-left">
             <dl className="space-y-[12px] font-sans text-[14px]">
@@ -49,6 +53,12 @@ export default async function OrderPage({
                 <dt className="text-muted">{t("reference")}</dt>
                 <dd className="font-mono text-[12px] tracking-[.06em] text-ink uppercase">
                   {order.id.slice(-8)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-[16px] border-b border-line-hair pb-[12px]">
+                <dt className="text-muted">{t("status")}</dt>
+                <dd className="font-medium text-ink">
+                  {t(`states.${order.status}`)}
                 </dd>
               </div>
               {order.items.map((item) => (
@@ -68,6 +78,14 @@ export default async function OrderPage({
                 <dt>{t("total")}</dt>
                 <dd>{formatPrice(Number(order.total))}</dd>
               </div>
+              {order.cancellationReason ? (
+                <div className="mt-[14px] rounded-[4px] bg-btn-fill p-[14px]">
+                  <dt className="text-muted">{t("cancellationReason")}</dt>
+                  <dd className="mt-[4px] text-ink">
+                    {order.cancellationReason}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </div>
           <div className="mt-[30px]">

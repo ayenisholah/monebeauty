@@ -6,12 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   AddressBook,
   Article,
+  CalendarCheck,
   ChatCircleDots,
   CurrencyEur,
   Flask,
   House,
   List,
   Package,
+  ShoppingBag,
   SignOut,
   SquaresFour,
   UserCircle,
@@ -36,6 +38,8 @@ const nav: Array<{
 }> = [
   { module: "dashboard", icon: House },
   { module: "clients", icon: AddressBook },
+  { module: "appointments", icon: CalendarCheck },
+  { module: "orders", icon: ShoppingBag },
   { module: "services", icon: SquaresFour },
   { module: "technologies", icon: Flask },
   { module: "content", icon: Article },

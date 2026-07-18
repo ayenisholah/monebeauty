@@ -9,7 +9,7 @@ import {
   type AppointmentEmailData,
   type OrderEmailData,
 } from "../lib/email";
-import { sendEmail } from "../lib/notifications";
+import { sendEmail, sendSms } from "../lib/notifications";
 import type { Locale } from "../i18n/routing";
 
 process.env.NEXT_PUBLIC_SITE_URL = "https://clinic.example";
@@ -221,8 +221,8 @@ test("Resend receives both text and HTML payloads", async () => {
       text: "Plain fallback",
       html: "<p>HTML body</p>",
     });
-    assert.equal(result.status, "sent");
-    assert.equal(result.detail, "resend");
+    assert.equal(result.status, "accepted");
+    assert.equal(result.provider, "resend");
     assert.equal(requestBody?.text, "Plain fallback");
     assert.equal(requestBody?.html, "<p>HTML body</p>");
   } finally {
@@ -275,6 +275,61 @@ test("Postmark receives TextBody and HtmlBody while text-only calls remain compa
     restoreEnv("RESEND_API_KEY", previous.resend);
     restoreEnv("EMAIL_API_KEY", previous.emailApi);
     restoreEnv("POSTMARK_SERVER_TOKEN", previous.postmark);
+  }
+});
+
+test("Sinch obtains an OAuth token and sends with bearer authentication", async () => {
+  const originalFetch = globalThis.fetch;
+  const names = [
+    "NOTIFICATIONS_ENABLED",
+    "SINCH_PROJECT_ID",
+    "SINCH_APP_ID",
+    "SINCH_ACCESS_KEY_ID",
+    "SINCH_ACCESS_KEY_SECRET",
+    "SINCH_REGION",
+    "SINCH_SMS_SENDER",
+  ] as const;
+  const previous = Object.fromEntries(
+    names.map((name) => [name, process.env[name]]),
+  );
+  process.env.NOTIFICATIONS_ENABLED = "true";
+  process.env.SINCH_PROJECT_ID = "project";
+  process.env.SINCH_APP_ID = "app";
+  process.env.SINCH_ACCESS_KEY_ID = "key";
+  process.env.SINCH_ACCESS_KEY_SECRET = "secret";
+  process.env.SINCH_REGION = "eu";
+  process.env.SINCH_SMS_SENDER = "MoneBeauty";
+  const requests: Array<{ url: string; authorization: string; body: string }> =
+    [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    requests.push({
+      url,
+      authorization: String(new Headers(init?.headers).get("authorization")),
+      body: String(init?.body ?? ""),
+    });
+    return url.includes("oauth2/token")
+      ? new Response(
+          JSON.stringify({ access_token: "oauth-token", expires_in: 3600 }),
+        )
+      : new Response(JSON.stringify({ message_id: "sinch-message-id" }));
+  };
+
+  try {
+    const result = await sendSms({ to: "+358401234567", text: "Test message" });
+    assert.equal(result.status, "accepted");
+    assert.equal(result.provider, "sinch");
+    assert.equal(result.providerMessageId, "sinch-message-id");
+    assert.match(requests[0].authorization, /^Basic /);
+    assert.match(requests[0].body, /grant_type=client_credentials/);
+    assert.equal(requests[1].authorization, "Bearer oauth-token");
+    assert.match(
+      requests[1].url,
+      /^https:\/\/eu\.conversation\.api\.sinch\.com/,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const name of names) restoreEnv(name, previous[name]);
   }
 });
 

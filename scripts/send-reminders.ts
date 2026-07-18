@@ -16,6 +16,19 @@ function windowFor(hoursAhead: number) {
 }
 
 async function alreadyHandled(appointmentId: string, kind: ReminderKind) {
+  const messageKind =
+    kind === "reminder_24h"
+      ? "APPOINTMENT_REMINDER_24H"
+      : "APPOINTMENT_REMINDER_2H";
+  const communication = await prisma.outboundMessage.findFirst({
+    where: {
+      appointmentId,
+      kind: messageKind,
+      attempts: { some: { status: "ACCEPTED" } },
+    },
+    select: { id: true },
+  });
+  if (communication) return true;
   const existing = await prisma.auditLog.findFirst({
     where: {
       entity: "Appointment",

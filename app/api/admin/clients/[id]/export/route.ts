@@ -17,14 +17,19 @@ export async function GET(
         include: {
           service: { select: { slug: true, category: true } },
           practitioner: { select: { name: true, role: true } },
+          events: true,
+          messages: { include: { attempts: true } },
         },
       },
-      orders: { include: { items: true } },
+      orders: {
+        include: { items: true, messages: { include: { attempts: true } } },
+      },
       carts: { include: { items: true } },
       chatSessions: true,
     },
   });
-  if (!client) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!client)
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const consents = await prisma.consent.findMany({
     where: { clientId: id },

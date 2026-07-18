@@ -310,6 +310,6 @@ export async function appointmentByReference(reference: string) {
     where: {
       OR: [{ id }, { id: { endsWith: id } }],
     },
-    include: { client: true },
+    include: { client: true, practitioner: true, service: true },
   });
 }

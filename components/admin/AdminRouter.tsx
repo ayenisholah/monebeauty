@@ -34,6 +34,10 @@ import {
 } from "@/lib/admin-actions";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { MediaField } from "@/components/admin/MediaField";
+import {
+  AppointmentsAdmin,
+  OrdersAdmin,
+} from "@/components/admin/AdminOperations";
 import mediaAssets from "@/content/generated/assets.json";
 
 const locales: DbLocale[] = ["fi", "en", "ru"];
@@ -73,10 +77,13 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
       noWarnings: t("dashboard.noWarnings"),
       recent: t("dashboard.recent"),
       quick: t("dashboard.quick"),
+      needsAction: (count: number) => t("dashboard.needsAction", { count }),
     },
     nav: {
       dashboard: t("nav.dashboard"),
       clients: t("nav.clients"),
+      appointments: t("nav.appointments"),
+      orders: t("nav.orders"),
       services: t("nav.services"),
       technologies: t("nav.technologies"),
       content: t("nav.content"),
@@ -87,6 +94,8 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
     },
     modules: {
       clients: t("modules.clients"),
+      appointments: t("modules.appointments"),
+      orders: t("modules.orders"),
       services: t("modules.services"),
       technologies: t("modules.technologies"),
       content: t("modules.content"),
@@ -306,6 +315,12 @@ async function renderModule({
         searchParams={searchParams}
       />
     );
+  if (adminModule === "appointments")
+    return (
+      <AppointmentsAdmin locale={locale} id={id} searchParams={searchParams} />
+    );
+  if (adminModule === "orders")
+    return <OrdersAdmin locale={locale} id={id} searchParams={searchParams} />;
   if (adminModule === "services")
     return <Services locale={locale} id={id} copy={copy} />;
   if (adminModule === "technologies")
@@ -330,6 +345,8 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     clients,
     appointments,
     orders,
+    appointmentsNeedingAction,
+    ordersNeedingAction,
     services,
     technologies,
     products,
@@ -343,6 +360,10 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     prisma.client.count({ where: { archivedAt: null } }),
     prisma.appointment.count(),
     prisma.order.count(),
+    prisma.appointment.count({
+      where: { status: { in: ["BOOKED", "RESCHEDULED"] } },
+    }),
+    prisma.order.count({ where: { status: "PENDING" } }),
     prisma.service.count({ where: { archivedAt: null } }),
     prisma.technology.count({ where: { archivedAt: null } }),
     prisma.product.count({ where: { archivedAt: null } }),
@@ -386,10 +407,15 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
   const cards: Array<{
     key: keyof typeof counts;
     module: Exclude<AdminModule, "login" | "dashboard"> | "dashboard";
+    needsAction?: number;
   }> = [
     { key: "clients", module: "clients" },
-    { key: "appointments", module: "dashboard" },
-    { key: "orders", module: "clients" },
+    {
+      key: "appointments",
+      module: "appointments",
+      needsAction: appointmentsNeedingAction,
+    },
+    { key: "orders", module: "orders", needsAction: ordersNeedingAction },
     { key: "services", module: "services" },
     { key: "technologies", module: "technologies" },
     { key: "products", module: "products" },
@@ -415,11 +441,20 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
             className={cardCls}
           >
             <span className="font-sans text-meta tracking-[.1em] text-muted uppercase">
-              {card.key}
+              {
+                copy.nav[
+                  card.module === "dashboard" ? "dashboard" : card.module
+                ]
+              }
             </span>
             <strong className="mt-[10px] block font-display text-[36px] font-medium">
               {counts[card.key]}
             </strong>
+            {card.needsAction ? (
+              <span className="mt-[5px] block font-sans text-[12px] text-muted">
+                {copy.dashboard.needsAction(card.needsAction)}
+              </span>
+            ) : null}
           </Link>
         ))}
       </div>
@@ -615,7 +650,11 @@ async function Clients({
         </form>
         <History title="Appointments" empty={copy.common.empty}>
           {client.appointments.map((item) => (
-            <div key={item.id} className={historyRow}>
+            <Link
+              href={adminHref(locale, "appointments", item.id)}
+              key={item.id}
+              className={historyRow}
+            >
               <span>{formatDate(item.start, locale)}</span>
               <strong>
                 {item.procedureTitle ?? item.service.slug}
@@ -623,19 +662,23 @@ async function Clients({
               </strong>
               <span>{item.practitioner.name}</span>
               <span>{item.status}</span>
-            </div>
+            </Link>
           ))}
         </History>
         <History title="Orders" empty={copy.common.empty}>
           {client.orders.map((item) => (
-            <div key={item.id} className={historyRow}>
+            <Link
+              href={adminHref(locale, "orders", item.id)}
+              key={item.id}
+              className={historyRow}
+            >
               <span>{formatDate(item.createdAt, locale)}</span>
               <strong>{item.items.map((line) => line.name).join(", ")}</strong>
               <span>
                 {Number(item.total).toFixed(2)} {item.currency}
               </span>
               <span>{item.status}</span>
-            </div>
+            </Link>
           ))}
         </History>
       </div>

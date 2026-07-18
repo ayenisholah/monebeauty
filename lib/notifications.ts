@@ -2,22 +2,38 @@ import { prisma } from "@/lib/db";
 import { BRAND, CONTACT } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import {
+  renderAppointmentLifecycleEmail,
   renderCustomerAppointmentEmail,
   renderCustomerOrderEmail,
+  renderCustomEmail,
+  renderOrderLifecycleEmail,
   renderStaffAppointmentEmail,
   renderStaffOrderEmail,
   type AppointmentEmailData,
+  type EmailMessage,
   type OrderEmailData,
 } from "@/lib/email";
+import {
+  appointmentSms,
+  orderSms,
+  smsSegments,
+  staffAppointmentSms,
+  staffOrderSms,
+} from "@/lib/sms";
 
 export type NotifyResult = {
   channel: "email" | "sms";
-  status: "sent" | "skipped" | "failed";
+  status: "accepted" | "skipped" | "failed";
+  provider?: string;
+  providerMessageId?: string;
   detail?: string;
 };
 
 type AppointmentNotification = AppointmentEmailData;
 type OrderNotification = OrderEmailData;
+type Parent =
+  | { orderId: string; appointmentId?: never }
+  | { appointmentId: string; orderId?: never };
 
 function env(name: string) {
   return process.env[name]?.trim() ?? "";
@@ -47,27 +63,23 @@ function staffPhones() {
     .filter(Boolean);
 }
 
-function dateTime(date: Date, locale: Locale = "fi") {
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Helsinki",
-  }).format(date);
-}
-
 async function postJson(url: string, headers: HeadersInit, body: unknown) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "monebeauty/1.0",
+      ...headers,
+    },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${text.slice(0, 180)}`);
+  const raw = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(`${res.status} ${raw.slice(0, 180)}`);
+  if (!raw) return {} as Record<string, unknown>;
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return {} as Record<string, unknown>;
   }
 }
 
@@ -76,30 +88,31 @@ export async function sendEmail({
   subject,
   text,
   html,
+  idempotencyKey,
 }: {
   to: string | string[];
   subject: string;
   text: string;
   html?: string;
+  idempotencyKey?: string;
 }): Promise<NotifyResult> {
   if (!enabled())
     return { channel: "email", status: "skipped", detail: "disabled" };
-
-  const recipients = Array.isArray(to)
-    ? to.filter(Boolean)
-    : [to].filter(Boolean);
-  if (recipients.length === 0) {
+  const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  if (!recipients.length)
     return { channel: "email", status: "skipped", detail: "no_recipient" };
-  }
-
   const resendKey = env("RESEND_API_KEY") || env("EMAIL_API_KEY");
   const postmarkKey = env("POSTMARK_SERVER_TOKEN");
-
   try {
     if (resendKey) {
-      await postJson(
+      const response = await postJson(
         "https://api.resend.com/emails",
-        { Authorization: `Bearer ${resendKey}` },
+        {
+          Authorization: `Bearer ${resendKey}`,
+          ...(idempotencyKey
+            ? { "Idempotency-Key": idempotencyKey.slice(0, 256) }
+            : {}),
+        },
         {
           from: fromEmail(),
           to: recipients,
@@ -108,11 +121,16 @@ export async function sendEmail({
           ...(html ? { html } : {}),
         },
       );
-      return { channel: "email", status: "sent", detail: "resend" };
+      return {
+        channel: "email",
+        status: "accepted",
+        provider: "resend",
+        providerMessageId:
+          typeof response.id === "string" ? response.id : undefined,
+      };
     }
-
     if (postmarkKey) {
-      await postJson(
+      const response = await postJson(
         "https://api.postmarkapp.com/email",
         { "X-Postmark-Server-Token": postmarkKey },
         {
@@ -123,17 +141,92 @@ export async function sendEmail({
           ...(html ? { HtmlBody: html } : {}),
         },
       );
-      return { channel: "email", status: "sent", detail: "postmark" };
+      return {
+        channel: "email",
+        status: "accepted",
+        provider: "postmark",
+        providerMessageId:
+          typeof response.MessageID === "string"
+            ? response.MessageID
+            : undefined,
+      };
     }
-
     return { channel: "email", status: "skipped", detail: "no_provider" };
   } catch (error) {
-    return {
-      channel: "email",
-      status: "failed",
-      detail: error instanceof Error ? error.message : "unknown_error",
-    };
+    return { channel: "email", status: "failed", detail: sanitizeError(error) };
   }
+}
+
+let sinchToken: { value: string; expiresAt: number } | null = null;
+
+async function sinchAccessToken(force = false) {
+  if (!force && sinchToken && sinchToken.expiresAt > Date.now() + 60_000)
+    return sinchToken.value;
+  const id = env("SINCH_ACCESS_KEY_ID");
+  const secret = env("SINCH_ACCESS_KEY_SECRET");
+  const auth = Buffer.from(`${id}:${secret}`).toString("base64");
+  const res = await fetch("https://auth.sinch.com/oauth2/token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "monebeauty/1.0",
+    },
+    body: new URLSearchParams({ grant_type: "client_credentials" }),
+  });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`${res.status} ${raw.slice(0, 180)}`);
+  const data = JSON.parse(raw) as {
+    access_token?: string;
+    expires_in?: number;
+  };
+  if (!data.access_token) throw new Error("sinch_missing_access_token");
+  sinchToken = {
+    value: data.access_token,
+    expiresAt: Date.now() + Math.max(60, data.expires_in ?? 3600) * 1000,
+  };
+  return sinchToken.value;
+}
+
+async function sendSinch(recipient: string, text: string, retry = true) {
+  const projectId = env("SINCH_PROJECT_ID");
+  const appId = env("SINCH_APP_ID");
+  const region = env("SINCH_REGION").toLowerCase();
+  const sender = env("SINCH_SMS_SENDER") || env("SMS_FROM");
+  if (!sender) throw new Error("sinch_missing_sender");
+  if (!["eu", "us", "br"].includes(region))
+    throw new Error("sinch_invalid_region");
+  const token = await sinchAccessToken(!retry);
+  const url = `https://${region}.conversation.api.sinch.com/v1/projects/${encodeURIComponent(projectId)}/messages:send`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "monebeauty/1.0",
+    },
+    body: JSON.stringify({
+      app_id: appId,
+      recipient: {
+        identified_by: {
+          channel_identities: [{ channel: "SMS", identity: recipient }],
+        },
+      },
+      message: { text_message: { text } },
+      channel_priority_order: ["SMS"],
+      channel_properties: { SMS_SENDER: sender },
+    }),
+  });
+  if (res.status === 401 && retry) {
+    sinchToken = null;
+    return sendSinch(recipient, text, false);
+  }
+  const raw = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(`${res.status} ${raw.slice(0, 180)}`);
+  const data = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  return [data.message_id, data.accepted_message_id, data.id].find(
+    (value) => typeof value === "string",
+  ) as string | undefined;
 }
 
 export async function sendSms({
@@ -145,80 +238,41 @@ export async function sendSms({
 }): Promise<NotifyResult> {
   if (!enabled())
     return { channel: "sms", status: "skipped", detail: "disabled" };
-
-  const recipients = Array.isArray(to)
-    ? to.filter(Boolean)
-    : [to].filter(Boolean);
-  if (recipients.length === 0) {
+  const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  if (!recipients.length)
     return { channel: "sms", status: "skipped", detail: "no_recipient" };
-  }
-
-  const webhook = env("SMS_WEBHOOK_URL");
-  const token = env("SMS_API_KEY");
+  const message = smsSegments(text);
+  if (message.segments > 3)
+    return { channel: "sms", status: "failed", detail: "message_too_long" };
+  const hasSinch =
+    env("SINCH_PROJECT_ID") &&
+    env("SINCH_APP_ID") &&
+    env("SINCH_ACCESS_KEY_ID") &&
+    env("SINCH_ACCESS_KEY_SECRET");
   const accountSid = env("TWILIO_ACCOUNT_SID");
-  const authToken = env("TWILIO_AUTH_TOKEN") || token;
+  const authToken = env("TWILIO_AUTH_TOKEN") || env("SMS_API_KEY");
   const from = env("TWILIO_FROM") || env("SMS_FROM");
-  const sinchProjectId = env("SINCH_PROJECT_ID");
-  const sinchAppId = env("SINCH_APP_ID");
-  const sinchAccessKeyId = env("SINCH_ACCESS_KEY_ID");
-  const sinchAccessKeySecret = env("SINCH_ACCESS_KEY_SECRET");
-  const sinchRegion = env("SINCH_REGION").toLowerCase();
-  const sinchSender = env("SINCH_SMS_SENDER") || env("SMS_FROM");
-
+  const webhook = env("SMS_WEBHOOK_URL");
   try {
-    if (
-      sinchProjectId &&
-      sinchAppId &&
-      sinchAccessKeyId &&
-      sinchAccessKeySecret
-    ) {
-      if (!sinchSender) {
-        return {
-          channel: "sms",
-          status: "failed",
-          detail: "sinch_missing_sender",
-        };
-      }
-
-      if (sinchRegion !== "eu" && sinchRegion !== "us") {
-        return {
-          channel: "sms",
-          status: "failed",
-          detail: "sinch_invalid_region",
-        };
-      }
-
-      const auth = Buffer.from(
-        `${sinchAccessKeyId}:${sinchAccessKeySecret}`,
-      ).toString("base64");
-      const url = `https://${sinchRegion}.conversation.api.sinch.com/v1/projects/${encodeURIComponent(sinchProjectId)}/messages:send`;
-
-      for (const recipient of recipients) {
-        await postJson(
-          url,
-          { Authorization: `Basic ${auth}` },
-          {
-            app_id: sinchAppId,
-            recipient: {
-              identified_by: {
-                channel_identities: [{ channel: "SMS", identity: recipient }],
-              },
-            },
-            message: { text_message: { text } },
-            channel_properties: { SMS_SENDER: sinchSender },
-          },
-        );
-      }
-      return { channel: "sms", status: "sent", detail: "sinch_conversation" };
+    if (hasSinch) {
+      const ids = await Promise.all(
+        recipients.map((recipient) => sendSinch(recipient, message.text)),
+      );
+      return {
+        channel: "sms",
+        status: "accepted",
+        provider: "sinch",
+        providerMessageId: ids.filter(Boolean).join(",") || undefined,
+      };
     }
-
     if (accountSid && authToken && from) {
       const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+      const ids: string[] = [];
       for (const recipient of recipients) {
         const body = new URLSearchParams({
           From: from,
           To: recipient,
-          Body: text,
+          Body: message.text,
         });
         const res = await fetch(
           `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -231,52 +285,132 @@ export async function sendSms({
             body,
           },
         );
-        if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+        const raw = await res.text();
+        if (!res.ok) throw new Error(`${res.status} ${raw.slice(0, 180)}`);
+        const data = JSON.parse(raw) as { sid?: string };
+        if (data.sid) ids.push(data.sid);
       }
-      return { channel: "sms", status: "sent", detail: "twilio" };
+      return {
+        channel: "sms",
+        status: "accepted",
+        provider: "twilio",
+        providerMessageId: ids.join(",") || undefined,
+      };
     }
-
     if (webhook) {
-      await postJson(
+      const response = await postJson(
         webhook,
-        token ? { Authorization: `Bearer ${token}` } : {},
-        {
-          to: recipients,
-          text,
-        },
+        env("SMS_API_KEY")
+          ? { Authorization: `Bearer ${env("SMS_API_KEY")}` }
+          : {},
+        { to: recipients, text: message.text },
       );
-      return { channel: "sms", status: "sent", detail: "webhook" };
+      return {
+        channel: "sms",
+        status: "accepted",
+        provider: "webhook",
+        providerMessageId:
+          typeof response.id === "string" ? response.id : undefined,
+      };
     }
-
     return { channel: "sms", status: "skipped", detail: "no_provider" };
   } catch (error) {
-    return {
-      channel: "sms",
-      status: "failed",
-      detail:
-        error instanceof Error ? error.message.slice(0, 180) : "unknown_error",
-    };
+    return { channel: "sms", status: "failed", detail: sanitizeError(error) };
   }
 }
 
-async function logNotification(
-  action: string,
-  entity: "Appointment" | "Order",
-  entityId: string,
-  results: NotifyResult[],
-) {
-  await Promise.all(
-    results.map((result) =>
-      prisma.auditLog.create({
-        data: {
-          actor: "system",
-          action: `${action}_${result.channel}_${result.status}`,
-          entity,
-          entityId,
+function sanitizeError(error: unknown) {
+  return (error instanceof Error ? error.message : "unknown_error")
+    .replace(/[\r\n]+/g, " ")
+    .slice(0, 180);
+}
+
+async function latestAccepted(messageId: string) {
+  return prisma.deliveryAttempt.findFirst({
+    where: { messageId, status: "ACCEPTED" },
+    orderBy: { attemptedAt: "desc" },
+  });
+}
+
+async function persistDelivery({
+  parent,
+  kind,
+  channel,
+  locale,
+  recipient,
+  message,
+  actor,
+  dedupeKey,
+}: {
+  parent: Parent;
+  kind: string;
+  channel: "EMAIL" | "SMS";
+  locale: Locale;
+  recipient: string | string[];
+  message: EmailMessage | { text: string };
+  actor: string;
+  dedupeKey?: string;
+}) {
+  const recipients = Array.isArray(recipient) ? recipient : [recipient];
+  const stored = dedupeKey
+    ? await prisma.outboundMessage.upsert({
+        where: { dedupeKey },
+        update: {},
+        create: {
+          ...parent,
+          kind: kind as never,
+          channel,
+          locale,
+          recipient: recipients.join(", "),
+          subject: "subject" in message ? message.subject : null,
+          body: "text" in message ? message.text : "",
+          html: "html" in message ? message.html : null,
+          actor,
+          dedupeKey,
         },
-      }),
-    ),
-  );
+      })
+    : await prisma.outboundMessage.create({
+        data: {
+          ...parent,
+          kind: kind as never,
+          channel,
+          locale,
+          recipient: recipients.join(", "),
+          subject: "subject" in message ? message.subject : null,
+          body: "text" in message ? message.text : "",
+          html: "html" in message ? message.html : null,
+          actor,
+        },
+      });
+  const accepted = await latestAccepted(stored.id);
+  if (accepted)
+    return {
+      channel: channel.toLowerCase() as "email" | "sms",
+      status: "accepted" as const,
+      provider: accepted.provider ?? undefined,
+      providerMessageId: accepted.providerMessageId ?? undefined,
+      detail: "already_accepted",
+    };
+  const result =
+    channel === "EMAIL"
+      ? await sendEmail({
+          to: recipients,
+          subject: stored.subject ?? BRAND.name,
+          text: stored.body,
+          html: stored.html ?? undefined,
+          idempotencyKey: dedupeKey ?? stored.id,
+        })
+      : await sendSms({ to: recipients, text: stored.body });
+  await prisma.deliveryAttempt.create({
+    data: {
+      messageId: stored.id,
+      status: result.status.toUpperCase() as never,
+      provider: result.provider,
+      providerMessageId: result.providerMessageId,
+      errorDetail: result.detail,
+    },
+  });
+  return result;
 }
 
 async function appointmentServiceTitle(slug: string, locale: Locale) {
@@ -287,23 +421,18 @@ async function appointmentServiceTitle(slug: string, locale: Locale) {
   return content?.h1 ?? slug;
 }
 
-function appointmentSms(
+function localizedAppointment(
   appointment: AppointmentNotification,
-  locale: Locale,
-  kind: "confirmation" | "reminder_24h" | "reminder_2h",
-  service: string,
+  title: string,
+  staffTitle?: string,
 ) {
-  const prefix =
-    kind === "confirmation"
-      ? "Booking received"
-      : kind === "reminder_24h"
-        ? "Reminder tomorrow"
-        : "Reminder soon";
-  const treatment = appointment.procedureTitle ?? service;
-  return `${BRAND.shortName}: ${prefix}. ${treatment}, ${dateTime(appointment.start, locale)}. Ref ${appointment.id.slice(-8).toUpperCase()}. ${CONTACT.phone}`;
+  return {
+    ...appointment,
+    service: { ...appointment.service, title, staffTitle },
+  };
 }
 
-export async function notifyAppointmentConfirmation(
+export async function notifyAppointmentReceipt(
   appointment: AppointmentNotification,
   locale: Locale = "fi",
 ) {
@@ -311,42 +440,178 @@ export async function notifyAppointmentConfirmation(
     appointmentServiceTitle(appointment.service.slug, locale),
     appointmentServiceTitle(appointment.service.slug, "fi"),
   ]);
-  const localizedAppointment = {
-    ...appointment,
-    service: {
-      ...appointment.service,
-      title: service,
-      staffTitle: staffService,
-    },
-  };
-  const customerMessage = renderCustomerAppointmentEmail(
-    localizedAppointment,
+  const localized = localizedAppointment(appointment, service, staffService);
+  const customer = renderCustomerAppointmentEmail(
+    localized,
     locale,
     "confirmation",
   );
-  const staffMessage = renderStaffAppointmentEmail(localizedAppointment);
-  const results = await Promise.all([
-    sendSms({
-      to: appointment.client.phone,
-      text: appointmentSms(appointment, locale, "confirmation", service),
+  const staff = renderStaffAppointmentEmail(localized);
+  return Promise.all([
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: "APPOINTMENT_RECEIPT",
+      channel: "EMAIL",
+      locale,
+      recipient: appointment.client.email,
+      message: customer,
+      actor: "system",
+      dedupeKey: `appointment:${appointment.id}:receipt:customer:email`,
     }),
-    sendEmail({ to: appointment.client.email, ...customerMessage }),
-    sendEmail({
-      to: staffEmails(),
-      ...staffMessage,
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: "APPOINTMENT_RECEIPT",
+      channel: "EMAIL",
+      locale: "fi",
+      recipient: staffEmails(),
+      message: staff,
+      actor: "system",
+      dedupeKey: `appointment:${appointment.id}:receipt:staff:email`,
     }),
-    sendSms({
-      to: staffPhones(),
-      text: `New ${BRAND.shortName} booking: ${appointment.client.fullName}, ${appointment.procedureTitle ?? staffService}, ${dateTime(appointment.start, locale)}, ref ${appointment.id.slice(-8).toUpperCase()}.`,
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: "APPOINTMENT_RECEIPT",
+      channel: "SMS",
+      locale: "fi",
+      recipient: staffPhones(),
+      message: { text: staffAppointmentSms(appointment, staffService) },
+      actor: "system",
+      dedupeKey: `appointment:${appointment.id}:receipt:staff:sms`,
     }),
   ]);
+}
 
-  await logNotification(
-    "booking_confirmation",
-    "Appointment",
-    appointment.id,
-    results,
+export async function notifyAppointmentConfirmation(
+  appointment: AppointmentNotification,
+  locale: Locale = "fi",
+  actor = "system",
+) {
+  const service = await appointmentServiceTitle(
+    appointment.service.slug,
+    locale,
   );
+  const localized = localizedAppointment(appointment, service);
+  const email = renderAppointmentLifecycleEmail(
+    localized,
+    locale,
+    "confirmation",
+  );
+  return Promise.all([
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: "APPOINTMENT_CONFIRMATION",
+      channel: "EMAIL",
+      locale,
+      recipient: appointment.client.email,
+      message: email,
+      actor,
+      dedupeKey: `appointment:${appointment.id}:confirmation:email`,
+    }),
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: "APPOINTMENT_CONFIRMATION",
+      channel: "SMS",
+      locale,
+      recipient: appointment.client.phone,
+      message: {
+        text: appointmentSms(appointment, locale, "confirmation", service),
+      },
+      actor,
+      dedupeKey: `appointment:${appointment.id}:confirmation:sms`,
+    }),
+  ]);
+}
+
+export async function notifyAppointmentChange(
+  appointment: AppointmentNotification,
+  kind: "rescheduled" | "cancellation",
+  locale: Locale = "fi",
+  reason?: string | null,
+  actor = "system",
+) {
+  const service = await appointmentServiceTitle(
+    appointment.service.slug,
+    locale,
+  );
+  const localized = localizedAppointment(appointment, service);
+  const email = renderAppointmentLifecycleEmail(
+    localized,
+    locale,
+    kind,
+    reason,
+  );
+  const key =
+    kind === "rescheduled"
+      ? `appointment:${appointment.id}:rescheduled:${appointment.start.toISOString()}`
+      : `appointment:${appointment.id}:cancellation`;
+  const results = await Promise.all([
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind:
+        kind === "rescheduled"
+          ? "APPOINTMENT_RESCHEDULED"
+          : "APPOINTMENT_CANCELLATION",
+      channel: "EMAIL",
+      locale,
+      recipient: appointment.client.email,
+      message: email,
+      actor,
+      dedupeKey: `${key}:email`,
+    }),
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind:
+        kind === "rescheduled"
+          ? "APPOINTMENT_RESCHEDULED"
+          : "APPOINTMENT_CANCELLATION",
+      channel: "SMS",
+      locale,
+      recipient: appointment.client.phone,
+      message: {
+        text: appointmentSms(appointment, locale, kind, service, reason),
+      },
+      actor,
+      dedupeKey: `${key}:sms`,
+    }),
+  ]);
+  const staffKind = kind === "rescheduled" ? "rescheduled" : "cancelled";
+  const staffSubject =
+    kind === "rescheduled" ? "Ajanvaraus siirretty" : "Ajanvaraus peruttu";
+  const staffBody = `${appointment.client.fullName}\n${appointment.procedureTitle ?? service}\n${appointment.start.toISOString()}${reason ? `\n${reason}` : ""}`;
+  results.push(
+    await persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind:
+        kind === "rescheduled"
+          ? "APPOINTMENT_RESCHEDULED"
+          : "APPOINTMENT_CANCELLATION",
+      channel: "EMAIL",
+      locale: "fi",
+      recipient: staffEmails(),
+      message: renderCustomEmail({
+        locale: "fi",
+        subject: staffSubject,
+        bodyText: staffBody,
+        reference: appointment.id.slice(-8).toUpperCase(),
+      }),
+      actor,
+      dedupeKey: `${key}:staff:email`,
+    }),
+    await persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind:
+        kind === "rescheduled"
+          ? "APPOINTMENT_RESCHEDULED"
+          : "APPOINTMENT_CANCELLATION",
+      channel: "SMS",
+      locale: "fi",
+      recipient: staffPhones(),
+      message: { text: staffAppointmentSms(appointment, service, staffKind) },
+      actor,
+      dedupeKey: `${key}:staff:sms`,
+    }),
+  );
+  return results;
 }
 
 export async function notifyAppointmentReminder(
@@ -358,51 +623,228 @@ export async function notifyAppointmentReminder(
     appointment.service.slug,
     locale,
   );
-  const localizedAppointment = {
-    ...appointment,
-    service: { ...appointment.service, title: service },
-  };
-  const message = renderCustomerAppointmentEmail(
-    localizedAppointment,
-    locale,
-    kind,
-  );
-  const results = await Promise.all([
-    sendSms({
-      to: appointment.client.phone,
-      text: appointmentSms(appointment, locale, kind, service),
+  const localized = localizedAppointment(appointment, service);
+  const email = renderCustomerAppointmentEmail(localized, locale, kind);
+  const messageKind =
+    kind === "reminder_24h"
+      ? "APPOINTMENT_REMINDER_24H"
+      : "APPOINTMENT_REMINDER_2H";
+  return Promise.all([
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: messageKind,
+      channel: "EMAIL",
+      locale,
+      recipient: appointment.client.email,
+      message: email,
+      actor: "system",
+      dedupeKey: `appointment:${appointment.id}:${kind}:email`,
     }),
-    sendEmail({
-      to: appointment.client.email,
-      ...message,
+    persistDelivery({
+      parent: { appointmentId: appointment.id },
+      kind: messageKind,
+      channel: "SMS",
+      locale,
+      recipient: appointment.client.phone,
+      message: { text: appointmentSms(appointment, locale, kind, service) },
+      actor: "system",
+      dedupeKey: `appointment:${appointment.id}:${kind}:sms`,
     }),
   ]);
+}
 
-  await logNotification(
-    `booking_${kind}`,
-    "Appointment",
-    appointment.id,
-    results,
-  );
+export async function notifyOrderReceipt(
+  order: OrderNotification,
+  locale: Locale = "fi",
+) {
+  const customer = renderCustomerOrderEmail(order, locale);
+  const staff = renderStaffOrderEmail(order);
+  return Promise.all([
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_RECEIPT",
+      channel: "EMAIL",
+      locale,
+      recipient: order.email,
+      message: customer,
+      actor: "system",
+      dedupeKey: `order:${order.id}:receipt:customer:email`,
+    }),
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_RECEIPT",
+      channel: "EMAIL",
+      locale: "fi",
+      recipient: staffEmails(),
+      message: staff,
+      actor: "system",
+      dedupeKey: `order:${order.id}:receipt:staff:email`,
+    }),
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_RECEIPT",
+      channel: "SMS",
+      locale: "fi",
+      recipient: staffPhones(),
+      message: { text: staffOrderSms(order, order.client?.fullName ?? "-") },
+      actor: "system",
+      dedupeKey: `order:${order.id}:receipt:staff:sms`,
+    }),
+  ]);
 }
 
 export async function notifyOrderConfirmation(
   order: OrderNotification,
   locale: Locale = "fi",
+  actor = "system",
 ) {
-  const customerMessage = renderCustomerOrderEmail(order, locale);
-  const staffMessage = renderStaffOrderEmail(order);
-
-  const results = await Promise.all([
-    sendEmail({
-      to: order.email,
-      ...customerMessage,
+  const email = renderOrderLifecycleEmail(order, locale, "confirmation");
+  return Promise.all([
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_CONFIRMATION",
+      channel: "EMAIL",
+      locale,
+      recipient: order.email,
+      message: email,
+      actor,
+      dedupeKey: `order:${order.id}:confirmation:email`,
     }),
-    sendEmail({
-      to: staffEmails(),
-      ...staffMessage,
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_CONFIRMATION",
+      channel: "SMS",
+      locale,
+      recipient: order.phone ?? "",
+      message: { text: orderSms(order, locale, "confirmation") },
+      actor,
+      dedupeKey: `order:${order.id}:confirmation:sms`,
     }),
   ]);
-
-  await logNotification("order_confirmation", "Order", order.id, results);
 }
+
+export async function notifyOrderCancellation(
+  order: OrderNotification,
+  locale: Locale = "fi",
+  reason: string,
+  actor = "system",
+) {
+  const email = renderOrderLifecycleEmail(
+    order,
+    locale,
+    "cancellation",
+    reason,
+  );
+  return Promise.all([
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_CANCELLATION",
+      channel: "EMAIL",
+      locale,
+      recipient: order.email,
+      message: email,
+      actor,
+      dedupeKey: `order:${order.id}:cancellation:email`,
+    }),
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: "ORDER_CANCELLATION",
+      channel: "SMS",
+      locale,
+      recipient: order.phone ?? "",
+      message: { text: orderSms(order, locale, "cancellation", reason) },
+      actor,
+      dedupeKey: `order:${order.id}:cancellation:sms`,
+    }),
+  ]);
+}
+
+export async function sendCustomMessage({
+  parent,
+  channel,
+  locale,
+  recipient,
+  subject,
+  body,
+  actor,
+  reference,
+}: {
+  parent: Parent;
+  channel: "EMAIL" | "SMS";
+  locale: Locale;
+  recipient: string;
+  subject?: string;
+  body: string;
+  actor: string;
+  reference: string;
+}) {
+  const message =
+    channel === "EMAIL"
+      ? renderCustomEmail({
+          locale,
+          subject: subject ?? BRAND.name,
+          bodyText: body,
+          reference,
+        })
+      : { text: body };
+  return persistDelivery({
+    parent,
+    kind: "CUSTOM",
+    channel,
+    locale,
+    recipient,
+    message,
+    actor,
+  });
+}
+
+export async function retryOutboundMessage(id: string, actor: string) {
+  const message = await prisma.outboundMessage.findUnique({
+    where: { id },
+    include: { attempts: true },
+  });
+  if (!message) throw new Error("message_not_found");
+  if (message.attempts.some((attempt) => attempt.status === "ACCEPTED"))
+    throw new Error("message_already_accepted");
+  const result =
+    message.channel === "EMAIL"
+      ? await sendEmail({
+          to: message.recipient
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+          subject: message.subject ?? BRAND.name,
+          text: message.body,
+          html: message.html ?? undefined,
+          idempotencyKey: message.dedupeKey ?? message.id,
+        })
+      : await sendSms({
+          to: message.recipient
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+          text: message.body,
+        });
+  await prisma.deliveryAttempt.create({
+    data: {
+      messageId: message.id,
+      status: result.status.toUpperCase() as never,
+      provider: result.provider,
+      providerMessageId: result.providerMessageId,
+      errorDetail: result.detail,
+    },
+  });
+  const entity = message.orderId ? "Order" : "Appointment";
+  await prisma.auditLog.create({
+    data: {
+      actor,
+      action: `communication_retry_${result.status}`,
+      entity,
+      entityId: message.orderId ?? message.appointmentId,
+    },
+  });
+  return result;
+}
+
+// Backward-compatible name used by older callers during rolling deployment.
+export const notifyLegacyOrderConfirmation = notifyOrderReceipt;

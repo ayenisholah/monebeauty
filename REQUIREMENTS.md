@@ -9,6 +9,14 @@ practitioner and ignores client-supplied practitioner IDs. Internal practitioner
 availability, staff scheduling, overlap prevention, historical appointments, rescheduling,
 CRM, confirmations, and notifications remain unchanged.
 
+## Owner-approved admin operations (2026-07-18)
+
+The admin sidebar exposes `/admin/ajanvaraukset` and `/admin/tilaukset` in every interface
+locale. Orders follow Pending -> Confirmed -> Fulfilled or Cancelled. Appointments follow
+Booked -> Confirmed -> Completed or Cancelled; a customer reschedule returns a confirmed
+appointment to Booked for clinic reconfirmation. Confirmation, rescheduling, and cancellation
+use localized transactional email/SMS with durable provider-attempt history and safe retry.
+
 ## Owner-approved homepage direction (2026-07-12)
 
 Reproduce root `index.html` as the homepage visual and content reference. Its medical,
@@ -252,7 +260,8 @@ Access control + **audit logging** on medical fields.
 
 - The admin uses the same Finnish path segments in every locale. Finnish has no prefix;
   English and Russian use `/en` and `/ru`. Canonical modules are `/admin`,
-  `/admin/kirjaudu`, `/admin/asiakkaat`, `/admin/palvelut`, `/admin/teknologiat`,
+  `/admin/kirjaudu`, `/admin/asiakkaat`, `/admin/ajanvaraukset`, `/admin/tilaukset`,
+  `/admin/palvelut`, `/admin/teknologiat`,
   `/admin/sisalto`, `/admin/tuotteet`, `/admin/hinnasto`, `/admin/artikkelit`, and
   `/admin/keskustelut`; creation uses `/uusi` and records use `/[id]`.
 - Existing English admin paths permanently redirect to the matching Finnish path.

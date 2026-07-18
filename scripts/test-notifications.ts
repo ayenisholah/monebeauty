@@ -26,7 +26,7 @@ async function main() {
   const results: Array<{
     recipient: string;
     channel: "email" | "sms";
-    status: "sent" | "skipped" | "failed";
+    status: "accepted" | "skipped" | "failed";
     provider?: string;
     detail?: string;
   }> = [];
@@ -40,8 +40,8 @@ async function main() {
       recipient,
       channel: result.channel,
       status: result.status,
-      provider: result.status === "sent" ? result.detail : undefined,
-      detail: result.status === "sent" ? undefined : result.detail,
+      provider: result.status === "accepted" ? result.provider : undefined,
+      detail: result.status === "accepted" ? undefined : result.detail,
     });
   }
 
@@ -54,20 +54,20 @@ async function main() {
       recipient,
       channel: result.channel,
       status: result.status,
-      provider: result.status === "sent" ? result.detail : undefined,
-      detail: result.status === "sent" ? undefined : result.detail,
+      provider: result.status === "accepted" ? result.provider : undefined,
+      detail: result.status === "accepted" ? undefined : result.detail,
     });
   }
 
   console.log(
     JSON.stringify(
-      { ok: results.every((result) => result.status === "sent"), results },
+      { ok: results.every((result) => result.status === "accepted"), results },
       null,
       2,
     ),
   );
 
-  if (results.some((result) => result.status !== "sent")) {
+  if (results.some((result) => result.status !== "accepted")) {
     process.exitCode = 1;
   }
 }

@@ -4,7 +4,8 @@ import type { Product } from "@/content/products";
 import { getLiveProduct } from "@/lib/live-content";
 import { normalizeQty } from "@/lib/cart";
 import { routing, type Locale } from "@/i18n/routing";
-import { notifyOrderConfirmation } from "@/lib/notifications";
+import { notifyOrderReceipt } from "@/lib/notifications";
+import { normalizeInternationalPhone } from "@/lib/phone";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const fullName = String(payload.fullName ?? "").trim();
-  const phone = String(payload.phone ?? "").trim();
+  const phone = normalizeInternationalPhone(String(payload.phone ?? ""));
   const email = String(payload.email ?? "").trim();
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const locale = routing.locales.includes(payload.locale as Locale)
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
 
   if (!fullName) return bad("name_required");
-  if (!phone) return bad("phone_required");
+  if (!phone) return bad("phone_invalid");
   if (!EMAIL_RE.test(email)) return bad("email_required");
   if (!consentGdpr) return bad("consent_required");
 
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
         currency: "EUR",
         email,
         phone,
+        notes,
         consentGdpr: true,
         items: { create: orderItems },
       },
@@ -141,7 +143,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await notifyOrderConfirmation(order, locale);
+      await notifyOrderReceipt(order, locale);
     } catch {
       await prisma.auditLog.create({
         data: {

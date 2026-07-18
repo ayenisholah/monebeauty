@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServiceId, openPublicSlots } from "@/lib/booking";
-import { notifyAppointmentConfirmation } from "@/lib/notifications";
+import { notifyAppointmentReceipt } from "@/lib/notifications";
+import { normalizeInternationalPhone } from "@/lib/phone";
 import { routing, type Locale } from "@/i18n/routing";
 import { resolveProcedure } from "@/lib/procedures";
 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const service = String(payload.service ?? "");
   const start = String(payload.start ?? "");
   const fullName = String(payload.fullName ?? "").trim();
-  const phone = String(payload.phone ?? "").trim();
+  const phone = normalizeInternationalPhone(String(payload.phone ?? ""));
   const email = String(payload.email ?? "").trim();
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const locale = routing.locales.includes(payload.locale as Locale)
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (procedureRequested && !procedure) return bad("invalid_procedure");
   if (!start || Number.isNaN(Date.parse(start))) return bad("invalid_start");
   if (!fullName) return bad("name_required");
-  if (!phone) return bad("phone_required");
+  if (!phone) return bad("phone_invalid");
   if (!EMAIL_RE.test(email)) return bad("email_required");
   if (!consentGdpr) return bad("consent_required");
 
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      await notifyAppointmentConfirmation(appointment, locale);
+      await notifyAppointmentReceipt(appointment, locale);
     } catch {
       await prisma.auditLog.create({
         data: {

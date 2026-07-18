@@ -32,6 +32,11 @@ persisted total quantity.
 > `SCOPE.md` governs brand/positioning/IA/features, the design handoff supplies visual
 > styling + structure, and **existing-page copy, images, and video come from
 > `scraped_content/`**. **Prisma + custom admin (no Payload)**; **e-commerce is in scope**.
+> **Current operations milestone: admin Orders + Appointments.** The dashboard and sidebar
+> route to dedicated Finnish-segment queues, lifecycle actions are audited, checkout/booking
+> receipts are distinct from clinic confirmation, and Resend/Sinch delivery attempts plus
+> custom transactional messages are retained per record.
+>
 > **Current completed milestone: Phase 8 SEO + GDPR finalize.** Phase 6 notifications/reminders
 > are now implemented at provider-integration scope; payment capture remains deferred.
 
@@ -39,8 +44,9 @@ persisted total quantity.
 
 - Split locale routes into public and admin groups so the admin has its own HTML/application
   shell and never inherits public chrome, cart, chatbot, consent, or analytics.
-- Use Finnish admin segments across FI/EN/RU: `asiakkaat`, `palvelut`, `teknologiat`,
-  `sisalto`, `tuotteet`, `hinnasto`, `artikkelit`, `keskustelut`, `kirjaudu`, and `uusi`.
+- Use Finnish admin segments across FI/EN/RU: `asiakkaat`, `ajanvaraukset`, `tilaukset`,
+  `palvelut`, `teknologiat`, `sisalto`, `tuotteet`, `hinnasto`, `artikkelit`,
+  `keskustelut`, `kirjaudu`, and `uusi`.
   Permanently redirect legacy English admin URLs.
 - Add the localized responsive admin sidebar/drawer, `Admin` translations, context-preserving
   locale switcher, dashboard warnings/metrics/audits/quick actions, and localized CRUD.
@@ -257,6 +263,11 @@ order confirmations. Implemented with `lib/notifications.ts`, provider env confi
 non-blocking booking/checkout notification sends, `AuditLog` delivery records, and
 `npm run notifications:reminders` for cron/PM2 scheduling. Payment capture remains deferred.
 **Verify:** confirmation + scheduled reminder fire; consent respected.
+
+Admin confirmation sends localized email and SMS for orders and appointments. Resend requests
+use idempotency keys; Sinch Conversation API uses production OAuth. Outbound message content
+and every provider attempt are stored for channel-specific retry without duplicating accepted
+sends. Customer reschedule/cancellation and scheduled reminders share this history.
 
 ## Phase 7 — AI chatbot ✅ implemented
 

@@ -1,4 +1,11 @@
 Project Overview
+Admin operations (owner-approved, 2026-07-18): the multilingual custom admin includes
+dedicated Orders (`tilaukset`) and Appointments (`ajanvaraukset`) modules. Submitted order
+contents remain immutable; staff confirm, fulfil, or cancel requests and can send audited
+transactional email/SMS. Appointment administration supports confirmation, availability-
+validated rescheduling, completion, cancellation, reminders, and audited custom messages.
+Customer-facing automatic messages use the record locale through Resend and Sinch.
+
 Public booking assignment (owner-approved, 2026-07-17): the customer flow is simplified to
 Service -> Time -> You. Customers do not select or see a specialist before confirming. Every
 new public booking is assigned server-side to the exact "Mone Beauty Clinic" practitioner.

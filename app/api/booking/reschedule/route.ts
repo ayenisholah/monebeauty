@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { appointmentByReference, openSlots } from "@/lib/booking";
+import { notifyAppointmentChange } from "@/lib/notifications";
+import type { Locale } from "@/i18n/routing";
 
 function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
@@ -54,20 +56,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "slot_taken" }, { status: 409 });
   }
 
-  const updated = await prisma.appointment.update({
-    where: { id: appointment.id },
-    data: {
-      start: new Date(matchingSlot.start),
-      end: new Date(matchingSlot.end),
-      status: "RESCHEDULED",
-      history: {
-        rescheduledAt: new Date().toISOString(),
-        previousStart: appointment.start.toISOString(),
-        previousEnd: appointment.end.toISOString(),
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.appointment.update({
+      where: { id: appointment.id },
+      data: {
+        start: new Date(matchingSlot.start),
+        end: new Date(matchingSlot.end),
+        status: "BOOKED",
+        confirmedAt: null,
+        history: {
+          rescheduledAt: new Date().toISOString(),
+          previousStart: appointment.start.toISOString(),
+          previousEnd: appointment.end.toISOString(),
+        },
       },
-    },
-    select: { id: true, start: true, end: true, status: true },
+      include: { client: true, practitioner: true, service: true },
+    });
+    await tx.appointmentEvent.create({
+      data: {
+        appointmentId: appointment.id,
+        kind: "RESCHEDULED",
+        actor: appointment.client.email,
+        previousStatus: appointment.status,
+        nextStatus: "BOOKED",
+        previousStart: appointment.start,
+        previousEnd: appointment.end,
+        nextStart: row.start,
+        nextEnd: row.end,
+      },
+    });
+    return row;
   });
+  await notifyAppointmentChange(
+    updated,
+    "rescheduled",
+    updated.locale as Locale,
+    null,
+    appointment.client.email,
+  );
 
   return NextResponse.json({
     id: updated.id,
