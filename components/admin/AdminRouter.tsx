@@ -43,6 +43,11 @@ import {
 import mediaAssets from "@/content/generated/assets.json";
 import { bootstrapProcedureMedia } from "@/content/procedure-media";
 import { parseProcedures } from "@/lib/procedures";
+import {
+  getRecentBusinessActivity,
+  type BusinessActivityAction,
+  type BusinessActivityCategory,
+} from "@/lib/admin-activity";
 
 const locales: DbLocale[] = ["fi", "en", "ru"];
 const assets = Array.from(
@@ -89,6 +94,13 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
       warnings: t("dashboard.warnings"),
       noWarnings: t("dashboard.noWarnings"),
       recent: t("dashboard.recent"),
+      emptyActivity: t("dashboard.emptyActivity"),
+      activityCategory: (category: BusinessActivityCategory) =>
+        t(`dashboard.activity.categories.${category}`),
+      activityAction: (action: BusinessActivityAction) =>
+        t(`dashboard.activity.actions.${action}`),
+      activityStatus: (status: string) =>
+        t(`dashboard.activity.statuses.${status}`),
       quick: t("dashboard.quick"),
       needsAction: (count: number) => t("dashboard.needsAction", { count }),
     },
@@ -368,7 +380,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     serviceRows,
     technologyRows,
     productRows,
-    audits,
+    recentActivity,
   ] = await Promise.all([
     prisma.client.count({ where: { archivedAt: null } }),
     prisma.appointment.count(),
@@ -405,7 +417,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
         contents: { select: { locale: true, status: true } },
       },
     }),
-    prisma.auditLog.findMany({ orderBy: { at: "desc" }, take: 10 }),
+    getRecentBusinessActivity(locale),
   ]);
   const counts = {
     clients,
@@ -517,20 +529,58 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
       </div>
       <section className={`${panelCls} mt-[20px]`}>
         <h2 className={sectionTitle}>{copy.dashboard.recent}</h2>
-        <div className="mt-[12px] overflow-x-auto">
-          <table className={tableCls}>
-            <tbody>
-              {audits.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{formatDate(entry.at, locale)}</td>
-                  <td>{entry.action}</td>
-                  <td>{entry.entity}</td>
-                  <td>{entry.actor}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {recentActivity.length ? (
+          <ul className="divide-line border-line mt-[12px] divide-y border-y">
+            {recentActivity.map((entry) => {
+              const content = (
+                <div className="grid gap-[8px] px-[8px] py-[14px] sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-center sm:gap-[16px]">
+                  <span className="font-sans text-[12px] tracking-[.08em] text-muted uppercase">
+                    {copy.dashboard.activityCategory(entry.category)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-sans text-[14px] font-medium text-body">
+                      {copy.dashboard.activityAction(entry.action)}
+                      {entry.subject ? ` · ${entry.subject}` : ""}
+                    </span>
+                    {entry.detail ? (
+                      <span className="mt-[3px] block truncate font-sans text-[13px] text-muted">
+                        {entry.detail}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="flex items-center gap-[10px] sm:justify-end">
+                    {entry.status ? (
+                      <span className="rounded-full bg-btn-fill px-[9px] py-[4px] font-sans text-[11px] tracking-[.06em] text-body uppercase">
+                        {copy.dashboard.activityStatus(entry.status)}
+                      </span>
+                    ) : null}
+                    <time className="font-sans text-[12px] whitespace-nowrap text-muted">
+                      {formatDate(entry.at, locale)}
+                    </time>
+                  </span>
+                </div>
+              );
+              return (
+                <li key={entry.id}>
+                  {entry.href ? (
+                    <Link
+                      href={entry.href}
+                      className="block transition-colors hover:bg-btn-fill focus-visible:bg-btn-fill focus-visible:outline-none"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    content
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="mt-[12px] font-sans text-[14px] text-muted">
+            {copy.dashboard.emptyActivity}
+          </p>
+        )}
       </section>
     </div>
   );
@@ -2256,8 +2306,6 @@ const panelCls =
 const cardCls =
   "rounded-[8px] border border-line-card bg-card p-[16px] transition hover:-translate-y-[2px] hover:shadow-card motion-reduce:transform-none";
 const sectionTitle = "font-display text-[26px] font-medium";
-const tableCls =
-  "w-full min-w-[720px] border-collapse font-sans text-left text-[14px] [&_td]:border-t [&_td]:border-line-hair [&_td]:px-[10px] [&_td]:py-[12px]";
 const recordRow =
   "flex min-h-[72px] items-start justify-between gap-[16px] border-b border-line-hair px-[16px] py-[14px] font-sans text-[14px] text-ink last:border-b-0 hover:bg-page sm:items-center [&_small]:text-label [&_small]:text-muted [&_strong]:block";
 const globalGrid = "grid gap-x-[14px] sm:grid-cols-2 xl:grid-cols-3";

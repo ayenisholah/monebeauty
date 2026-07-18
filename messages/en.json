@@ -616,9 +616,49 @@
       "subtitle": "Publication, client, booking, shop, and support overview.",
       "warnings": "Publication warnings",
       "noWarnings": "Every locale has published content for all active records.",
-      "recent": "Recent audit events",
+      "recent": "Recent business activity",
+      "emptyActivity": "No recent business activity.",
       "quick": "Quick create",
-      "needsAction": "{count} need confirmation"
+      "needsAction": "{count} need confirmation",
+      "activity": {
+        "categories": {
+          "appointment": "Appointment",
+          "order": "Order",
+          "chat": "Conversation",
+          "treatment": "Treatment"
+        },
+        "actions": {
+          "appointmentBooked": "New treatment booked",
+          "appointmentConfirmed": "Appointment confirmed",
+          "appointmentRescheduled": "Appointment rescheduled",
+          "appointmentCompleted": "Treatment completed",
+          "appointmentCancelled": "Appointment cancelled",
+          "orderPlaced": "New order placed",
+          "orderConfirmed": "Order confirmed",
+          "orderFulfilled": "Order fulfilled",
+          "orderCancelled": "Order cancelled",
+          "chatHandoffRequested": "Customer requested human help",
+          "chatResolved": "Conversation resolved",
+          "chatReopened": "Conversation reopened",
+          "chatArchived": "Conversation archived",
+          "treatmentCreated": "Treatment created",
+          "treatmentUpdated": "Treatment updated",
+          "treatmentArchived": "Treatment archived",
+          "treatmentDeleted": "Treatment deleted"
+        },
+        "statuses": {
+          "BOOKED": "Booked",
+          "CONFIRMED": "Confirmed",
+          "RESCHEDULED": "Rescheduled",
+          "COMPLETED": "Completed",
+          "CANCELLED": "Cancelled",
+          "PENDING": "Pending",
+          "PAID": "Paid",
+          "FULFILLED": "Fulfilled",
+          "OPEN": "Open",
+          "RESOLVED": "Resolved"
+        }
+      }
     },
     "common": {
       "new": "New",

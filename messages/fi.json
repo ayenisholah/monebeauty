@@ -608,9 +608,49 @@
       "subtitle": "Julkaisujen, asiakkaiden, varausten, kaupan ja tuen tilanne.",
       "warnings": "Julkaisuvaroitukset",
       "noWarnings": "Kaikilla aktiivisilla tietueilla on julkaistu sisältö jokaisella kielellä.",
-      "recent": "Viimeisimmät auditointitapahtumat",
+      "recent": "Viimeaikainen liiketoiminta",
+      "emptyActivity": "Ei viimeaikaista liiketoimintaa.",
       "quick": "Luo nopeasti",
-      "needsAction": "{count} odottaa vahvistusta"
+      "needsAction": "{count} odottaa vahvistusta",
+      "activity": {
+        "categories": {
+          "appointment": "Ajanvaraus",
+          "order": "Tilaus",
+          "chat": "Keskustelu",
+          "treatment": "Hoito"
+        },
+        "actions": {
+          "appointmentBooked": "Uusi hoitovaraus",
+          "appointmentConfirmed": "Ajanvaraus vahvistettu",
+          "appointmentRescheduled": "Ajanvaraus siirretty",
+          "appointmentCompleted": "Hoito suoritettu",
+          "appointmentCancelled": "Ajanvaraus peruttu",
+          "orderPlaced": "Uusi tilaus",
+          "orderConfirmed": "Tilaus vahvistettu",
+          "orderFulfilled": "Tilaus toimitettu",
+          "orderCancelled": "Tilaus peruttu",
+          "chatHandoffRequested": "Asiakas pyysi henkilökohtaista apua",
+          "chatResolved": "Keskustelu ratkaistu",
+          "chatReopened": "Keskustelu avattu uudelleen",
+          "chatArchived": "Keskustelu arkistoitu",
+          "treatmentCreated": "Hoito luotu",
+          "treatmentUpdated": "Hoitoa päivitetty",
+          "treatmentArchived": "Hoito arkistoitu",
+          "treatmentDeleted": "Hoito poistettu"
+        },
+        "statuses": {
+          "BOOKED": "Varattu",
+          "CONFIRMED": "Vahvistettu",
+          "RESCHEDULED": "Siirretty",
+          "COMPLETED": "Suoritettu",
+          "CANCELLED": "Peruttu",
+          "PENDING": "Odottaa",
+          "PAID": "Maksettu",
+          "FULFILLED": "Toimitettu",
+          "OPEN": "Avoin",
+          "RESOLVED": "Ratkaistu"
+        }
+      }
     },
     "common": {
       "new": "Uusi",

@@ -29,49 +29,61 @@ export async function POST(req: NextRequest) {
   const submittedHistory = normalizeTranscript(payload.history);
 
   try {
-    const existing = sessionId
-      ? await prisma.chatSession.findUnique({ where: { id: sessionId } })
-      : null;
-    const savedHistory = normalizeTranscript(existing?.messages);
-    const baseMessages = submittedHistory.length
-      ? submittedHistory
-      : savedHistory;
-    const lastMessage = baseMessages.at(-1);
-    const messages = (
-      lastMessage?.role === "user" && lastMessage.content === message
-        ? [
-            ...baseMessages.slice(0, -1),
-            { role: "user", content: message, handoff: true },
-          ]
-        : [...baseMessages, { role: "user", content: message, handoff: true }]
-    ).slice(-12) as Prisma.InputJsonValue;
-
-    const saved = existing
-      ? await prisma.chatSession.update({
-          where: { id: existing.id },
-          data: {
-            locale,
-            handoffRequested: true,
-            status: "OPEN",
-            contactName,
-            contactEmail,
-            contactPhone,
-            messages,
-          },
-          select: { id: true },
-        })
-      : await prisma.chatSession.create({
-          data: {
-            locale,
-            messages,
-            handoffRequested: true,
-            status: "OPEN",
-            contactName,
-            contactEmail,
-            contactPhone,
-          },
-          select: { id: true },
-        });
+    const saved = await prisma.$transaction(async (transaction) => {
+      const existing = sessionId
+        ? await transaction.chatSession.findUnique({
+            where: { id: sessionId },
+          })
+        : null;
+      const savedHistory = normalizeTranscript(existing?.messages);
+      const baseMessages = submittedHistory.length
+        ? submittedHistory
+        : savedHistory;
+      const lastMessage = baseMessages.at(-1);
+      const messages = (
+        lastMessage?.role === "user" && lastMessage.content === message
+          ? [
+              ...baseMessages.slice(0, -1),
+              { role: "user", content: message, handoff: true },
+            ]
+          : [...baseMessages, { role: "user", content: message, handoff: true }]
+      ).slice(-12) as Prisma.InputJsonValue;
+      const chat = existing
+        ? await transaction.chatSession.update({
+            where: { id: existing.id },
+            data: {
+              locale,
+              handoffRequested: true,
+              status: "OPEN",
+              contactName,
+              contactEmail,
+              contactPhone,
+              messages,
+            },
+            select: { id: true },
+          })
+        : await transaction.chatSession.create({
+            data: {
+              locale,
+              messages,
+              handoffRequested: true,
+              status: "OPEN",
+              contactName,
+              contactEmail,
+              contactPhone,
+            },
+            select: { id: true },
+          });
+      await transaction.auditLog.create({
+        data: {
+          actor: contactEmail || contactPhone || "chat-customer",
+          action: "chat_handoff_requested",
+          entity: "ChatSession",
+          entityId: chat.id,
+        },
+      });
+      return chat;
+    });
 
     return NextResponse.json({ id: saved.id });
   } catch {

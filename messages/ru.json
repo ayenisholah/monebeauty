@@ -608,9 +608,49 @@
       "subtitle": "Публикации, клиенты, записи, магазин и поддержка.",
       "warnings": "Предупреждения о публикациях",
       "noWarnings": "Для всех активных записей опубликован контент на каждом языке.",
-      "recent": "Последние события аудита",
+      "recent": "Последние бизнес-события",
+      "emptyActivity": "Недавних бизнес-событий нет.",
       "quick": "Быстрое создание",
-      "needsAction": "Требуют подтверждения: {count}"
+      "needsAction": "Требуют подтверждения: {count}",
+      "activity": {
+        "categories": {
+          "appointment": "Запись",
+          "order": "Заказ",
+          "chat": "Диалог",
+          "treatment": "Процедура"
+        },
+        "actions": {
+          "appointmentBooked": "Новая запись на процедуру",
+          "appointmentConfirmed": "Запись подтверждена",
+          "appointmentRescheduled": "Запись перенесена",
+          "appointmentCompleted": "Процедура завершена",
+          "appointmentCancelled": "Запись отменена",
+          "orderPlaced": "Новый заказ",
+          "orderConfirmed": "Заказ подтверждён",
+          "orderFulfilled": "Заказ выполнен",
+          "orderCancelled": "Заказ отменён",
+          "chatHandoffRequested": "Клиент запросил помощь специалиста",
+          "chatResolved": "Диалог закрыт",
+          "chatReopened": "Диалог открыт повторно",
+          "chatArchived": "Диалог архивирован",
+          "treatmentCreated": "Процедура создана",
+          "treatmentUpdated": "Процедура обновлена",
+          "treatmentArchived": "Процедура архивирована",
+          "treatmentDeleted": "Процедура удалена"
+        },
+        "statuses": {
+          "BOOKED": "Забронировано",
+          "CONFIRMED": "Подтверждено",
+          "RESCHEDULED": "Перенесено",
+          "COMPLETED": "Завершено",
+          "CANCELLED": "Отменено",
+          "PENDING": "Ожидает",
+          "PAID": "Оплачено",
+          "FULFILLED": "Выполнено",
+          "OPEN": "Открыто",
+          "RESOLVED": "Закрыто"
+        }
+      }
     },
     "common": {
       "new": "Создать",
