@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import type { Locale as DbLocale, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -197,6 +198,7 @@ export async function AdminRouter({
 }) {
   const t = await getTranslations({ locale, namespace: "Admin" });
   const copy = makeCopy(t);
+  const mediaMessages = t.raw("media");
   const [first, ...rest] = segments;
   const legacy = first ? LEGACY_ADMIN_SEGMENTS[first] : undefined;
   if (legacy) {
@@ -233,28 +235,33 @@ export async function AdminRouter({
       ? copy.common.updated
       : null;
   return (
-    <AdminShell
+    <NextIntlClientProvider
       locale={locale}
-      labels={{
-        appName: copy.appName,
-        menu: copy.menu,
-        close: copy.close,
-        logout: copy.logout,
-        locale: copy.locale,
-        nav: copy.nav,
-      }}
-      user={user}
+      messages={{ Admin: { media: mediaMessages } }}
     >
-      {feedback ? (
-        <p
-          role="status"
-          className="mb-[18px] rounded-[5px] border border-line-btn bg-btn-fill px-[14px] py-[11px] font-sans text-[14px] text-ink"
-        >
-          {feedback}
-        </p>
-      ) : null}
-      {content}
-    </AdminShell>
+      <AdminShell
+        locale={locale}
+        labels={{
+          appName: copy.appName,
+          menu: copy.menu,
+          close: copy.close,
+          logout: copy.logout,
+          locale: copy.locale,
+          nav: copy.nav,
+        }}
+        user={user}
+      >
+        {feedback ? (
+          <p
+            role="status"
+            className="mb-[18px] rounded-[5px] border border-line-btn bg-btn-fill px-[14px] py-[11px] font-sans text-[14px] text-ink"
+          >
+            {feedback}
+          </p>
+        ) : null}
+        {content}
+      </AdminShell>
+    </NextIntlClientProvider>
   );
 }
 

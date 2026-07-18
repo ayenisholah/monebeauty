@@ -67,6 +67,7 @@ test("upload endpoint is admin-only and keeps credentials server-side", () => {
 
 test("media fields upload and retain existing manual media controls", () => {
   const field = readFileSync("components/admin/MediaField.tsx", "utf8");
+  const router = readFileSync("components/admin/AdminRouter.tsx", "utf8");
   const actions = readFileSync("lib/admin-actions.ts", "utf8");
   const nextConfig = readFileSync("next.config.ts", "utf8");
   assert.match(field, /fetch\("\/api\/admin\/media\/upload"/);
@@ -74,6 +75,9 @@ test("media fields upload and retain existing manual media controls", () => {
   assert.match(field, /type="file"/);
   assert.match(field, /multiple=\{multiple\}/);
   assert.match(field, /<ThemedSelect/);
+  assert.match(router, /<NextIntlClientProvider/);
+  assert.match(router, /messages=\{\{ Admin: \{ media: mediaMessages \} \}\}/);
+  assert.match(router, /t\.raw\("media"\)/);
   assert.match(actions, /isAllowedMediaReference/);
   assert.match(actions, /CLINIC_UPLOAD/);
   assert.match(nextConfig, /hostname: "res\.cloudinary\.com"/);
