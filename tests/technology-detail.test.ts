@@ -13,8 +13,17 @@ test("technology detail leads with a full-bleed hero", () => {
   assert.match(detail, /min-h-\[clamp\(380px,56vh,600px\)\]/);
   assert.match(detail, /fill\s+priority/);
   assert.match(detail, /sizes="100vw"/);
-  assert.match(detail, /bg-gradient-to-t from-\[rgba\(34,30,27/);
+  assert.match(
+    detail,
+    /bg-gradient-to-t from-\[rgba\(34,30,27,\.88\)\] via-\[rgba\(34,30,27,\.42\)\] to-\[rgba\(34,30,27,\.16\)\]/,
+  );
   assert.match(detail, /text-cta-heading/);
+  assert.match(detail, /font-normal/);
+  assert.match(
+    detail,
+    /text-cta-heading \[text-shadow:0_1px_10px_rgba\(58,42,28,\.72\)\]/,
+  );
+  assert.doesNotMatch(detail, /text-cta-body/);
   assert.match(detail, /variant=\{image \? "primaryOnDark"/);
   assert.doesNotMatch(detail, /Container width="narrow"/);
   assert.doesNotMatch(detail, /aspect-\[16\/10\]/);

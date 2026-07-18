@@ -40,7 +40,7 @@ export async function TechnologyDetailPage({
               className="object-cover"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,30,27,.82)] via-[rgba(34,30,27,.34)] to-[rgba(34,30,27,.12)]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,30,27,.88)] via-[rgba(34,30,27,.42)] to-[rgba(34,30,27,.16)]" />
           </>
         ) : (
           <div className="absolute inset-0 bg-alt" />
@@ -61,8 +61,10 @@ export async function TechnologyDetailPage({
             {technology.content.name}
           </h1>
           <p
-            className={`mt-[16px] max-w-[52ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-light ${
-              image ? "text-cta-body" : "text-body"
+            className={`mt-[16px] max-w-[52ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-normal ${
+              image
+                ? "text-cta-heading [text-shadow:0_1px_10px_rgba(58,42,28,.72)]"
+                : "text-body"
             }`}
           >
             {technology.content.summary}

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight } from "@phosphor-icons/react/ssr";
-import { BookServiceCta } from "@/components/booking/BookServiceCta";
 import { Markdown } from "@/components/Markdown";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -45,10 +44,7 @@ const SERVICE_IMAGES: Record<string, string[]> = {
     "/media/home/packages.jpg",
     "/media/files/land/133/aee24846322a462b149cee1d4c9fbdb9.jpg",
   ],
-  giftCards: [
-    "/media/home/arosha.jpg",
-    "/media/images/photo/5.jpg",
-  ],
+  giftCards: ["/media/home/arosha.jpg", "/media/images/photo/5.jpg"],
 };
 
 export async function ServiceDetailPage({
@@ -60,9 +56,7 @@ export async function ServiceDetailPage({
 }) {
   const service = await getPublishedServiceByPath(`/${slug}`, locale);
   if (!service) notFound();
-  const content = { title: service.content.h1, body: service.content.whatItIs };
-
-  const treatments = parseProcedures(content.body);
+  const treatments = parseProcedures(service.content.whatItIs);
   const bookingKey = service.bookable ? service.slug : undefined;
   const common = await getTranslations("Common");
   const nav = await getTranslations("Nav");
@@ -70,86 +64,120 @@ export async function ServiceDetailPage({
     ? service.images
     : (SERVICE_IMAGES[service.slug] ?? []);
   const heroImage = images[0];
-
-  if (!bookingKey || treatments.length === 0) {
-    return (
-      <>
-        <article className="bg-page py-[clamp(48px,7vw,96px)]">
-          <Container className="max-w-[880px]">
-            <Eyebrow className="mb-[16px]">{nav("services")}</Eyebrow>
-            <h1 className="font-display text-[clamp(36px,5vw,64px)] leading-[1.04] font-medium text-ink">
-              {content.title}
-            </h1>
-            <div className="mt-[clamp(24px,3vw,40px)]">
-              <Markdown>{content.body}</Markdown>
-            </div>
-          </Container>
-        </article>
-        <BookServiceCta contentSlug={service.slug} />
-      </>
-    );
-  }
+  const summary =
+    service.content.shortDesc.trim() || excerpt(service.content.whatItIs, 220);
+  const bookHref = bookingKey
+    ? {
+        pathname: PUBLIC_PATHS.booking,
+        query: { service: bookingKey },
+      }
+    : undefined;
+  const showTreatmentCards =
+    Boolean(bookingKey) && treatments.length > 0 && images.length > 0;
 
   return (
     <article className="bg-page">
-      <section className="border-b border-line-card bg-alt py-[clamp(48px,7vw,96px)]">
-        <Container>
-          <div className="grid items-center gap-[clamp(28px,5vw,72px)] lg:grid-cols-[minmax(0,1fr)_minmax(360px,520px)]">
-            <div>
-              <Eyebrow className="mb-[16px]">{nav("services")}</Eyebrow>
-              <h1 className="font-display text-[clamp(38px,5vw,72px)] leading-[1.02] font-medium text-ink">
-                {content.title}
-              </h1>
-              <p className="mt-[22px] max-w-[650px] font-sans text-[16px] leading-[1.8] font-light text-body">
-                {excerpt(treatments[0]?.description || content.body, 220)}
-              </p>
-              <div className="mt-[30px]">
-                <Button
-                  href={{
-                    pathname: PUBLIC_PATHS.booking,
-                    query: { service: bookingKey },
-                  }}
-                  iconRight={ArrowRight}
-                >
-                  {common("bookThis")}
-                </Button>
-              </div>
+      <section className="relative isolate min-h-[clamp(380px,56vh,600px)] overflow-hidden">
+        {heroImage ? (
+          <>
+            <Image
+              src={heroImage}
+              alt={service.content.imageAlt || service.content.h1}
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,30,27,.88)] via-[rgba(34,30,27,.42)] to-[rgba(34,30,27,.16)]" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-alt" />
+        )}
+        <Container className="absolute inset-x-0 bottom-0 pb-[clamp(28px,4.5vw,64px)]">
+          <Eyebrow
+            tone={heroImage ? "gold" : "accent"}
+            tracking="wide"
+            className="mb-[14px]"
+          >
+            {nav("services")}
+          </Eyebrow>
+          <h1
+            className={`font-display text-[clamp(34px,4.6vw,64px)] leading-[1.03] font-medium ${
+              heroImage ? "text-cta-heading" : "text-ink"
+            }`}
+          >
+            {service.content.h1}
+          </h1>
+          <p
+            className={`mt-[16px] max-w-[52ch] font-sans text-[clamp(14.5px,1.3vw,16px)] leading-[1.75] font-normal ${
+              heroImage
+                ? "text-cta-heading [text-shadow:0_1px_10px_rgba(58,42,28,.72)]"
+                : "text-body"
+            }`}
+          >
+            {summary}
+          </p>
+          {bookHref ? (
+            <div className="mt-[26px]">
+              <Button
+                href={bookHref}
+                variant={heroImage ? "primaryOnDark" : "primary"}
+                iconRight={ArrowRight}
+              >
+                {common("bookThis")}
+              </Button>
             </div>
-            {heroImage ? (
-              <div className="relative min-h-[300px] overflow-hidden rounded-[var(--radius)] border border-line-card bg-card shadow-card sm:min-h-[420px]">
-                <Image
-                  src={heroImage}
-                  alt={service.content.imageAlt || content.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 520px"
-                />
-              </div>
-            ) : null}
-          </div>
+          ) : null}
         </Container>
       </section>
 
-      <section className="py-[clamp(44px,7vw,96px)]">
+      <section className="py-[clamp(40px,6vw,76px)]">
         <Container>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-[clamp(16px,1.8vw,26px)]">
-            {treatments.map((item, index) => {
-              const image = images[index % images.length] ?? heroImage;
-              if (!image) return null;
-              return (
-                <TreatmentCard
-                  key={`${item.group ?? "service"}-${item.title}-${index}`}
-                  item={item}
-                  index={index}
-                  image={image}
-                  bookingKey={bookingKey}
-                  bookLabel={common("bookThis")}
-                  seeMoreLabel={common("seeMore")}
-                  seeLessLabel={common("seeLess")}
-                />
-              );
-            })}
+          <div className="grid gap-[clamp(28px,4vw,56px)] nav:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            <aside className="nav:sticky nav:top-[104px] nav:self-start">
+              <div className="rounded-[var(--radius)] border border-line-card bg-card p-[clamp(22px,2.4vw,30px)]">
+                <Eyebrow className="mb-[12px]">{nav("services")}</Eyebrow>
+                <p className="font-display text-[clamp(22px,2.4vw,28px)] leading-[1.12] font-medium text-ink">
+                  {service.content.h1}
+                </p>
+                <p className="mt-[14px] font-sans text-[14.5px] leading-[1.7] font-light text-body">
+                  {summary}
+                </p>
+                {bookHref ? (
+                  <div className="mt-[24px]">
+                    <Button
+                      href={bookHref}
+                      iconRight={ArrowRight}
+                      className="w-full justify-center"
+                    >
+                      {common("bookThis")}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </aside>
+            <div className="min-w-0">
+              {showTreatmentCards && bookingKey ? (
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-[clamp(16px,1.8vw,26px)]">
+                  {treatments.map((item, index) => (
+                    <TreatmentCard
+                      key={`${item.group ?? "service"}-${item.title}-${index}`}
+                      item={item}
+                      index={index}
+                      image={images[index % images.length]}
+                      bookingKey={bookingKey}
+                      bookLabel={common("bookThis")}
+                      seeMoreLabel={common("seeMore")}
+                      seeLessLabel={common("seeLess")}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Markdown variant="technology">
+                  {service.content.whatItIs}
+                </Markdown>
+              )}
+            </div>
           </div>
         </Container>
       </section>

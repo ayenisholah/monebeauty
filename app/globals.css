@@ -323,8 +323,8 @@ body:has(.home-reference) > footer {
 }
 .hr-hero-image {
   position: relative;
-  min-height: 280px;
-  aspect-ratio: 21/9;
+  width: 100%;
+  aspect-ratio: 4/3;
   overflow: hidden;
   border: 1px solid var(--color-line-card);
 }
@@ -791,6 +791,9 @@ body:has(.home-reference) > footer {
   }
   .hr-header {
     --g: 40px;
+  }
+  .hr-hero-image {
+    aspect-ratio: 21/9;
   }
   .hr-products {
     grid-template-columns: repeat(4, 1fr);
