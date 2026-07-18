@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
       serviceKey: service,
       locale,
     });
-    return NextResponse.json({ slots });
+    return NextResponse.json({
+      slots: slots.map(({ start, end, label }) => ({ start, end, label })),
+    });
   } catch (err) {
     // DB unavailable — empty slots so the wizard shows its call/email fallback.
     console.error("[booking/slots] failed", err);

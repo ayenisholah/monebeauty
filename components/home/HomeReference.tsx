@@ -28,6 +28,8 @@ import {
   createBookingHandoff,
 } from "@/lib/booking-handoff";
 import { PUBLIC_PATHS, productPath } from "@/lib/public-routes";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { DatePicker, clinicTodayYmd } from "@/components/ui/CalendarPicker";
 
 const productOrder = {
   AROSHA_BODY: [
@@ -520,25 +522,28 @@ export function HomeReference({
               <div className="hr-form-row">
                 <label>
                   {t("booking.fields.treatment")}
-                  <select
+                  <ThemedSelect
                     name="service"
                     value={selected}
-                    onChange={(e) => setSelected(e.target.value)}
+                    onValueChange={setSelected}
                     required
-                  >
-                    <option value="">{t("booking.select")}</option>
-                    {services.map((service) => (
-                      <option key={service.key} value={service.key}>
-                        {service.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder={t("booking.select")}
+                    options={services.map((service) => ({
+                      value: service.key,
+                      label: service.name,
+                    }))}
+                  />
                 </label>
-                <Field
-                  label={t("booking.fields.date")}
-                  name="date"
-                  type="date"
-                />
+                <label>
+                  {t("booking.fields.date")}
+                  <DatePicker
+                    name="date"
+                    min={clinicTodayYmd()}
+                    disableClosedDays
+                    placeholder={t("booking.fields.date")}
+                    ariaLabel={t("booking.fields.date")}
+                  />
+                </label>
               </div>
               <label>
                 {t("booking.fields.notes")}

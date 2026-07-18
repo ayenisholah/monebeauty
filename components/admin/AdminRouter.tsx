@@ -34,6 +34,7 @@ import {
 } from "@/lib/admin-actions";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { MediaField } from "@/components/admin/MediaField";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import {
   AppointmentsAdmin,
   OrdersAdmin,
@@ -560,7 +561,7 @@ async function Clients({
       where: { id },
       include: {
         appointments: {
-          include: { service: true, practitioner: true },
+          include: { service: true },
           orderBy: { start: "desc" },
         },
         orders: { include: { items: true }, orderBy: { createdAt: "desc" } },
@@ -653,14 +654,13 @@ async function Clients({
             <Link
               href={adminHref(locale, "appointments", item.id)}
               key={item.id}
-              className={historyRow}
+              className={appointmentHistoryRow}
             >
               <span>{formatDate(item.start, locale)}</span>
               <strong>
                 {item.procedureTitle ?? item.service.slug}
                 {item.procedurePrice ? ` · ${item.procedurePrice}` : ""}
               </strong>
-              <span>{item.practitioner.name}</span>
               <span>{item.status}</span>
             </Link>
           ))}
@@ -810,12 +810,10 @@ function ServiceEditor({ row, copy }: { row: ServiceRow | null; copy: Copy }) {
             />
           </Field>
           <Field label={copy.common.category}>
-            <select
+            <ThemedSelect
               name="category"
               defaultValue={row?.category ?? "FACE"}
-              className={inputCls}
-            >
-              {[
+              options={[
                 "FACE",
                 "BODY",
                 "HAIR",
@@ -823,10 +821,8 @@ function ServiceEditor({ row, copy }: { row: ServiceRow | null; copy: Copy }) {
                 "DEVICE",
                 "LASER",
                 "CONSULTATION",
-              ].map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
+              ].map((item) => ({ value: item, label: item }))}
+            />
           </Field>
           <Field label="Duration (min)">
             <input
@@ -1007,18 +1003,17 @@ function TechnologyEditor({
             />
           </Field>
           <Field label="Booking service">
-            <select
+            <ThemedSelect
               name="relatedServiceId"
               defaultValue={row?.relatedServiceId ?? ""}
-              className={inputCls}
-            >
-              <option value="">—</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.slug}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "—" },
+                ...services.map((service) => ({
+                  value: service.id,
+                  label: service.slug,
+                })),
+              ]}
+            />
           </Field>
           <Field label={copy.common.order}>
             <input
@@ -1259,14 +1254,14 @@ function ProductEditor({ row, copy }: { row: ProductRow | null; copy: Copy }) {
             />
           </Field>
           <Field label={copy.common.category}>
-            <select
+            <ThemedSelect
               name="category"
               defaultValue={row?.category ?? "AROSHA_BODY"}
-              className={inputCls}
-            >
-              <option>AROSHA_BODY</option>
-              <option>DIXIDOX_TRICHO</option>
-            </select>
+              options={[
+                { value: "AROSHA_BODY", label: "AROSHA_BODY" },
+                { value: "DIXIDOX_TRICHO", label: "DIXIDOX_TRICHO" },
+              ]}
+            />
           </Field>
           <Field label={copy.common.price}>
             <input
@@ -1437,27 +1432,24 @@ function PricingEditor({
       <EditorSection title={copy.common.global}>
         <div className={globalGrid}>
           <Field label="Service">
-            <select
+            <ThemedSelect
               name="serviceId"
               defaultValue={row?.serviceId ?? ""}
-              className={inputCls}
-            >
-              <option value="">—</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.slug}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "—" },
+                ...services.map((service) => ({
+                  value: service.id,
+                  label: service.slug,
+                })),
+              ]}
+            />
           </Field>
           <Field label={copy.common.category}>
-            <select
+            <ThemedSelect
               name="category"
               defaultValue={row?.category ?? ""}
-              className={inputCls}
-            >
-              <option value="">—</option>
-              {[
+              options={[
+                "",
                 "FACE",
                 "BODY",
                 "HAIR",
@@ -1465,10 +1457,8 @@ function PricingEditor({
                 "DEVICE",
                 "LASER",
                 "CONSULTATION",
-              ].map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
+              ].map((item) => ({ value: item, label: item || "—" }))}
+            />
           </Field>
           <Field label={copy.common.price}>
             <input
@@ -1964,14 +1954,14 @@ function LocaleCard({
         {locale}
       </legend>
       <Field label={copy.common.status}>
-        <select
+        <ThemedSelect
           name={`status_${locale}`}
           defaultValue={status ?? "DRAFT"}
-          className={inputCls}
-        >
-          <option value="DRAFT">{copy.common.draft}</option>
-          <option value="PUBLISHED">{copy.common.published}</option>
-        </select>
+          options={[
+            { value: "DRAFT", label: copy.common.draft },
+            { value: "PUBLISHED", label: copy.common.published },
+          ]}
+        />
       </Field>
       {children}
     </fieldset>
@@ -2201,3 +2191,5 @@ const recordRow =
 const globalGrid = "grid gap-x-[14px] sm:grid-cols-2 xl:grid-cols-3";
 const historyRow =
   "grid gap-[7px] rounded-[5px] border border-line-hair bg-page px-[14px] py-[12px] font-sans text-[14px] md:grid-cols-[170px_1fr_1fr_120px]";
+const appointmentHistoryRow =
+  "grid gap-[7px] rounded-[5px] border border-line-hair bg-page px-[14px] py-[12px] font-sans text-[14px] md:grid-cols-[170px_1fr_120px]";

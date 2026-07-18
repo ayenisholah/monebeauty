@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
   const available = await openSlots({
     dateStr: start.slice(0, 10),
     serviceKey: service.slug,
-    practitionerId: appointment.practitionerId,
   });
   const matchingSlot = available.find((slot) => slot.start === start);
   if (!matchingSlot) {
@@ -62,6 +61,7 @@ export async function POST(req: NextRequest) {
       data: {
         start: new Date(matchingSlot.start),
         end: new Date(matchingSlot.end),
+        practitionerId: matchingSlot.practitionerId,
         status: "BOOKED",
         confirmedAt: null,
         history: {
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           previousEnd: appointment.end.toISOString(),
         },
       },
-      include: { client: true, practitioner: true, service: true },
+      include: { client: true, service: true },
     });
     await tx.appointmentEvent.create({
       data: {

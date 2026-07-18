@@ -24,13 +24,6 @@ export interface SlotDto {
   label: string;
   /** Practitioner that will receive the booking. */
   practitionerId: string;
-  practitionerName: string;
-}
-
-export interface PractitionerDto {
-  id: string;
-  name: string;
-  role: string;
 }
 
 type AvailabilitySlot = {
@@ -85,40 +78,6 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
   return service ? { svc: service, serviceId: service.id } : null;
 }
 
-/** Practitioners who can provide a service. Falls back to all/default while admin UI is absent. */
-export async function eligiblePractitioners(
-  serviceKey: string,
-  locale?: Locale,
-): Promise<PractitionerDto[]> {
-  const record = await serviceRecord(serviceKey, locale);
-  if (!record) return [];
-
-  let practitioners = await prisma.practitioner.findMany({
-    where: { services: { some: { id: record.serviceId } } },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, role: true },
-  });
-
-  if (practitioners.length === 0) {
-    const defaultId = await getDefaultPractitionerId();
-    // Best-effort service link; a failed write must never break slot reads.
-    try {
-      await prisma.practitioner.update({
-        where: { id: defaultId },
-        data: { services: { connect: { id: record.serviceId } } },
-      });
-    } catch (err) {
-      console.error("[booking] service link skipped", err);
-    }
-    practitioners = await prisma.practitioner.findMany({
-      where: { id: defaultId },
-      select: { id: true, name: true, role: true },
-    });
-  }
-
-  return practitioners;
-}
-
 async function candidateSlotsForPractitioner(
   dateStr: string,
   durationMin: number,
@@ -162,12 +121,10 @@ async function candidateSlotsForPractitioner(
 export async function openSlots({
   dateStr,
   serviceKey,
-  practitionerId,
   locale,
 }: {
   dateStr: string;
   serviceKey: string;
-  practitionerId?: string | "any";
   locale?: Locale;
 }): Promise<SlotDto[]> {
   const record = await serviceRecord(serviceKey, locale);
@@ -175,19 +132,14 @@ export async function openSlots({
   const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
   if (!isOpenDate(dateStr)) return [];
 
-  const practitioners = await eligiblePractitioners(serviceKey, locale);
-  const selected =
-    practitionerId && practitionerId !== "any"
-      ? practitioners.filter((p) => p.id === practitionerId)
-      : practitioners;
-  if (selected.length === 0) return [];
+  const practitionerId = await getDefaultPractitionerId(record.serviceId);
 
   const [y, m, d] = dateStr.split("-").map(Number);
   const dayStart = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
   const dayEnd = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0));
   const booked = await prisma.appointment.findMany({
     where: {
-      practitionerId: { in: selected.map((p) => p.id) },
+      practitionerId,
       start: { gte: dayStart, lt: dayEnd },
       status: { not: "CANCELLED" },
     },
@@ -196,40 +148,25 @@ export async function openSlots({
 
   const now = Date.now();
   const out: SlotDto[] = [];
-  for (const practitioner of selected) {
-    const candidates = await candidateSlotsForPractitioner(
-      dateStr,
-      duration,
-      practitioner.id,
+  const candidates = await candidateSlotsForPractitioner(
+    dateStr,
+    duration,
+    practitionerId,
+  );
+  for (const candidate of candidates) {
+    if (candidate.start.getTime() <= now) continue;
+    const clash = booked.some((booking) =>
+      overlaps(candidate.start, candidate.end, booking.start, booking.end),
     );
-    const practitionerBookings = booked.filter(
-      (b) => b.practitionerId === practitioner.id,
-    );
-    for (const candidate of candidates) {
-      if (candidate.start.getTime() <= now) continue;
-      const clash = practitionerBookings.some((b) =>
-        overlaps(candidate.start, candidate.end, b.start, b.end),
-      );
-      if (clash) continue;
-      out.push({
-        start: candidate.start.toISOString(),
-        end: candidate.end.toISOString(),
-        label: dateLabel(candidate.start),
-        practitionerId: practitioner.id,
-        practitionerName: practitioner.name,
-      });
-    }
+    if (clash) continue;
+    out.push({
+      start: candidate.start.toISOString(),
+      end: candidate.end.toISOString(),
+      label: dateLabel(candidate.start),
+      practitionerId,
+    });
   }
-
-  const unique = new Map<string, SlotDto>();
-  for (const slot of out.sort((a, b) => a.start.localeCompare(b.start))) {
-    const key =
-      practitionerId === "any" || !practitionerId
-        ? slot.start
-        : `${slot.practitionerId}:${slot.start}`;
-    if (!unique.has(key)) unique.set(key, slot);
-  }
-  return [...unique.values()];
+  return out.sort((a, b) => a.start.localeCompare(b.start));
 }
 
 /** Public availability is always owned by the clinic's stable default practitioner. */
@@ -242,10 +179,7 @@ export async function openPublicSlots({
   serviceKey: string;
   locale?: Locale;
 }): Promise<SlotDto[]> {
-  const record = await serviceRecord(serviceKey, locale);
-  if (!record) return [];
-  const practitionerId = await getDefaultPractitionerId(record.serviceId);
-  return openSlots({ dateStr, serviceKey, practitionerId, locale });
+  return openSlots({ dateStr, serviceKey, locale });
 }
 
 /** Find-or-create the single shared default practitioner (self-heals if unseeded). */
@@ -310,6 +244,6 @@ export async function appointmentByReference(reference: string) {
     where: {
       OR: [{ id }, { id: { endsWith: id } }],
     },
-    include: { client: true, practitioner: true, service: true },
+    include: { client: true, service: true },
   });
 }

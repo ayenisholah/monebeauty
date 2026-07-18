@@ -23,7 +23,6 @@ export type AppointmentEmailData = {
   start: Date;
   end: Date;
   client: { fullName: string; email: string; phone: string };
-  practitioner: { name: string; role: string };
   service: { slug: string; title?: string; staffTitle?: string };
   procedureIndex?: number | null;
   procedureTitle?: string | null;
@@ -56,7 +55,6 @@ type Copy = {
   labels: {
     service: string;
     procedure: string;
-    specialist: string;
     time: string;
     reference: string;
     item: string;
@@ -104,7 +102,6 @@ export const EMAIL_COPY: Record<Locale, Copy> = {
     labels: {
       service: "Palvelu",
       procedure: "Toimenpide",
-      specialist: "Asiantuntija",
       time: "Aika",
       reference: "Viite",
       item: "Tuote",
@@ -153,7 +150,6 @@ export const EMAIL_COPY: Record<Locale, Copy> = {
     labels: {
       service: "Service",
       procedure: "Procedure",
-      specialist: "Specialist",
       time: "Time",
       reference: "Reference",
       item: "Item",
@@ -201,7 +197,6 @@ export const EMAIL_COPY: Record<Locale, Copy> = {
     labels: {
       service: "Услуга",
       procedure: "Процедура",
-      specialist: "Специалист",
       time: "Время",
       reference: "Номер",
       item: "Товар",
@@ -285,7 +280,6 @@ export function renderCustomerAppointmentEmail(
     ...(appointment.procedureTitle
       ? [{ label: copy.labels.procedure, value: procedureName(appointment) }]
       : []),
-    { label: copy.labels.specialist, value: appointment.practitioner.name },
     {
       label: copy.labels.time,
       value: formatEmailDateTime(appointment.start, locale),
@@ -311,7 +305,10 @@ export function renderCustomerAppointmentEmail(
     "",
     copy.appointmentNotice,
     ...(kind === "confirmation"
-      ? ["", `${copy.bookAnother}: ${localizedUrl(PUBLIC_PATHS.booking, locale)}`]
+      ? [
+          "",
+          `${copy.bookAnother}: ${localizedUrl(PUBLIC_PATHS.booking, locale)}`,
+        ]
       : []),
     "",
     plainTextFooter(locale),
@@ -433,7 +430,6 @@ export function renderStaffAppointmentEmail(
     ...(appointment.procedureTitle
       ? [{ label: copy.labels.procedure, value: procedureName(appointment) }]
       : []),
-    { label: copy.labels.specialist, value: appointment.practitioner.name },
     {
       label: copy.labels.time,
       value: formatEmailDateTime(appointment.start, locale),

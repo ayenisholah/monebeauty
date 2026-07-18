@@ -7,10 +7,14 @@ validated rescheduling, completion, cancellation, reminders, and audited custom 
 Customer-facing automatic messages use the record locale through Resend and Sinch.
 
 Public booking assignment (owner-approved, 2026-07-17): the customer flow is simplified to
-Service -> Time -> You. Customers do not select or see a specialist before confirming. Every
-new public booking is assigned server-side to the exact "Mone Beauty Clinic" practitioner.
-Practitioner-aware availability, overlap protection, staff scheduling, CRM history,
-rescheduling, confirmations, and notifications remain in place internally.
+Service -> Time -> You. Customers do not select or see an individual provider. Every new or actively
+rescheduled booking is assigned server-side to the exact "Mone Beauty Clinic" scheduling
+resource. The provider relation remains internal for availability and overlap protection;
+historical appointment relations are preserved.
+
+Themed controls (owner-approved, 2026-07-18): all dropdowns, calendars, and time pickers use
+custom Mone Beauty controls. Compact fields use popovers and the booking calendar remains
+inline; no native form select/date/time UI is exposed.
 
 Public URL architecture (owner-approved, 2026-07-17): every user-facing route uses the same
 Finnish path segments in FI, EN, and RU; only the locale prefix changes. Finnish remains

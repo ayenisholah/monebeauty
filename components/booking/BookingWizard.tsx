@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { ButtonAction } from "@/components/ui/Button";
 import { BookingCalendar } from "@/components/booking/BookingCalendar";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { cn } from "@/lib/cn";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -77,7 +78,6 @@ export function BookingWizard({
   const [confirmation, setConfirmation] = useState<{
     id: string;
     start: string;
-    practitionerName: string;
   } | null>(null);
 
   const dateTimeFmt = new Intl.DateTimeFormat(locale, {
@@ -212,7 +212,6 @@ export function BookingWizard({
         setConfirmation({
           id: data.id,
           start: data.start,
-          practitionerName: data.practitionerName,
         });
         return;
       }
@@ -250,11 +249,6 @@ export function BookingWizard({
     router.replace(PUBLIC_PATHS.booking);
   }
 
-  const chip =
-    "min-h-[44px] rounded-[4px] border px-[16px] py-[10px] font-sans text-[14px] transition-colors";
-  const chipIdle =
-    "border-line-btn text-ink hover:border-line-btn-hover hover:bg-btn-fill";
-
   if (confirmation) {
     const label = services.find((item) => item.key === service)?.name ?? "";
     return (
@@ -274,10 +268,6 @@ export function BookingWizard({
               value={procedure.title}
             />
           ) : null}
-          <SummaryRow
-            label={t("summary.practitioner")}
-            value={confirmation.practitionerName}
-          />
           <SummaryRow
             label={t("summary.time")}
             value={dateTimeFmt.format(new Date(confirmation.start))}
@@ -411,18 +401,21 @@ export function BookingWizard({
             ) : slotsLoading ? (
               <p className="font-sans text-[14px] text-muted">{t("loading")}</p>
             ) : slots.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-[8px]">
-                {slots.map((s) => (
-                  <button
-                    key={s.start}
-                    type="button"
-                    onClick={() => pickSlot(s)}
-                    className={cn(chip, "text-center", chipIdle)}
-                  >
-                    <span className="block">{s.label}</span>
-                  </button>
-                ))}
-              </div>
+              <TimePicker
+                inline
+                value={slot?.start ?? ""}
+                ariaLabel={t("pickTime")}
+                options={slots.map((item) => ({
+                  value: item.start,
+                  label: item.label,
+                }))}
+                onValueChange={(value) => {
+                  const selectedSlot = slots.find(
+                    (item) => item.start === value,
+                  );
+                  if (selectedSlot) pickSlot(selectedSlot);
+                }}
+              />
             ) : slotsDegraded ? (
               <FallbackBlock t={t} fallback={fallback} />
             ) : (

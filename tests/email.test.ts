@@ -23,7 +23,6 @@ const appointment: AppointmentEmailData = {
     email: "ada@example.com",
     phone: "+358 40 000 0000",
   },
-  practitioner: { name: "Mia & Team", role: "Specialist" },
   service: {
     slug: "facial",
     title: "Customer facial <care>",
@@ -145,7 +144,6 @@ test("customer and database values are escaped in HTML without damaging plain te
 
   assert.doesNotMatch(appointmentMessage.html, /<script>/);
   assert.match(appointmentMessage.html, /&lt;script&gt;/);
-  assert.match(appointmentMessage.html, /Mia &amp; Team/);
   assert.match(appointmentMessage.html, /Approved procedure &lt;care&gt;/);
   assert.match(appointmentMessage.text, /Ada <script>/);
   assert.doesNotMatch(orderMessage.html, /Body <Slim>/);

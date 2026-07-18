@@ -121,7 +121,6 @@ export async function POST(req: NextRequest) {
       },
       include: {
         client: { select: { fullName: true, email: true, phone: true } },
-        practitioner: { select: { name: true, role: true } },
         service: { select: { slug: true } },
       },
     });
@@ -146,7 +145,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       id: appointment.id,
       start: appointment.start.toISOString(),
-      practitionerName: appointment.practitioner.name,
       serviceKey: svc.slug,
       procedure: procedure
         ? {

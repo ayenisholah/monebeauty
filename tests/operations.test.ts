@@ -23,8 +23,11 @@ test("orders and appointments are first-class admin modules", () => {
   assert.match(router, /ordersNeedingAction/);
   assert.match(operations, /name="from"/);
   assert.match(operations, /name="to"/);
-  assert.match(operations, /name="practitioner"/);
-  assert.match(operations, /value="ALL"/);
+  assert.doesNotMatch(operations, /name="practitioner"/);
+  assert.match(operations, /<ThemedSelect/);
+  assert.match(operations, /<DatePicker/);
+  assert.match(operations, /<TimePicker/);
+  assert.match(operations, /value: "ALL"/);
 });
 
 test("operation lifecycle data and delivery attempts are durable", () => {

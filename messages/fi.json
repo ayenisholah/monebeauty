@@ -95,7 +95,7 @@
       },
       "arosha": {
         "title": "Arosha Boost",
-        "description": "AROSHA on kehittänyt intensiivisiä tuotteita ja ohjelmia, jotka vastaavat jokaisen asiakkaan tarpeisiin. Halutun tuloksen mukaan asiantuntija valitsee sopivan protokollan."
+        "description": "AROSHA on kehittänyt intensiivisiä tuotteita ja ohjelmia, jotka vastaavat jokaisen asiakkaan tarpeisiin. Klinikan tiimi auttaa valitsemaan sopivan protokollan."
       },
       "facial": {
         "title": "Kasvojen hoitomenetelmät",
@@ -159,7 +159,7 @@
         },
         {
           "title": "Varaa",
-          "body": "Valitse asiantuntija tai ei toivetta ja katso vapaat ajat."
+          "body": "Valitse palvelu ja katso klinikan vapaat ajat."
         },
         {
           "title": "Saavu",
@@ -189,7 +189,7 @@
     "booking": {
       "eyebrow": "Varaa verkossa",
       "heading": "Aloita yhdellä valinnalla",
-      "lead": "Valitse palvelu ja jatka suoraan asiantuntijoihin ja vapaisiin aikoihin.",
+      "lead": "Valitse palvelu ja jatka suoraan klinikan vapaisiin aikoihin.",
       "placeholder": "Valitse palvelu",
       "cta": "Jatka varaukseen"
     },
@@ -427,7 +427,6 @@
     "summary": {
       "service": "Hoito",
       "procedure": "Toimenpide",
-      "practitioner": "Asiantuntija",
       "time": "Aika",
       "reference": "Viite"
     },
@@ -516,7 +515,6 @@
     "heading": "Aikataulu",
     "intro": "Hallinnoi vapaita aikoja, suljettuja aikoja ja päivän varauksia. Kirjautuminen ja roolirajaus lisätään seuraavassa vaiheessa.",
     "controls": "Hallinta",
-    "practitioner": "Asiantuntija",
     "date": "Päivä",
     "workingHours": "Työajat",
     "startHour": "Alku",
@@ -674,7 +672,6 @@
     "active": "Aktiiviset",
     "from": "Alkaen",
     "until": "Asti",
-    "allPractitioners": "Kaikki asiantuntijat",
     "apply": "Käytä suodattimia",
     "empty": "Vastaavia tietueita ei löytynyt.",
     "reference": "Viite",
@@ -687,7 +684,6 @@
     "notes": "Asiakkaan lisätiedot",
     "locale": "Asiakkaan kieli",
     "service": "Palvelu",
-    "practitioner": "Asiantuntija",
     "time": "Aika",
     "history": "Muutoshistoria",
     "communications": "Viestihistoria",

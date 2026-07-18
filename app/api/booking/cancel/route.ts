@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           previousStatus: appointment.status,
         },
       },
-      include: { client: true, practitioner: true, service: true },
+      include: { client: true, service: true },
     });
     await tx.appointmentEvent.create({
       data: {

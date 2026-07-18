@@ -37,7 +37,7 @@ test("service and homepage handoffs load availability for a retained date", () =
   assert.match(wizard, /slotsDegraded[\s\S]*?<FallbackBlock/);
 });
 
-test("provider details stay hidden until the completed confirmation", () => {
+test("provider details stay internal throughout the public booking flow", () => {
   const completedConfirmation = wizard.slice(
     wizard.indexOf("if (confirmation)"),
     wizard.indexOf("const stepLabels"),
@@ -46,7 +46,10 @@ test("provider details stay hidden until the completed confirmation", () => {
     wizard.indexOf("const stepLabels"),
     wizard.indexOf("const inputCls"),
   );
-  assert.match(completedConfirmation, /confirmation\.practitionerName/);
+  assert.doesNotMatch(
+    completedConfirmation,
+    /practitionerName|summary\.practitioner/,
+  );
   assert.doesNotMatch(publicSteps, /practitionerName|summary\.practitioner/);
 });
 
@@ -58,7 +61,7 @@ test("public booking APIs ignore forged practitioner values", () => {
   assert.match(bookingRoute, /practitionerId = matchingSlot\.practitionerId/);
 });
 
-test("the named clinic provider is stable while internal rescheduling stays practitioner-aware", () => {
+test("the named clinic provider owns all new and rescheduled availability", () => {
   assert.equal(DEFAULT_BOOKING_PRACTITIONER_NAME, "Mone Beauty Clinic");
   assert.match(
     bookingLib,
@@ -68,12 +71,9 @@ test("the named clinic provider is stable while internal rescheduling stays prac
   assert.match(bookingLib, /services: \{ connect: \{ id: serviceId \} \}/);
   assert.match(
     bookingLib,
-    /openPublicSlots[\s\S]*?practitionerId = await getDefaultPractitionerId\(record\.serviceId\)[\s\S]*?openSlots/,
+    /openSlots[\s\S]*?practitionerId = await getDefaultPractitionerId\(record\.serviceId\)/,
   );
-  assert.match(
-    rescheduleRoute,
-    /openSlots\([\s\S]*?practitionerId: appointment\.practitionerId/,
-  );
+  assert.match(rescheduleRoute, /practitionerId: matchingSlot\.practitionerId/);
   assert.match(
     bookingRoute,
     /status: \{ not: "CANCELLED" \}[\s\S]*?start: \{ lt: endDate \}[\s\S]*?end: \{ gt: startDate \}/,

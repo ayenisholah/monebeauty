@@ -22,6 +22,7 @@ import {
 import type { Locale } from "@/i18n/routing";
 import { adminLogoutAction } from "@/lib/admin-actions";
 import { adminBase, adminHref, type AdminModule } from "@/lib/admin-routing";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
 
 type Labels = {
   appName: string;
@@ -167,15 +168,16 @@ export function AdminShell({
         </div>
         <label className="mb-[10px] block font-sans text-label tracking-[.08em] text-muted uppercase">
           {labels.locale}
-          <select
+          <ThemedSelect
             value={locale}
-            onChange={(event) => switchLocale(event.target.value as Locale)}
-            className="mt-[6px] min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[10px] text-compact text-ink"
-          >
-            <option value="fi">Suomi</option>
-            <option value="en">English</option>
-            <option value="ru">Русский</option>
-          </select>
+            onValueChange={(next) => switchLocale(next as Locale)}
+            options={[
+              { value: "fi", label: "Suomi" },
+              { value: "en", label: "English" },
+              { value: "ru", label: "Русский" },
+            ]}
+            className="mt-[6px] w-full tracking-normal normal-case"
+          />
         </label>
         <form action={adminLogoutAction}>
           <input type="hidden" name="locale" value={locale} />

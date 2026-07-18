@@ -12,6 +12,9 @@ import {
   updateOrderAction,
 } from "@/lib/admin-actions";
 import { CommunicationComposer } from "./CommunicationComposer";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { DatePicker, clinicTodayYmd } from "@/components/ui/CalendarPicker";
+import { TimePicker } from "@/components/ui/TimePicker";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 const orderStatuses: OrderStatus[] = [
@@ -72,6 +75,14 @@ function formatDate(value: Date, locale: Locale) {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Europe/Helsinki",
+  }).format(value);
+}
+
+function formatTime(value: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: "Europe/Helsinki",
   }).format(value);
 }
@@ -451,7 +462,6 @@ export async function AppointmentsAdmin({
       where: { id },
       include: {
         client: true,
-        practitioner: true,
         service: {
           include: {
             contents: { where: { locale, status: "PUBLISHED" }, take: 1 },
@@ -474,7 +484,6 @@ export async function AppointmentsAdmin({
       ? await openSlots({
           dateStr: selectedDate,
           serviceKey: appointment.service.slug,
-          practitionerId: appointment.practitionerId,
         })
       : [];
     const service =
@@ -511,10 +520,6 @@ export async function AppointmentsAdmin({
                 value={appointment.locale.toUpperCase()}
               />
               <Detail label={t("service")} value={service} />
-              <Detail
-                label={t("practitioner")}
-                value={appointment.practitioner.name}
-              />
               <Detail
                 label={t("time")}
                 value={formatDate(appointment.start, locale)}
@@ -586,11 +591,14 @@ export async function AppointmentsAdmin({
                 <form className="mt-[18px] grid gap-[9px] border-t border-line-hair pt-[16px]">
                   <label className="font-sans text-[13px] text-muted">
                     {t("chooseDate")}
-                    <input
-                      type="date"
+                    <DatePicker
                       name="date"
                       defaultValue={selectedDate}
-                      className={`${input} mt-[6px] w-full`}
+                      min={clinicTodayYmd()}
+                      disableClosedDays
+                      ariaLabel={t("chooseDate")}
+                      placeholder={t("chooseDate")}
+                      className="mt-[6px] w-full"
                     />
                   </label>
                   <button className={secondary}>{t("apply")}</button>
@@ -608,21 +616,16 @@ export async function AppointmentsAdmin({
                   <input type="hidden" name="intent" value="reschedule" />
                   <label className="font-sans text-[13px] text-muted">
                     {t("chooseTime")}
-                    <select
-                      required
+                    <TimePicker
                       name="start"
-                      className={`${input} mt-[6px] w-full`}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        —
-                      </option>
-                      {slots.map((slot) => (
-                        <option key={slot.start} value={slot.start}>
-                          {formatDate(new Date(slot.start), locale)}
-                        </option>
-                      ))}
-                    </select>
+                      inline
+                      ariaLabel={t("chooseTime")}
+                      options={slots.map((slot) => ({
+                        value: slot.start,
+                        label: formatTime(new Date(slot.start), locale),
+                      }))}
+                      className="mt-[6px]"
+                    />
                   </label>
                   <button className={secondary}>{t("reschedule")}</button>
                 </form>
@@ -680,7 +683,6 @@ export async function AppointmentsAdmin({
   const rawStatus = scalar(searchParams, "status");
   const from = scalar(searchParams, "from");
   const to = scalar(searchParams, "to");
-  const practitionerId = scalar(searchParams, "practitioner");
   const status = appointmentStatuses.includes(rawStatus as AppointmentStatus)
     ? (rawStatus as AppointmentStatus)
     : undefined;
@@ -692,7 +694,6 @@ export async function AppointmentsAdmin({
         ? {}
         : { status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] } }),
     ...(dateRange(from, to) ? { start: dateRange(from, to) } : {}),
-    ...(practitionerId ? { practitionerId } : {}),
     ...(q
       ? {
           OR: [
@@ -712,12 +713,11 @@ export async function AppointmentsAdmin({
         }
       : {}),
   };
-  const [appointments, count, practitioners] = await Promise.all([
+  const [appointments, count] = await Promise.all([
     prisma.appointment.findMany({
       where,
       include: {
         client: true,
-        practitioner: true,
         service: {
           include: {
             contents: { where: { locale, status: "PUBLISHED" }, take: 1 },
@@ -729,10 +729,6 @@ export async function AppointmentsAdmin({
       take: 25,
     }),
     prisma.appointment.count({ where }),
-    prisma.practitioner.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
   ]);
   return (
     <div>
@@ -747,8 +743,6 @@ export async function AppointmentsAdmin({
         statuses={appointmentStatuses}
         from={from}
         to={to}
-        practitioner={practitionerId}
-        practitioners={practitioners}
         t={t}
       />
       <div className="mt-[18px] grid gap-[10px]">
@@ -762,7 +756,7 @@ export async function AppointmentsAdmin({
               <Link
                 key={appointment.id}
                 href={`${base}/${appointment.id}`}
-                className="grid gap-[10px] rounded-[8px] border border-line-card bg-card p-[16px] transition-colors hover:bg-btn-fill md:grid-cols-[150px_1fr_180px_150px] md:items-center"
+                className="grid gap-[10px] rounded-[8px] border border-line-card bg-card p-[16px] transition-colors hover:bg-btn-fill md:grid-cols-[150px_1fr_150px] md:items-center"
               >
                 <span className="font-sans text-[13px]">
                   {formatDate(appointment.start, locale)}
@@ -774,9 +768,6 @@ export async function AppointmentsAdmin({
                   <small className="block truncate text-[12px] text-muted">
                     {service}
                   </small>
-                </span>
-                <span className="font-sans text-[13px] text-body">
-                  {appointment.practitioner.name}
                 </span>
                 <StatusBadge
                   status={appointment.status}
@@ -800,7 +791,6 @@ export async function AppointmentsAdmin({
           status: rawStatus === "ALL" ? "ALL" : status,
           from,
           to,
-          practitioner: practitionerId,
         }}
       />
     </div>
@@ -855,8 +845,6 @@ function FilterForm({
   statuses,
   from = "",
   to = "",
-  practitioner = "",
-  practitioners = [],
   t,
 }: {
   base: string;
@@ -865,60 +853,50 @@ function FilterForm({
   statuses: readonly string[];
   from?: string;
   to?: string;
-  practitioner?: string;
-  practitioners?: Array<{ id: string; name: string }>;
   t: Awaited<ReturnType<typeof getTranslations>>;
 }) {
   return (
-    <form className="mt-[20px] flex flex-wrap gap-[8px]">
+    <form className="mt-[20px] grid gap-[8px] md:grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_minmax(170px,1fr)_minmax(170px,1fr)_auto] md:items-end">
       <input
         name="q"
         defaultValue={q}
         placeholder={t("search")}
         className={`${input} min-w-[240px] flex-1`}
       />
-      <select name="status" defaultValue={status} className={input}>
-        <option value="">{t("active")}</option>
-        <option value="ALL">{t("all")}</option>
-        {statuses.map((item) => (
-          <option key={item} value={item}>
-            {t(`statusLabels.${item}`)}
-          </option>
-        ))}
-      </select>
+      <ThemedSelect
+        name="status"
+        defaultValue={status}
+        options={[
+          { value: "", label: t("active") },
+          { value: "ALL", label: t("all") },
+          ...statuses.map((item) => ({
+            value: item,
+            label: t(`statusLabels.${item}`),
+          })),
+        ]}
+      />
       <label className="font-sans text-[13px] text-muted">
         {t("from")}
-        <input
-          type="date"
+        <DatePicker
           name="from"
           defaultValue={from}
-          className={`${input} ml-[6px]`}
+          clearable
+          ariaLabel={t("from")}
+          placeholder={t("from")}
+          className="mt-[6px]"
         />
       </label>
       <label className="font-sans text-[13px] text-muted">
         {t("until")}
-        <input
-          type="date"
+        <DatePicker
           name="to"
           defaultValue={to}
-          className={`${input} ml-[6px]`}
+          clearable
+          ariaLabel={t("until")}
+          placeholder={t("until")}
+          className="mt-[6px]"
         />
       </label>
-      {practitioners.length ? (
-        <select
-          name="practitioner"
-          defaultValue={practitioner}
-          className={input}
-          aria-label={t("practitioner")}
-        >
-          <option value="">{t("allPractitioners")}</option>
-          {practitioners.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      ) : null}
       <button className={secondary}>{t("apply")}</button>
     </form>
   );

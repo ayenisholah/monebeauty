@@ -9,9 +9,11 @@ import {
   FloppyDisk,
 } from "@phosphor-icons/react";
 import { ButtonAction } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/CalendarPicker";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { cn } from "@/lib/cn";
 
-type Practitioner = { id: string; name: string; role: string };
 type Slot = {
   start: string;
   end: string;
@@ -31,8 +33,6 @@ type Appointment = {
   notes: string | null;
 };
 type SchedulePayload = {
-  practitioners: Practitioner[];
-  practitionerId: string;
   date: string;
   slots: Slot[];
   appointments: Appointment[];
@@ -51,8 +51,6 @@ export function StaffSchedule() {
   const t = useTranslations("Staff");
   const locale = useLocale();
   const [date, setDate] = useState(todayYmd());
-  const [practitionerId, setPractitionerId] = useState("");
-  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,16 +71,13 @@ export function StaffSchedule() {
   );
 
   const load = useCallback(
-    async (nextPractitionerId = practitionerId, nextDate = date) => {
+    async (nextDate = date) => {
       setLoading(true);
       setMessage(null);
       const qs = new URLSearchParams({ date: nextDate });
-      if (nextPractitionerId) qs.set("practitionerId", nextPractitionerId);
       try {
         const res = await fetch(`/api/staff/schedule?${qs.toString()}`);
         const data = (await res.json()) as SchedulePayload;
-        setPractitioners(data.practitioners ?? []);
-        setPractitionerId(data.practitionerId ?? "");
         setDate(data.date ?? nextDate);
         setSlots(data.slots ?? []);
         setAppointments(data.appointments ?? []);
@@ -92,7 +87,7 @@ export function StaffSchedule() {
         setLoading(false);
       }
     },
-    [date, practitionerId, t],
+    [date, t],
   );
 
   useEffect(() => {
@@ -115,11 +110,11 @@ export function StaffSchedule() {
       const res = await fetch("/api/staff/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ practitionerId, date, slots }),
+        body: JSON.stringify({ date, slots }),
       });
       if (!res.ok) throw new Error("save_failed");
       setMessage(t("saved"));
-      await load(practitionerId, date);
+      await load(date);
     } catch {
       setMessage(t("errors.save"));
     } finally {
@@ -135,14 +130,13 @@ export function StaffSchedule() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          practitionerId,
           fromDate: date,
           ...hours,
         }),
       });
       if (!res.ok) throw new Error("apply_failed");
       setMessage(t("applied"));
-      await load(practitionerId, date);
+      await load(date);
     } catch {
       setMessage(t("errors.apply"));
     } finally {
@@ -159,31 +153,15 @@ export function StaffSchedule() {
           {t("controls")}
         </h2>
         <div className="mt-[18px] grid gap-[14px]">
-          <Field label={t("practitioner")}>
-            <select
-              value={practitionerId}
-              onChange={(e) => {
-                setPractitionerId(e.target.value);
-                void load(e.target.value, date);
-              }}
-              className={inputCls}
-            >
-              {practitioners.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} — {p.role}
-                </option>
-              ))}
-            </select>
-          </Field>
           <Field label={t("date")}>
-            <input
-              type="date"
+            <DatePicker
               value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                void load(practitionerId, e.target.value);
+              onValueChange={(next) => {
+                setDate(next);
+                void load(next);
               }}
-              className={inputCls}
+              ariaLabel={t("date")}
+              placeholder={t("date")}
             />
           </Field>
         </div>
@@ -194,43 +172,45 @@ export function StaffSchedule() {
           </h3>
           <div className="mt-[14px] grid grid-cols-2 gap-[12px]">
             <Field label={t("startHour")}>
-              <input
-                type="number"
-                min={0}
-                max={22}
-                value={hours.startHour}
-                onChange={(e) =>
-                  setHours({ ...hours, startHour: Number(e.target.value) })
+              <TimePicker
+                value={String(hours.startHour)}
+                onValueChange={(next) =>
+                  setHours({ ...hours, startHour: Number(next) })
                 }
-                className={inputCls}
+                options={Array.from({ length: 23 }, (_, hour) => ({
+                  value: String(hour),
+                  label: `${String(hour).padStart(2, "0")}:00`,
+                }))}
+                ariaLabel={t("startHour")}
               />
             </Field>
             <Field label={t("endHour")}>
-              <input
-                type="number"
-                min={1}
-                max={24}
-                value={hours.endHour}
-                onChange={(e) =>
-                  setHours({ ...hours, endHour: Number(e.target.value) })
+              <TimePicker
+                value={String(hours.endHour)}
+                onValueChange={(next) =>
+                  setHours({ ...hours, endHour: Number(next) })
                 }
-                className={inputCls}
+                options={Array.from(
+                  { length: 24 },
+                  (_, index) => index + 1,
+                ).map((hour) => ({
+                  value: String(hour),
+                  label: `${String(hour).padStart(2, "0")}:00`,
+                }))}
+                ariaLabel={t("endHour")}
               />
             </Field>
             <Field label={t("stepMin")}>
-              <select
-                value={hours.stepMin}
-                onChange={(e) =>
-                  setHours({ ...hours, stepMin: Number(e.target.value) })
+              <ThemedSelect
+                value={String(hours.stepMin)}
+                onValueChange={(next) =>
+                  setHours({ ...hours, stepMin: Number(next) })
                 }
-                className={inputCls}
-              >
-                {[15, 30, 45, 60, 90, 120].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+                options={[15, 30, 45, 60, 90, 120].map((minutes) => ({
+                  value: String(minutes),
+                  label: String(minutes),
+                }))}
+              />
             </Field>
             <Field label={t("daysAhead")}>
               <input
@@ -275,7 +255,7 @@ export function StaffSchedule() {
           <ButtonAction
             type="button"
             onClick={() => void applyWorkingHours()}
-            disabled={saving || !practitionerId}
+            disabled={saving}
             iconRight={CalendarBlank}
             className="mt-[18px] w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -296,7 +276,7 @@ export function StaffSchedule() {
             <ButtonAction
               type="button"
               variant="outline"
-              onClick={() => void load(practitionerId, date)}
+              onClick={() => void load(date)}
               iconRight={ArrowClockwise}
             >
               {t("refresh")}
@@ -304,7 +284,7 @@ export function StaffSchedule() {
             <ButtonAction
               type="button"
               onClick={() => void saveDay()}
-              disabled={saving || !practitionerId}
+              disabled={saving}
               iconRight={FloppyDisk}
               className="disabled:cursor-not-allowed disabled:opacity-50"
             >

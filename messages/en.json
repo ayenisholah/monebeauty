@@ -95,7 +95,7 @@
       },
       "arosha": {
         "title": "Arosha Boost",
-        "description": "AROSHA has developed intensive products and programs that suit every customer's requirements. Depending on the desired result, a specialist will help you choose the right protocol."
+        "description": "AROSHA has developed intensive products and programs that suit every customer's requirements. Depending on the desired result, the clinic team will help you choose the right protocol."
       },
       "facial": {
         "title": "Facial treatments",
@@ -159,7 +159,7 @@
         },
         {
           "title": "Book",
-          "body": "Choose a specialist or no preference, then see available appointment times."
+          "body": "Choose a service, then see the clinic's available appointment times."
         },
         {
           "title": "Visit",
@@ -189,7 +189,7 @@
     "booking": {
       "eyebrow": "Book online",
       "heading": "Begin with one simple choice",
-      "lead": "Select a service here and continue directly to specialists and live appointment times.",
+      "lead": "Select a service here and continue directly to the clinic's live appointment times.",
       "placeholder": "Select a service",
       "cta": "Continue to booking"
     },
@@ -435,7 +435,6 @@
     "summary": {
       "service": "Treatment",
       "procedure": "Procedure",
-      "practitioner": "Specialist",
       "time": "Time",
       "reference": "Reference"
     },
@@ -524,7 +523,6 @@
     "heading": "Schedule",
     "intro": "Manage open slots, closed times, and the day’s appointments. Authentication and role gating are added in the next phase.",
     "controls": "Controls",
-    "practitioner": "Practitioner",
     "date": "Date",
     "workingHours": "Working hours",
     "startHour": "Start",
@@ -682,7 +680,6 @@
     "active": "Active",
     "from": "From",
     "until": "Until",
-    "allPractitioners": "All practitioners",
     "apply": "Apply filters",
     "empty": "No matching records.",
     "reference": "Reference",
@@ -695,7 +692,6 @@
     "notes": "Submitted notes",
     "locale": "Customer language",
     "service": "Service",
-    "practitioner": "Practitioner",
     "time": "Time",
     "history": "Change history",
     "communications": "Communication history",

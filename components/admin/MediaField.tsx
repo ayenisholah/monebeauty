@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { ThemedSelect } from "@/components/ui/ThemedSelect";
 
 export function MediaField({
   name,
@@ -65,19 +66,16 @@ export function MediaField({
         )}
       </label>
       <div className="mt-[8px] grid gap-[8px] sm:grid-cols-[1fr_96px]">
-        <select
-          aria-label={`${label} media library`}
+        <ThemedSelect
+          ariaLabel={`${label} media library`}
           value={selection}
-          onChange={(event) => choose(event.target.value)}
-          className="min-h-[44px] min-w-0 rounded-[4px] border border-line-btn bg-card px-[10px] font-sans text-compact text-body"
-        >
-          <option value="">/media/…</option>
-          {assets.map((asset) => (
-            <option key={asset} value={asset}>
-              {asset}
-            </option>
-          ))}
-        </select>
+          onValueChange={choose}
+          options={assets.map((asset) => ({ value: asset, label: asset }))}
+          placeholder="/media/…"
+          searchable
+          searchPlaceholder="Search media"
+          className="min-w-0 [&_button[data-trigger]]:bg-card"
+        />
         {preview?.startsWith("/media/") ? (
           <div className="relative h-[72px] overflow-hidden rounded-[4px] border border-line-card bg-page">
             <Image

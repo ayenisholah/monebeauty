@@ -818,7 +818,6 @@ export async function updateChatAction(formData: FormData) {
 
 const appointmentInclude = {
   client: { select: { fullName: true, email: true, phone: true } },
-  practitioner: { select: { name: true, role: true } },
   service: { select: { slug: true } },
 } as const;
 
@@ -997,14 +996,13 @@ export async function updateAppointmentAction(formData: FormData) {
     const available = await openSlots({
       dateStr: start.slice(0, 10),
       serviceKey: appointment.service.slug,
-      practitionerId: appointment.practitionerId,
     });
     const slot = available.find((candidate) => candidate.start === start);
     if (!slot) redirect(`${returnTo}?error=slot_taken`);
     const overlap = await prisma.appointment.findFirst({
       where: {
         id: { not: id },
-        practitionerId: appointment.practitionerId,
+        practitionerId: slot.practitionerId,
         status: { not: "CANCELLED" },
         start: { lt: new Date(slot.end) },
         end: { gt: new Date(slot.start) },
@@ -1017,6 +1015,7 @@ export async function updateAppointmentAction(formData: FormData) {
       data: {
         start: new Date(slot.start),
         end: new Date(slot.end),
+        practitionerId: slot.practitionerId,
         status: "RESCHEDULED",
         confirmedAt: null,
       },

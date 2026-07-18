@@ -3,11 +3,18 @@
 ## Owner-approved public booking assignment (2026-07-17)
 
 The public booking wizard is **Service -> Time -> You**. Contextual booking links and valid
-homepage handoffs open directly at Time. Customers do not choose or see a specialist before
-submitting; the server assigns every new public booking to the exact **Mone Beauty Clinic**
-practitioner and ignores client-supplied practitioner IDs. Internal practitioner-aware
-availability, staff scheduling, overlap prevention, historical appointments, rescheduling,
-CRM, confirmations, and notifications remain unchanged.
+homepage handoffs open directly at Time. Customers do not choose or see an individual
+provider; the server assigns every new public booking to the exact **Mone Beauty Clinic**
+clinic scheduling resource and ignores client-supplied practitioner IDs. Practitioner
+choices and provider identity are not exposed in customer or operational interfaces;
+historical relations remain stored for integrity.
+
+## Owner-approved themed controls (2026-07-18)
+
+Every form dropdown must use the application-themed custom listbox. Date and time selection
+must use the booking-style month grid and time chips; compact forms use popovers while the
+booking wizard keeps its calendar inline. Controls must be keyboard accessible, localized,
+mobile-safe, and use the existing design tokens.
 
 ## Owner-approved admin operations (2026-07-18)
 
@@ -221,31 +228,31 @@ service.
 > advances; service cards and pages deep-link `/booking?service=<key>` to preselect. Steps:
 > pick date/time (open slots only, single shared default practitioner) → client details
 > (create/match CRM `Client`) → **GDPR consent** → **on-screen confirmation**, persisted via
-> Prisma (`Appointment` + `Consent`). Practitioner-aware availability remains internal for
-> scheduling, persistence, conflict prevention, reschedule/cancel, and Phase 6 email/SMS
+> Prisma (`Appointment` + `Consent`). The clinic scheduling relation remains internal for
+> persistence, conflict prevention, reschedule/cancel, and Phase 6 email/SMS
 > confirmations + reminders.
 > Mobile-first; 44px+ tap targets; clear progress indicator.
 
 **Client wizard (24/7):** select treatment → choose date/time (only open slots) → client
 details (create/match CRM client) → confirm + GDPR consent → on-screen confirmation. New
 public bookings always resolve the exact **Mone Beauty Clinic** practitioner server-side;
-legacy practitioner query/body values never control assignment. The resolved provider may
-appear after completion and in confirmations. Practitioner-aware availability and
-lightweight cancel/reschedule endpoints remain implemented internally. Email + SMS
+legacy practitioner query/body values never control assignment. Provider identity is not
+returned in public slot or confirmation responses. Shared-clinic availability and lightweight
+cancel/reschedule endpoints remain implemented internally. Email + SMS
 confirmations, reminders at 24h + 2h, and staff alerts are implemented through the Phase 6
 notification layer; richer cutoff policy remains deferred to a future admin policy pass.
 Mobile-first; 44px+ tap targets; clear three-step progress indicator; accent selected-state
 calendar.
 
-**Staff flow (`/staff`):** implemented as an internal schedule surface with practitioner/date
-selection, working-hour range application, open/closed slot controls, and appointment details
-(client + treatment + notes). Auth/RBAC, own-schedule restriction, and new-booking
+**Staff flow (`/staff`):** implemented as an internal shared-clinic schedule surface with a
+custom date picker, working-hour range application, open/closed slot controls, and appointment
+details (client + treatment + notes). Auth/RBAC and new-booking
 notifications are implemented. Fully responsive.
 
 ## 9. CRM / client database
 
-Client profile: full name, phone, email; appointment history (treatments, dates,
-practitioner); free-text notes; **contraindications / medical comments — flagged,
+Client profile: full name, phone, email; appointment history (treatments, dates, status);
+free-text notes; **contraindications / medical comments — flagged,
 high-visibility, treated as special-category data**; cancellation/reschedule history.
 Quick search by name / phone / email. Admin can create/edit clients and add notes.
 

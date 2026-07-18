@@ -5,11 +5,18 @@
 The public wizard is **Service -> Time -> You**. Contextual links and valid homepage
 handoffs open directly at Time; service changes retain the chosen date, clear the slot, and
 reload availability. Public slot lookup and appointment creation ignore legacy
-practitioner values and resolve the exact **Mone Beauty Clinic** practitioner server-side,
-connecting it to the requested bookable service when needed. Practitioner IDs remain stored
-for availability, overlap prevention, staff schedules, CRM, rescheduling, and notifications.
-The compatibility practitioner endpoint, additional internal practitioners, and historical
-appointments remain intact. No Prisma migration is required.
+practitioner values and resolve the exact **Mone Beauty Clinic** scheduling resource
+server-side, connecting it to the requested bookable service when needed. Practitioner IDs
+remain stored only as an internal persistence relation for availability and overlap
+prevention. The obsolete practitioner endpoint and every practitioner selector are removed;
+historical appointment relations remain intact. No Prisma migration is required.
+
+## Themed form controls (owner-approved, 2026-07-18)
+
+All form dropdowns use the shared themed listbox, and all date/time selection uses the
+booking-style calendar and time chips. Compact admin, staff, and homepage fields open the
+calendar in a popover; the main booking calendar remains inline. Native select/date/time
+controls are not used in application forms.
 
 ## Homepage reference match (owner-approved, 2026-07-12)
 
@@ -209,11 +216,11 @@ Ships ahead of the full Phase 3, reusing that data model at reduced scope.
 Booking data model (Practitioner, Availability, Appointment, Client). Public wizard:
 treatment → date/time (open slots only) → details (create/match client) → confirm + consent
 → confirmation. New public bookings use the exact **Mone Beauty Clinic** practitioner;
-specialist selection remains removed even when additional practitioners exist internally.
+specialist selection and provider details are not exposed to customers.
 Slot lookup uses `Availability.slots` when present, falls back to generated business-hours
 slots while staff UI is absent, and rejects appointment overlaps. Lightweight
-cancel/reschedule endpoints remain practitioner-aware for existing appointments and use the
-appointment reference + matching contact detail. **Verify:** slot generation, forced default
+cancel/reschedule endpoints move actively rescheduled appointments onto the shared clinic
+schedule and use the appointment reference + matching contact detail. **Verify:** slot generation, forced default
 assignment despite forged practitioner input, double-booking prevention, e2e booking,
 cancel, and reschedule.
 
@@ -237,10 +244,10 @@ cancel, and reschedule.
 
 ## Phase 4 — Staff schedule (`/staff`) ✅ implemented
 
-Internal staff schedule area: practitioner/date selector, daily schedule view, working-hours
+Internal staff schedule area: themed date selector, daily schedule view, working-hours
 range editor, open/closed slot controls, and booked appointment details. Staff edits persist
-to `Availability.slots` and are reflected in the client booking wizard. Staff/admin auth,
-role gating, and own-schedule restriction are implemented in Phase 5; staff new-booking
+to the shared clinic `Availability.slots` and are reflected in the client booking wizard.
+Staff/admin auth and role gating are implemented in Phase 5; staff new-booking
 alerts are implemented in Phase 6.
 **Verify:** staff edits availability → reflected in client wizard.
 
