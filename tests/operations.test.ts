@@ -3,11 +3,21 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { appointmentSms, orderSms, smsSegments } from "../lib/sms";
 import { normalizeInternationalPhone } from "../lib/phone";
+import {
+  normalizeOperationsRange,
+  operationsDateRange,
+  operationsFilterQuery,
+  validCalendarDate,
+} from "../lib/operations-filter";
 
 const schema = readFileSync("prisma/schema.prisma", "utf8");
 const router = readFileSync("components/admin/AdminRouter.tsx", "utf8");
 const shell = readFileSync("components/admin/AdminShell.tsx", "utf8");
 const operations = readFileSync("components/admin/AdminOperations.tsx", "utf8");
+const operationsFilter = readFileSync(
+  "components/admin/OperationsFilter.tsx",
+  "utf8",
+);
 const actions = readFileSync("lib/admin-actions.ts", "utf8");
 const checkout = readFileSync("app/api/checkout/route.ts", "utf8");
 const reschedule = readFileSync("app/api/booking/reschedule/route.ts", "utf8");
@@ -21,13 +31,65 @@ test("orders and appointments are first-class admin modules", () => {
   assert.match(router, /<OrdersAdmin/);
   assert.match(router, /appointmentsNeedingAction/);
   assert.match(router, /ordersNeedingAction/);
-  assert.match(operations, /name="from"/);
-  assert.match(operations, /name="to"/);
+  assert.match(operations, /<OperationsFilter/);
   assert.doesNotMatch(operations, /name="practitioner"/);
-  assert.match(operations, /<ThemedSelect/);
+  assert.match(operationsFilter, /<ThemedSelect/);
   assert.match(operations, /<DatePicker/);
   assert.match(operations, /<TimePicker/);
   assert.match(operations, /value: "ALL"/);
+  assert.doesNotMatch(operationsFilter, /Apply filters|type="submit"/);
+  assert.match(
+    operationsFilter,
+    /window\.setTimeout\(\(\) => replace\(filters\), 350\)/,
+  );
+  assert.match(operationsFilter, /max=\{filters\.to \|\| undefined\}/);
+  assert.match(operationsFilter, /min=\{filters\.from \|\| undefined\}/);
+});
+
+test("operation date ranges are strict, normalized, and future-safe", () => {
+  assert.equal(validCalendarDate("2028-02-29"), true);
+  assert.equal(validCalendarDate("2027-02-29"), false);
+  assert.equal(validCalendarDate("2026-02-31"), false);
+  assert.equal(validCalendarDate("2026-2-01"), false);
+  assert.deepEqual(normalizeOperationsRange("2030-06-20", "2030-06-20"), {
+    from: "2030-06-20",
+    to: "2030-06-20",
+  });
+  assert.deepEqual(normalizeOperationsRange("2030-06-22", "2030-06-20"), {
+    from: "2030-06-20",
+    to: "2030-06-22",
+  });
+  assert.deepEqual(normalizeOperationsRange("2026-02-31", "2030-06-20"), {
+    from: "",
+    to: "2030-06-20",
+  });
+});
+
+test("operation ranges use inclusive Helsinki calendar days", () => {
+  const winter = operationsDateRange("2026-01-15", "2026-01-15");
+  assert.equal(winter?.gte?.toISOString(), "2026-01-14T22:00:00.000Z");
+  assert.equal(winter?.lt?.toISOString(), "2026-01-15T22:00:00.000Z");
+  const summer = operationsDateRange("2026-07-15", "2026-07-15");
+  assert.equal(summer?.gte?.toISOString(), "2026-07-14T21:00:00.000Z");
+  assert.equal(summer?.lt?.toISOString(), "2026-07-15T21:00:00.000Z");
+});
+
+test("automatic operation filter URLs omit blanks and reset pagination", () => {
+  const filters = {
+    q: "  Ada  ",
+    status: "",
+    from: "2030-01-01",
+    to: "",
+  };
+  assert.equal(operationsFilterQuery(filters), "q=Ada&from=2030-01-01");
+  assert.equal(
+    operationsFilterQuery(filters, 3),
+    "q=Ada&from=2030-01-01&page=3",
+  );
+  assert.doesNotMatch(
+    operationsFilterQuery(filters),
+    /page|practitioner|date=/,
+  );
 });
 
 test("operation lifecycle data and delivery attempts are durable", () => {

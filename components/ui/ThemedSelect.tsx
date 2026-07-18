@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -9,6 +10,7 @@ import {
 } from "react";
 import { CaretDown, Check, MagnifyingGlass } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
+import { selectMenuLayout, type SelectPlacement } from "@/lib/select-placement";
 
 export type SelectOption = {
   value: string;
@@ -51,7 +53,12 @@ export function ThemedSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(0);
+  const [placement, setPlacement] = useState<SelectPlacement>("down");
+  const [menuMaxHeight, setMenuMaxHeight] = useState<number>();
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLLabelElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const visibleOptions = useMemo(() => {
@@ -85,6 +92,41 @@ export function ThemedSelect({
     form.addEventListener("reset", reset);
     return () => form.removeEventListener("reset", reset);
   }, [controlled, defaultValue]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    function positionMenu() {
+      const root = rootRef.current;
+      const menu = menuRef.current;
+      if (!root || !menu) return;
+      const trigger = root.getBoundingClientRect();
+      const menuHeight =
+        Math.min(listRef.current?.scrollHeight ?? 0, 280) +
+        (searchRef.current?.getBoundingClientRect().height ?? 0) +
+        2;
+      const layout = selectMenuLayout({
+        triggerTop: trigger.top,
+        triggerBottom: trigger.bottom,
+        menuHeight,
+        viewportHeight: window.innerHeight,
+      });
+      setPlacement((current) =>
+        current === layout.placement ? current : layout.placement,
+      );
+      setMenuMaxHeight((current) =>
+        current === layout.maxHeight ? current : layout.maxHeight,
+      );
+    }
+
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [open, searchable, visibleOptions.length]);
 
   function choose(next: string) {
     if (!controlled) setInternalValue(next);
@@ -173,9 +215,22 @@ export function ThemedSelect({
         />
       </button>
       {open ? (
-        <div className="absolute top-[calc(100%+6px)] left-0 z-[90] w-full min-w-[190px] overflow-hidden rounded-[7px] border border-line-card bg-card shadow-[var(--shadow-card)]">
+        <div
+          ref={menuRef}
+          style={{ maxHeight: menuMaxHeight }}
+          data-placement={placement}
+          className={cn(
+            "absolute left-0 z-[90] flex w-full min-w-[190px] flex-col overflow-hidden rounded-[7px] border border-line-card bg-card shadow-[var(--shadow-card)]",
+            placement === "up"
+              ? "bottom-[calc(100%+6px)]"
+              : "top-[calc(100%+6px)]",
+          )}
+        >
           {searchable ? (
-            <label className="flex items-center gap-[8px] border-b border-line-hair px-[11px]">
+            <label
+              ref={searchRef}
+              className="flex items-center gap-[8px] border-b border-line-hair px-[11px]"
+            >
               <MagnifyingGlass size={15} weight="thin" className="text-muted" />
               <input
                 autoFocus
@@ -190,10 +245,11 @@ export function ThemedSelect({
             </label>
           ) : null}
           <div
+            ref={listRef}
             role="listbox"
             aria-label={ariaLabel}
             aria-required={required || undefined}
-            className="max-h-[280px] overflow-y-auto p-[5px]"
+            className="max-h-[280px] min-h-0 flex-1 overflow-y-auto p-[5px]"
           >
             {visibleOptions.map((option, index) => {
               const active = option.value === selectedValue;

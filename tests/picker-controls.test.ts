@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { selectMenuLayout } from "../lib/select-placement";
 
 function tsxFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -32,11 +33,42 @@ test("themed controls expose accessible custom interaction semantics", () => {
   assert.match(select, /aria-haspopup="listbox"/);
   assert.match(select, /role="option"/);
   assert.match(select, /ArrowDown/);
+  assert.match(select, /data-placement=\{placement\}/);
   assert.match(calendar, /role="grid"/);
   assert.match(clinicDate, /Europe\/Helsinki/);
   assert.doesNotMatch(calendar, /useLocale/);
   assert.match(calendar, /locale: string/);
   assert.match(time, /role="listbox"/);
+});
+
+test("themed selects choose a viewport-safe opening direction", () => {
+  assert.deepEqual(
+    selectMenuLayout({
+      triggerTop: 120,
+      triggerBottom: 164,
+      menuHeight: 180,
+      viewportHeight: 800,
+    }),
+    { placement: "down", maxHeight: 630 },
+  );
+  assert.deepEqual(
+    selectMenuLayout({
+      triggerTop: 700,
+      triggerBottom: 744,
+      menuHeight: 140,
+      viewportHeight: 800,
+    }),
+    { placement: "up", maxHeight: 694 },
+  );
+  assert.deepEqual(
+    selectMenuLayout({
+      triggerTop: 70,
+      triggerBottom: 134,
+      menuHeight: 300,
+      viewportHeight: 220,
+    }),
+    { placement: "down", maxHeight: 80 },
+  );
 });
 
 test("staff schedule resolves the clinic resource on the server", () => {

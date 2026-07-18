@@ -12,10 +12,14 @@ import {
   updateOrderAction,
 } from "@/lib/admin-actions";
 import { CommunicationComposer } from "./CommunicationComposer";
-import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { clinicTodayYmd } from "@/lib/clinic-date";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { OperationsFilter } from "./OperationsFilter";
+import {
+  normalizeOperationsRange,
+  operationsDateRange,
+} from "@/lib/operations-filter";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 const orderStatuses: OrderStatus[] = [
@@ -50,22 +54,6 @@ function scalar(params: SearchParams, key: string) {
 
 function pageNumber(params: SearchParams) {
   return Math.max(1, Number.parseInt(scalar(params, "page"), 10) || 1);
-}
-
-function dateRange(from: string, to: string) {
-  const range: { gte?: Date; lt?: Date } = {};
-  if (/^\d{4}-\d{2}-\d{2}$/.test(from)) {
-    const start = new Date(`${from}T00:00:00.000Z`);
-    if (!Number.isNaN(start.getTime())) range.gte = start;
-  }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(to)) {
-    const end = new Date(`${to}T00:00:00.000Z`);
-    if (!Number.isNaN(end.getTime())) {
-      end.setUTCDate(end.getUTCDate() + 1);
-      range.lt = end;
-    }
-  }
-  return Object.keys(range).length ? range : undefined;
 }
 
 function reference(id: string) {
@@ -347,20 +335,23 @@ export async function OrdersAdmin({
 
   const q = scalar(searchParams, "q");
   const rawStatus = scalar(searchParams, "status");
-  const from = scalar(searchParams, "from");
-  const to = scalar(searchParams, "to");
+  const { from, to } = normalizeOperationsRange(
+    scalar(searchParams, "from"),
+    scalar(searchParams, "to"),
+  );
   const status = orderStatuses.includes(rawStatus as OrderStatus)
     ? (rawStatus as OrderStatus)
     : undefined;
   const statusFilter = rawStatus === "ALL" ? undefined : status;
   const page = pageNumber(searchParams);
+  const createdAt = operationsDateRange(from, to);
   const where: Prisma.OrderWhereInput = {
     ...(statusFilter
       ? { status: statusFilter }
       : rawStatus === "ALL"
         ? {}
         : { status: { in: ["PENDING", "CONFIRMED", "PAID"] } }),
-    ...(dateRange(from, to) ? { createdAt: dateRange(from, to) } : {}),
+    ...(createdAt ? { createdAt } : {}),
     ...(q
       ? {
           OR: [
@@ -394,7 +385,6 @@ export async function OrdersAdmin({
       <PageTitle title={t("orders")} description={t("orderDescription")} />
       <FilterForm
         locale={locale}
-        base={base}
         q={q}
         status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
         statuses={orderStatuses}
@@ -604,7 +594,7 @@ export async function AppointmentsAdmin({
                       className="mt-[6px] w-full"
                     />
                   </label>
-                  <button className={secondary}>{t("apply")}</button>
+                  <button className={secondary}>{t("showTimes")}</button>
                 </form>
                 <form
                   action={updateAppointmentAction}
@@ -684,19 +674,22 @@ export async function AppointmentsAdmin({
 
   const q = scalar(searchParams, "q");
   const rawStatus = scalar(searchParams, "status");
-  const from = scalar(searchParams, "from");
-  const to = scalar(searchParams, "to");
+  const { from, to } = normalizeOperationsRange(
+    scalar(searchParams, "from"),
+    scalar(searchParams, "to"),
+  );
   const status = appointmentStatuses.includes(rawStatus as AppointmentStatus)
     ? (rawStatus as AppointmentStatus)
     : undefined;
   const page = pageNumber(searchParams);
+  const start = operationsDateRange(from, to);
   const where: Prisma.AppointmentWhereInput = {
     ...(status
       ? { status }
       : rawStatus === "ALL"
         ? {}
         : { status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] } }),
-    ...(dateRange(from, to) ? { start: dateRange(from, to) } : {}),
+    ...(start ? { start } : {}),
     ...(q
       ? {
           OR: [
@@ -741,7 +734,6 @@ export async function AppointmentsAdmin({
       />
       <FilterForm
         locale={locale}
-        base={base}
         q={q}
         status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
         statuses={appointmentStatuses}
@@ -853,7 +845,6 @@ function FilterForm({
   t,
 }: {
   locale: Locale;
-  base: string;
   q: string;
   status: string;
   statuses: readonly string[];
@@ -862,51 +853,26 @@ function FilterForm({
   t: Awaited<ReturnType<typeof getTranslations>>;
 }) {
   return (
-    <form className="mt-[20px] grid gap-[8px] md:grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_minmax(170px,1fr)_minmax(170px,1fr)_auto] md:items-end">
-      <input
-        name="q"
-        defaultValue={q}
-        placeholder={t("search")}
-        className={`${input} min-w-[240px] flex-1`}
-      />
-      <ThemedSelect
-        name="status"
-        defaultValue={status}
-        options={[
-          { value: "", label: t("active") },
-          { value: "ALL", label: t("all") },
-          ...statuses.map((item) => ({
-            value: item,
-            label: t(`statusLabels.${item}`),
-          })),
-        ]}
-      />
-      <label className="font-sans text-[13px] text-muted">
-        {t("from")}
-        <DatePicker
-          locale={locale}
-          name="from"
-          defaultValue={from}
-          clearable
-          ariaLabel={t("from")}
-          placeholder={t("from")}
-          className="mt-[6px]"
-        />
-      </label>
-      <label className="font-sans text-[13px] text-muted">
-        {t("until")}
-        <DatePicker
-          locale={locale}
-          name="to"
-          defaultValue={to}
-          clearable
-          ariaLabel={t("until")}
-          placeholder={t("until")}
-          className="mt-[6px]"
-        />
-      </label>
-      <button className={secondary}>{t("apply")}</button>
-    </form>
+    <OperationsFilter
+      locale={locale}
+      initial={{ q, status, from, to }}
+      statusOptions={[
+        { value: "", label: t("active") },
+        { value: "ALL", label: t("all") },
+        ...statuses.map((item) => ({
+          value: item,
+          label: t(`statusLabels.${item}`),
+        })),
+      ]}
+      labels={{
+        search: t("search"),
+        status: t("status"),
+        from: t("from"),
+        until: t("until"),
+        filtering: t("filtering"),
+        automatic: t("automatic"),
+      }}
+    />
   );
 }
 
