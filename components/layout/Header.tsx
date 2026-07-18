@@ -20,14 +20,6 @@ export async function Header() {
   return (
     <header className="hr-header">
       <div className="hr-container hr-header-inner">
-        <nav className="hr-nav hr-left" aria-label={t("nav.menu")}>
-          {links.slice(0, 2).map((link) => (
-            <Link key={link.href} href={link.href}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
         <Link className="hr-brand" href="/#top" aria-label="Mone Beauty Clinic">
           <FlowerLotus weight="thin" />
           <b>MONE</b>
@@ -35,7 +27,7 @@ export async function Header() {
         </Link>
 
         <nav className="hr-nav hr-right" aria-label={t("nav.menu")}>
-          {links.slice(2, 4).map((link) => (
+          {links.slice(0, 4).map((link) => (
             <Link key={link.href} href={link.href}>
               {link.label}
             </Link>

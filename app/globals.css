@@ -838,35 +838,42 @@ body:has(.home-reference) > footer {
   }
 }
 @media (min-width: 1040px) {
+  .hr-booking {
+    grid-template-columns: 1fr 1.1fr;
+    gap: 80px;
+  }
+}
+@media (min-width: 1180px) {
   .hr-header-inner {
     height: 82px;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
   }
   .hr-nav {
     display: flex;
     align-items: center;
-    gap: 26px;
+    gap: clamp(16px, 1.5vw, 24px);
   }
   .hr-nav a:not(.hr-btn) {
+    color: var(--color-nav);
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-nav);
-  }
-  .hr-left {
-    justify-self: start;
+    white-space: nowrap;
   }
   .hr-right {
+    justify-content: flex-end;
     justify-self: end;
+  }
+  .hr-right .hr-btn {
+    height: 44px;
+    flex: none;
+    padding-inline: 20px;
+    white-space: nowrap;
   }
   .hr-mobile {
     display: none;
-  }
-  .hr-booking {
-    grid-template-columns: 1fr 1.1fr;
-    gap: 80px;
   }
 }
 @media (min-width: 1200px) {

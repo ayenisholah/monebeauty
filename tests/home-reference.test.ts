@@ -18,3 +18,23 @@ test("homepage hero restores the desktop cinematic ratio", () => {
     /@media \(min-width: 768px\) \{[\s\S]*?\.hr-hero-image \{\s*aspect-ratio: 21\/9;\s*\}/,
   );
 });
+
+test("desktop header keeps the logo left and navigation right", () => {
+  const desktopRules =
+    styles.match(
+      /@media \(min-width: 1180px\) \{([\s\S]*?)\n\}\n@media \(min-width: 1200px\)/,
+    )?.[1] ?? "";
+
+  assert.match(desktopRules, /grid-template-columns: auto minmax\(0, 1fr\)/);
+  assert.doesNotMatch(desktopRules, /\.hr-left/);
+  assert.match(desktopRules, /\.hr-right \{[\s\S]*?justify-content: flex-end/);
+  assert.match(
+    desktopRules,
+    /\.hr-nav a:not\(\.hr-btn\) \{[\s\S]*?white-space: nowrap/,
+  );
+  assert.match(
+    desktopRules,
+    /\.hr-right \.hr-btn \{[\s\S]*?height: 44px;[\s\S]*?flex: none;[\s\S]*?white-space: nowrap/,
+  );
+  assert.match(desktopRules, /\.hr-mobile \{\s*display: none/);
+});
