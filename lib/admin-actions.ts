@@ -30,6 +30,8 @@ import {
   sendCustomMessage,
 } from "@/lib/notifications";
 import { smsSegments } from "@/lib/sms";
+import { PROCEDURE_MEDIA_SEED } from "@/content/procedure-media";
+import { Prisma } from "@prisma/client";
 
 const locales: Locale[] = ["fi", "en", "ru"];
 const serviceCategories: ServiceCategory[] = [
@@ -177,6 +179,44 @@ export async function saveServiceAction(formData: FormData) {
   const saved = id
     ? await prisma.service.update({ where: { id }, data })
     : await prisma.service.create({ data });
+  const procedureMediaKeys = formData
+    .getAll("procedureMediaKey")
+    .filter((item): item is string => typeof item === "string");
+  for (const key of procedureMediaKeys) {
+    const definition = PROCEDURE_MEDIA_SEED.find(
+      (item) => item.serviceSlug === slug && item.key === key,
+    );
+    if (!definition) redirect(`${returnTo}?error=validation`);
+    const image = value(formData, `procedureImage_${key}`);
+    if (!image || !image.startsWith("/media/") || image.includes(".."))
+      redirect(`${returnTo}?error=media`);
+    const selectedDefinition = PROCEDURE_MEDIA_SEED.find(
+      (item) => item.image === image,
+    );
+    const selectedSourceUrl =
+      selectedDefinition?.sourceUrl ??
+      (image.startsWith("/media/files/") || image.startsWith("/media/images/")
+        ? `https://monebeauty.fi${image.replace(/^\/media/, "")}`
+        : "https://monebeauty.fi/");
+    const selectedSourceLicense =
+      selectedDefinition?.sourceLicense ?? "CLINIC_ARCHIVE";
+    await prisma.procedureMedia.upsert({
+      where: { serviceId_key: { serviceId: saved.id, key } },
+      update: {
+        image,
+        sourceUrl: selectedSourceUrl,
+        sourceLicense: selectedSourceLicense,
+      },
+      create: {
+        serviceId: saved.id,
+        key,
+        image,
+        identities: definition.identities as Prisma.InputJsonValue,
+        sourceUrl: selectedSourceUrl,
+        sourceLicense: selectedSourceLicense,
+      },
+    });
+  }
   for (const locale of locales) {
     const h1 = value(formData, `h1_${locale}`);
     const shortDesc = value(formData, `shortDesc_${locale}`);

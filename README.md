@@ -185,9 +185,24 @@ git pull origin main
 npm ci
 npm run db:generate
 npx prisma migrate deploy
+npm run db:sync-procedure-media
 npm run build
 test -f .next/BUILD_ID && cat .next/BUILD_ID
 ```
+
+Before reverting a release that uses treatment-card media, preview and apply its data
+rollback while the feature revision is still checked out:
+
+```bash
+npm run db:rollback-procedure-media
+npm run db:rollback-procedure-media -- --apply
+```
+
+The first command is a dry run. The second transactionally deletes only procedure-media
+rows whose service and key belong to the committed registry. It leaves services, unrelated
+rows, the additive `ProcedureMedia` table, and Prisma migration history intact. After it
+completes, deploy the previous application revision. Do not drop the table or run
+`prisma migrate resolve`; a successful Prisma migration cannot be marked rolled back safely.
 
 Start or reload the PM2 apps from the committed ecosystem configuration so watch mode,
 restart backoff, and updated environment values are applied:

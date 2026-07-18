@@ -112,7 +112,10 @@ export async function getPublishedServiceByPath(path: string, locale: Locale) {
       published: true,
       contents: { some: { locale, status: "PUBLISHED" } },
     },
-    include: { contents: { where: { locale, status: "PUBLISHED" }, take: 1 } },
+    include: {
+      contents: { where: { locale, status: "PUBLISHED" }, take: 1 },
+      procedureMedia: true,
+    },
   });
   const content = row?.contents[0];
   return row && content ? { ...row, content } : undefined;

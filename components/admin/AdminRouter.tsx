@@ -41,15 +41,26 @@ import {
   OrdersAdmin,
 } from "@/components/admin/AdminOperations";
 import mediaAssets from "@/content/generated/assets.json";
+import { bootstrapProcedureMedia } from "@/content/procedure-media";
+import { parseProcedures } from "@/lib/procedures";
 
 const locales: DbLocale[] = ["fi", "en", "ru"];
-const assets = (mediaAssets as string[])
-  .filter((path) => /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(path))
-  .map((path) => `/media/${path}`);
+const assets = Array.from(
+  new Set([
+    ...(mediaAssets as string[])
+      .filter((path) => /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(path))
+      .map((path) => `/media/${path}`),
+    "/media/home/arosha.jpg",
+    "/media/home/brows.jpg",
+    "/media/home/facial.jpg",
+  ]),
+);
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Copy = ReturnType<typeof makeCopy>;
-type ServiceRow = Prisma.ServiceGetPayload<{ include: { contents: true } }>;
+type ServiceRow = Prisma.ServiceGetPayload<{
+  include: { contents: true; procedureMedia: true };
+}>;
 type TechnologyRow = Prisma.TechnologyGetPayload<{
   include: { contents: true };
 }>;
@@ -751,7 +762,7 @@ async function Services({
         ? null
         : await prisma.service.findUnique({
             where: { id },
-            include: { contents: true },
+            include: { contents: true, procedureMedia: true },
           });
     if (id !== "uusi" && !row) notFound();
     return (
@@ -789,6 +800,28 @@ async function Services({
 
 function ServiceEditor({ row, copy }: { row: ServiceRow | null; copy: Copy }) {
   const byLocale = new Map(row?.contents.map((item) => [item.locale, item]));
+  const mediaDefinitions = row ? bootstrapProcedureMedia(row.slug) : [];
+  const savedMedia = new Map(
+    row?.procedureMedia.map((item) => [item.key, item]),
+  );
+  const referenceLocale = byLocale.has("en")
+    ? "en"
+    : byLocale.has("fi")
+      ? "fi"
+      : "ru";
+  const currentProcedures = parseProcedures(
+    byLocale.get(referenceLocale)?.whatItIs ?? "",
+  );
+  const unmatchedProcedures = currentProcedures.filter(
+    (procedure) =>
+      !mediaDefinitions.some((definition) =>
+        definition.identities[referenceLocale].some(
+          (identity) =>
+            identity.group === procedure.group &&
+            identity.title === procedure.title,
+        ),
+      ),
+  );
   return (
     <>
       <EditorSection title={copy.common.global}>
@@ -873,6 +906,44 @@ function ServiceEditor({ row, copy }: { row: ServiceRow | null; copy: Copy }) {
           />
         </div>
       </EditorSection>
+      {mediaDefinitions.length > 0 ? (
+        <EditorSection title="Treatment card images">
+          <p className="mb-[16px] text-compact leading-[1.6] text-muted">
+            Each image is bound to a stable treatment identity and shared by all
+            locales. Service gallery images above remain the hero source.
+          </p>
+          {unmatchedProcedures.length > 0 ? (
+            <p className="mb-[16px] rounded-[6px] border border-line-card-hover bg-alt p-[12px] text-compact leading-[1.55] text-ink">
+              {unmatchedProcedures.length} treatment
+              {unmatchedProcedures.length === 1 ? " is" : "s are"} not matched
+              to the media registry. Save approved content first, then refresh
+              the registry before publishing the new cards.
+            </p>
+          ) : null}
+          <div className="grid gap-[14px] lg:grid-cols-2">
+            {mediaDefinitions.map((definition, index) => (
+              <div
+                key={definition.key}
+                className="rounded-[8px] border border-line-card bg-page p-[14px]"
+              >
+                <input
+                  type="hidden"
+                  name="procedureMediaKey"
+                  value={definition.key}
+                />
+                <MediaField
+                  name={`procedureImage_${definition.key}`}
+                  label={`${String(index + 1).padStart(2, "0")} · ${definition.identities.en.map((item) => item.title).join(" / ")}`}
+                  defaultValue={
+                    savedMedia.get(definition.key)?.image ?? definition.image
+                  }
+                  assets={assets}
+                />
+              </div>
+            ))}
+          </div>
+        </EditorSection>
+      ) : null}
       <LocaleEditors title={copy.common.locales}>
         {locales.map((locale) => {
           const item = byLocale.get(locale);

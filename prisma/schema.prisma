@@ -34,27 +34,44 @@ model Session {
 }
 
 model Service {
-  id            String             @id @default(cuid())
-  slug          String             @unique
-  publicPath    String?
-  category      ServiceCategory
-  durationMin   Int                @default(60)
-  bookable      Boolean            @default(true)
-  priceFrom     Decimal?
-  images        String[]           @default([])
-  order         Int                @default(0)
-  published     Boolean            @default(true)
-  heroImageAlt  String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  archivedAt    DateTime?
-  appointments  Appointment[]
-  pricing       PricingItem[]
-  contents      TreatmentContent[]
-  practitioners Practitioner[]     @relation("PractitionerToService")
-  technologies  Technology[]       @relation("TechnologyBookingService")
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  publicPath     String?
+  category       ServiceCategory
+  durationMin    Int                @default(60)
+  bookable       Boolean            @default(true)
+  priceFrom      Decimal?
+  images         String[]           @default([])
+  order          Int                @default(0)
+  published      Boolean            @default(true)
+  heroImageAlt   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  archivedAt     DateTime?
+  appointments   Appointment[]
+  pricing        PricingItem[]
+  contents       TreatmentContent[]
+  procedureMedia ProcedureMedia[]
+  practitioners  Practitioner[]     @relation("PractitionerToService")
+  technologies   Technology[]       @relation("TechnologyBookingService")
 
   @@index([archivedAt, order])
+}
+
+model ProcedureMedia {
+  id            String   @id @default(cuid())
+  serviceId     String
+  key           String
+  image         String
+  identities    Json
+  sourceUrl     String
+  sourceLicense String   @default("CLINIC_ARCHIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, key])
+  @@index([serviceId])
 }
 
 model TreatmentContent {

@@ -12,6 +12,7 @@ import { excerpt } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { parseProcedures } from "@/lib/procedures";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { resolveProcedureImage } from "@/lib/procedure-media";
 
 const SERVICE_IMAGES: Record<string, string[]> = {
   facial: [
@@ -66,6 +67,14 @@ export async function ServiceDetailPage({
   const heroImage = images[0];
   const summary =
     service.content.shortDesc.trim() || excerpt(service.content.whatItIs, 220);
+  const treatmentImages = treatments.map((procedure) =>
+    resolveProcedureImage({
+      serviceSlug: service.slug,
+      locale,
+      procedure,
+      records: service.procedureMedia,
+    }),
+  );
   const bookHref = bookingKey
     ? {
         pathname: PUBLIC_PATHS.booking,
@@ -73,7 +82,9 @@ export async function ServiceDetailPage({
       }
     : undefined;
   const showTreatmentCards =
-    Boolean(bookingKey) && treatments.length > 0 && images.length > 0;
+    Boolean(bookingKey) &&
+    treatments.length > 0 &&
+    treatmentImages.every(Boolean);
 
   return (
     <article className="bg-page">
@@ -164,7 +175,7 @@ export async function ServiceDetailPage({
                       key={`${item.group ?? "service"}-${item.title}-${index}`}
                       item={item}
                       index={index}
-                      image={images[index % images.length]}
+                      image={treatmentImages[index] as string}
                       bookingKey={bookingKey}
                       bookLabel={common("bookThis")}
                       seeMoreLabel={common("seeMore")}
