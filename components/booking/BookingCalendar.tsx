@@ -1,7 +1,8 @@
 "use client";
 
 import { BUSINESS_HOURS } from "@/lib/booking-config";
-import { CalendarGrid, clinicTodayYmd } from "@/components/ui/CalendarPicker";
+import { CalendarGrid } from "@/components/ui/CalendarPicker";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 function addDays(value: string, days: number) {
   const [year, month, day] = value.split("-").map(Number);
@@ -12,15 +13,18 @@ function addDays(value: string, days: number) {
 
 /** Booking month grid with clinic-day, business-day, and booking-window limits. */
 export function BookingCalendar({
+  locale,
   value,
   onSelect,
 }: {
+  locale: string;
   value: string | null;
   onSelect: (value: string) => void;
 }) {
   const today = clinicTodayYmd();
   return (
     <CalendarGrid
+      locale={locale}
       value={value ?? ""}
       onSelect={onSelect}
       min={today}

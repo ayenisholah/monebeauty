@@ -13,7 +13,8 @@ import {
 } from "@/lib/admin-actions";
 import { CommunicationComposer } from "./CommunicationComposer";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
-import { DatePicker, clinicTodayYmd } from "@/components/ui/CalendarPicker";
+import { DatePicker } from "@/components/ui/CalendarPicker";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 import { TimePicker } from "@/components/ui/TimePicker";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -392,6 +393,7 @@ export async function OrdersAdmin({
     <div>
       <PageTitle title={t("orders")} description={t("orderDescription")} />
       <FilterForm
+        locale={locale}
         base={base}
         q={q}
         status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
@@ -592,6 +594,7 @@ export async function AppointmentsAdmin({
                   <label className="font-sans text-[13px] text-muted">
                     {t("chooseDate")}
                     <DatePicker
+                      locale={locale}
                       name="date"
                       defaultValue={selectedDate}
                       min={clinicTodayYmd()}
@@ -737,6 +740,7 @@ export async function AppointmentsAdmin({
         description={t("appointmentDescription")}
       />
       <FilterForm
+        locale={locale}
         base={base}
         q={q}
         status={rawStatus === "ALL" ? "ALL" : (status ?? "")}
@@ -840,6 +844,7 @@ function ActionForm({
 }
 
 function FilterForm({
+  locale,
   q,
   status,
   statuses,
@@ -847,6 +852,7 @@ function FilterForm({
   to = "",
   t,
 }: {
+  locale: Locale;
   base: string;
   q: string;
   status: string;
@@ -878,6 +884,7 @@ function FilterForm({
       <label className="font-sans text-[13px] text-muted">
         {t("from")}
         <DatePicker
+          locale={locale}
           name="from"
           defaultValue={from}
           clearable
@@ -889,6 +896,7 @@ function FilterForm({
       <label className="font-sans text-[13px] text-muted">
         {t("until")}
         <DatePicker
+          locale={locale}
           name="to"
           defaultValue={to}
           clearable

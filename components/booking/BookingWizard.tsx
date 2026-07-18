@@ -387,7 +387,7 @@ export function BookingWizard({
             <p className="mb-[12px] font-sans text-[13px] font-medium tracking-[.04em] text-muted uppercase">
               {t("pickDate")}
             </p>
-            <BookingCalendar value={date} onSelect={pickDate} />
+            <BookingCalendar locale={locale} value={date} onSelect={pickDate} />
           </div>
 
           <div className="flex-1">

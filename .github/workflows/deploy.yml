@@ -104,5 +104,39 @@ jobs:
 
       - name: Restart app with PM2
         run: |
-          pm2 startOrReload ecosystem.config.cjs --update-env
+          set -euo pipefail
+
+          is_app_online() {
+            pm2 jlist | node -e '
+              const apps = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+              const app = apps.find((entry) => entry.name === "monebeauty");
+              process.exit(app?.pm2_env?.status === "online" ? 0 : 1);
+            '
+          }
+
+          pm2 startOrReload ecosystem.config.cjs --update-env || true
+
+          if ! is_app_online; then
+            echo "PM2 reload did not leave monebeauty online; recreating that process."
+            pm2 delete monebeauty || true
+            pm2 start ecosystem.config.cjs --only monebeauty --update-env
+          fi
+
+          healthy=0
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error http://127.0.0.1:5000/api/health; then
+              healthy=1
+              break
+            fi
+            echo "Waiting for monebeauty health check ($attempt/12)..."
+            sleep 5
+          done
+
+          if [ "$healthy" -ne 1 ] || ! is_app_online; then
+            echo "monebeauty failed deployment health verification."
+            pm2 describe monebeauty || true
+            pm2 logs monebeauty --err --lines 100 --nostream || true
+            exit 1
+          fi
+
           pm2 save

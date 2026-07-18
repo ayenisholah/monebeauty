@@ -19,6 +19,7 @@ const applicationSource = [...tsxFiles("app"), ...tsxFiles("components")]
   .join("\n");
 const select = readFileSync("components/ui/ThemedSelect.tsx", "utf8");
 const calendar = readFileSync("components/ui/CalendarPicker.tsx", "utf8");
+const clinicDate = readFileSync("lib/clinic-date.ts", "utf8");
 const time = readFileSync("components/ui/TimePicker.tsx", "utf8");
 const staff = readFileSync("app/api/staff/schedule/route.ts", "utf8");
 
@@ -32,7 +33,9 @@ test("themed controls expose accessible custom interaction semantics", () => {
   assert.match(select, /role="option"/);
   assert.match(select, /ArrowDown/);
   assert.match(calendar, /role="grid"/);
-  assert.match(calendar, /Europe\/Helsinki/);
+  assert.match(clinicDate, /Europe\/Helsinki/);
+  assert.doesNotMatch(calendar, /useLocale/);
+  assert.match(calendar, /locale: string/);
   assert.match(time, /role="listbox"/);
 });
 

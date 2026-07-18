@@ -155,6 +155,7 @@ export function StaffSchedule() {
         <div className="mt-[18px] grid gap-[14px]">
           <Field label={t("date")}>
             <DatePicker
+              locale={locale}
               value={date}
               onValueChange={(next) => {
                 setDate(next);

@@ -3,6 +3,7 @@ import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { Locale as DbLocale, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { groupBy } from "@/lib/collections";
 import { currentUser } from "@/lib/auth";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -1171,7 +1172,7 @@ async function ContentPages({
   const rows = await prisma.contentPage.findMany({
     orderBy: [{ slug: "asc" }, { locale: "asc" }],
   });
-  const groups = Map.groupBy(rows, (row) => row.slug);
+  const groups = groupBy(rows, (row) => row.slug);
   return (
     <Collection title={copy.modules.content} base={base} copy={copy}>
       {[...groups].map(([slug, localized]) => (

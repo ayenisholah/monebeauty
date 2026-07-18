@@ -2,29 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CalendarBlank, CaretLeft, CaretRight, X } from "@phosphor-icons/react";
-import { useLocale } from "next-intl";
 import { BUSINESS_HOURS } from "@/lib/booking-config";
+import { clinicTodayYmd, ymd } from "@/lib/clinic-date";
 import { cn } from "@/lib/cn";
-
-function pad(value: number) {
-  return String(value).padStart(2, "0");
-}
-
-export function ymd(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-export function clinicTodayYmd() {
-  const parts = new Intl.DateTimeFormat("en", {
-    timeZone: "Europe/Helsinki",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
-}
 
 function parseYmd(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -42,19 +22,20 @@ function monthStart(date: Date) {
 }
 
 export function CalendarGrid({
+  locale,
   value,
   onSelect,
   min,
   max,
   disableClosedDays = false,
 }: {
+  locale: string;
   value?: string;
   onSelect: (value: string) => void;
   min?: string;
   max?: string;
   disableClosedDays?: boolean;
 }) {
-  const locale = useLocale();
   const selected = value ? parseYmd(value) : null;
   const minimum = min ? parseYmd(min) : null;
   const maximum = max ? parseYmd(max) : null;
@@ -162,6 +143,7 @@ export function CalendarGrid({
 }
 
 export function DatePicker({
+  locale,
   name,
   value,
   defaultValue = "",
@@ -175,6 +157,7 @@ export function DatePicker({
   clearable = false,
   className,
 }: {
+  locale: string;
   name?: string;
   value?: string;
   defaultValue?: string;
@@ -188,7 +171,6 @@ export function DatePicker({
   clearable?: boolean;
   className?: string;
 }) {
-  const locale = useLocale();
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const selectedValue = controlled ? value : internalValue;
@@ -255,6 +237,7 @@ export function DatePicker({
       {open ? (
         <div className="absolute top-[calc(100%+6px)] left-0 z-[90] shadow-[var(--shadow-card)]">
           <CalendarGrid
+            locale={locale}
             value={selectedValue}
             onSelect={select}
             min={min}

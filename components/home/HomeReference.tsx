@@ -29,7 +29,8 @@ import {
 } from "@/lib/booking-handoff";
 import { PUBLIC_PATHS, productPath } from "@/lib/public-routes";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
-import { DatePicker, clinicTodayYmd } from "@/components/ui/CalendarPicker";
+import { DatePicker } from "@/components/ui/CalendarPicker";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 const productOrder = {
   AROSHA_BODY: [
@@ -537,6 +538,7 @@ export function HomeReference({
                 <label>
                   {t("booking.fields.date")}
                   <DatePicker
+                    locale={locale}
                     name="date"
                     min={clinicTodayYmd()}
                     disableClosedDays
