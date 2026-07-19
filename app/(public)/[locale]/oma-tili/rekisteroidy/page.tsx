@@ -1,4 +1,5 @@
 import { AuthCard, AuthField, authButton } from "@/components/account/AuthCard";
+import { AuthPasswordField } from "@/components/account/AuthPasswordField";
 import { registerClientAction } from "@/lib/client-account-actions";
 import { accountHref } from "@/lib/account-routing";
 import type { Locale } from "@/i18n/routing";
@@ -81,16 +82,16 @@ export default async function Page({
           type="email"
           autoComplete="email"
         />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.password}
           name="password"
-          type="password"
           autoComplete="new-password"
         />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.confirm}
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
         />
         <label className="flex gap-[10px] font-sans text-[13px] leading-relaxed text-body">

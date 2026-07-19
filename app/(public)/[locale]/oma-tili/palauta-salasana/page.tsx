@@ -1,4 +1,5 @@
-import { AuthCard, AuthField, authButton } from "@/components/account/AuthCard";
+import { AuthCard, authButton } from "@/components/account/AuthCard";
+import { AuthPasswordField } from "@/components/account/AuthPasswordField";
 import { resetClientPasswordAction } from "@/lib/client-account-actions";
 import type { Locale } from "@/i18n/routing";
 const copy = {
@@ -45,16 +46,16 @@ export default async function Page({
         <form action={resetClientPasswordAction} className="grid gap-[16px]">
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="token" value={q.token} />
-          <AuthField
+          <AuthPasswordField
+            locale={locale}
             label={t.password}
             name="password"
-            type="password"
             autoComplete="new-password"
           />
-          <AuthField
+          <AuthPasswordField
+            locale={locale}
             label={t.confirm}
             name="confirmPassword"
-            type="password"
             autoComplete="new-password"
           />
           <button className={authButton}>{t.submit}</button>

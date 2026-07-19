@@ -21,6 +21,7 @@ import { normalizeInternationalPhone } from "@/lib/phone";
 import { accountHref } from "@/lib/account-routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { sendEmail } from "@/lib/notifications";
+import { renderAccountActionEmail } from "@/lib/email";
 import type { Locale } from "@/i18n/routing";
 
 function text(formData: FormData, key: string) {
@@ -40,27 +41,6 @@ function accountUrl(
     locale,
   );
 }
-
-const mail = {
-  fi: {
-    verifySubject: "Vahvista Mone Beauty -tilisi",
-    verify: "Vahvista sähköpostiosoitteesi avaamalla tämä linkki:",
-    resetSubject: "Palauta Mone Beauty -salasanasi",
-    reset: "Aseta uusi salasana avaamalla tämä linkki:",
-  },
-  en: {
-    verifySubject: "Verify your Mone Beauty account",
-    verify: "Verify your email address by opening this link:",
-    resetSubject: "Reset your Mone Beauty password",
-    reset: "Set a new password by opening this link:",
-  },
-  ru: {
-    verifySubject: "Подтвердите аккаунт Mone Beauty",
-    verify: "Подтвердите адрес электронной почты по ссылке:",
-    resetSubject: "Сброс пароля Mone Beauty",
-    reset: "Задайте новый пароль по ссылке:",
-  },
-} as const;
 
 export async function registerClientAction(formData: FormData) {
   const locale = localeFrom(formData);
@@ -131,10 +111,15 @@ export async function registerClientAction(formData: FormData) {
     ttlMs: 24 * 60 * 60 * 1000,
   });
   const verifyUrl = `${accountUrl(locale, "verify")}?token=${encodeURIComponent(verify)}${claim ? `&claim=${encodeURIComponent(claim)}` : ""}`;
+  const verificationEmail = renderAccountActionEmail({
+    locale,
+    kind: "verification",
+    href: verifyUrl,
+    name: fullName,
+  });
   await sendEmail({
     to: email,
-    subject: mail[locale].verifySubject,
-    text: `${mail[locale].verify}\n\n${verifyUrl}`,
+    ...verificationEmail,
     idempotencyKey: `client-verify:${user.id}`,
   });
   await audit({
@@ -268,10 +253,15 @@ export async function requestClientPasswordResetAction(formData: FormData) {
       ttlMs: 60 * 60 * 1000,
     });
     const url = `${accountUrl(locale, "reset")}?token=${encodeURIComponent(token)}`;
+    const passwordResetEmail = renderAccountActionEmail({
+      locale,
+      kind: "password-reset",
+      href: url,
+      name: user.name,
+    });
     await sendEmail({
       to: email,
-      subject: mail[locale].resetSubject,
-      text: `${mail[locale].reset}\n\n${url}`,
+      ...passwordResetEmail,
       idempotencyKey: `client-reset:${user.id}:${Date.now()}`,
     });
     await audit({

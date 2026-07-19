@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   renderCustomerAppointmentEmail,
   renderCustomerOrderEmail,
+  renderAccountActionEmail,
   renderStaffAppointmentEmail,
   renderStaffOrderEmail,
   type AppointmentEmailData,
@@ -90,6 +91,41 @@ test("shared shell has an absolute logo, responsive 600px structure, contact foo
   assert.match(message.text, /Mone Beauty Clinic/);
   assert.match(message.text, /Solvikinkatu 5/);
   assert.match(message.text, /https:\/\/clinic\.example\/en\/ajanvaraus/);
+});
+
+test("account verification and password reset use the branded localized email shell", () => {
+  const paths: Record<Locale, string> = {
+    fi: "/oma-tili/vahvista",
+    en: "/en/oma-tili/vahvista",
+    ru: "/ru/oma-tili/vahvista",
+  };
+  for (const locale of ["fi", "en", "ru"] as const) {
+    const href = `https://clinic.example${paths[locale]}?token=secret-token`;
+    const verification = renderAccountActionEmail({
+      locale,
+      kind: "verification",
+      href,
+      name: "Ada <Client>",
+    });
+    const reset = renderAccountActionEmail({
+      locale,
+      kind: "password-reset",
+      href: href.replace("vahvista", "palauta-salasana"),
+      name: "Ada <Client>",
+    });
+
+    for (const message of [verification, reset]) {
+      assert.match(message.html, /<!doctype html>/i);
+      assert.match(message.html, /https:\/\/clinic\.example\/logo\.svg/);
+      assert.match(message.html, /background:#97785A/);
+      assert.match(message.html, /Solvikinkatu 5/);
+      assert.match(message.html, /Ada &lt;Client&gt;/);
+      assert.doesNotMatch(message.html, /Ada <Client>/);
+      assert.match(message.text, /Ada <Client>/);
+      assert.match(message.text, /secret-token/);
+      assert.ok(message.html.length > message.text.length);
+    }
+  }
 });
 
 test("all customer appointment messages are localized and use Helsinki time", () => {

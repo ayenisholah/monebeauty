@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthCard, AuthField, authButton } from "@/components/account/AuthCard";
+import { AuthPasswordField } from "@/components/account/AuthPasswordField";
 import { currentUser } from "@/lib/auth";
 import { clientLoginAction } from "@/lib/client-account-actions";
 import { accountHref } from "@/lib/account-routing";
@@ -76,10 +77,10 @@ export default async function Page({
           type="email"
           autoComplete="username"
         />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.password}
           name="password"
-          type="password"
           autoComplete="current-password"
         />
         <button className={authButton}>{t.submit}</button>

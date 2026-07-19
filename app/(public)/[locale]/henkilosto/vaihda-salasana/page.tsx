@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { AuthCard, AuthField, authButton } from "@/components/account/AuthCard";
+import { AuthCard, authButton } from "@/components/account/AuthCard";
+import { AuthPasswordField } from "@/components/account/AuthPasswordField";
 import { currentUser } from "@/lib/auth";
 import { changeStaffPasswordAction } from "@/lib/staff-account-actions";
 import { staffHref } from "@/lib/account-routing";
@@ -63,22 +64,22 @@ export default async function StaffPasswordPage({
     >
       <form action={changeStaffPasswordAction} className="grid gap-[16px]">
         <input type="hidden" name="locale" value={locale} />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.current}
           name="currentPassword"
-          type="password"
           autoComplete="current-password"
         />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.password}
           name="password"
-          type="password"
           autoComplete="new-password"
         />
-        <AuthField
+        <AuthPasswordField
+          locale={locale}
           label={t.confirm}
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
         />
         <button className={authButton}>{t.submit}</button>

@@ -14,6 +14,10 @@ const passwordField = readFileSync(
   "components/admin/AdminPasswordField.tsx",
   "utf8",
 );
+const authPasswordField = readFileSync(
+  "components/account/AuthPasswordField.tsx",
+  "utf8",
+);
 const deleteControl = readFileSync(
   "components/admin/DeleteStaffAccount.tsx",
   "utf8",
@@ -98,6 +102,12 @@ test("client accounts are verified and guest appointments use single-use claims"
   assert.match(clientActions, /CLAIM_APPOINTMENT/);
   assert.match(booking, /accountClient/);
   assert.match(booking, /appointment-claim/);
+  assert.match(authPasswordField, /visible \? "text" : "password"/);
+  assert.match(authPasswordField, /<EyeSlash/);
+  assert.match(authPasswordField, /Näytä salasana/);
+  assert.match(clientActions, /renderAccountActionEmail/);
+  assert.match(clientActions, /\.\.\.verificationEmail/);
+  assert.match(clientActions, /\.\.\.passwordResetEmail/);
   assert.match(
     migration,
     /AppointmentChangeRequest_one_pending_per_appointment/,

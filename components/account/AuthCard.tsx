@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-export const authInput =
-  "mt-[6px] min-h-[48px] w-full rounded-[4px] border border-line-btn bg-page px-[13px] font-sans text-[16px] text-ink outline-none focus:border-accent";
+export const authInputBase =
+  "min-h-[48px] w-full rounded-[4px] border border-line-btn bg-page px-[13px] font-sans text-[16px] text-ink outline-none focus:border-accent";
+export const authInput = `mt-[6px] ${authInputBase}`;
 
 export const authButton =
   "min-h-[48px] w-full rounded-[4px] bg-accent px-[20px] font-sans text-[13px] font-medium tracking-[.12em] text-page uppercase hover:brightness-95";
