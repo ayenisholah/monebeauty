@@ -4,9 +4,10 @@ import { normalizeQty } from "@/lib/cart";
 import { routing, type Locale } from "@/i18n/routing";
 import { normalizeInternationalPhone } from "@/lib/phone";
 import { localizedPath, siteUrl } from "@/lib/seo";
-import { orderPath, PUBLIC_PATHS } from "@/lib/public-routes";
+import { orderPath } from "@/lib/public-routes";
 import {
   eurosToMinor,
+  createCheckoutCancelToken,
   minorToEuros,
   stripeClient,
   stripeShippingRateId,
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
 
   let orderId: string | undefined;
   try {
+    const cancellation = createCheckoutCancelToken();
     const existing = await prisma.client.findFirst({ where: { email } });
     const client = existing
       ? await prisma.client.update({
@@ -159,6 +161,7 @@ export async function POST(req: NextRequest) {
             idempotencyKey: `checkout:${crypto.randomUUID()}`,
             amount: minorToEuros(subtotalMinor),
             currency: "EUR",
+            checkoutCancelTokenHash: cancellation.hash,
           },
         },
       },
@@ -167,7 +170,8 @@ export async function POST(req: NextRequest) {
     orderId = order.id;
     const attempt = order.payments[0];
     const successUrl = `${siteUrl()}${localizedPath(orderPath(order.id), locale)}?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${siteUrl()}${localizedPath(PUBLIC_PATHS.checkout, locale)}?payment=cancelled`;
+    const cancelUrl = new URL("/api/checkout/cancel", siteUrl());
+    cancelUrl.searchParams.set("token", cancellation.token);
     const metadata = {
       source: "website",
       orderId: order.id,
@@ -182,7 +186,7 @@ export async function POST(req: NextRequest) {
         customer_email: email,
         line_items: lineItems,
         success_url: successUrl,
-        cancel_url: cancelUrl,
+        cancel_url: cancelUrl.toString(),
         metadata,
         payment_intent_data: { metadata },
         ...(fulfillmentMethod === "SHIPPING"
@@ -201,7 +205,6 @@ export async function POST(req: NextRequest) {
       prisma.paymentAttempt.update({
         where: { id: attempt.id },
         data: {
-          status: "PROCESSING",
           stripeCheckoutSessionId: session.id,
           amount: minorToEuros(session.amount_total),
           expiresAt: new Date(session.expires_at * 1000),
@@ -210,7 +213,6 @@ export async function POST(req: NextRequest) {
       prisma.order.update({
         where: { id: order.id },
         data: {
-          paymentStatus: "PROCESSING",
           total: minorToEuros(session.amount_total),
           shippingAmount: minorToEuros(
             session.total_details?.amount_shipping ?? 0,

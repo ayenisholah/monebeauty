@@ -310,12 +310,14 @@ model PaymentAttempt {
   idempotencyKey          String        @unique
   stripeCheckoutSessionId String?       @unique
   stripePaymentIntentId   String?       @unique
+  checkoutCancelTokenHash String?       @unique
   amount                  Decimal
   amountRefunded          Decimal       @default(0)
   currency                String        @default("EUR")
   expiresAt               DateTime?
   paidAt                  DateTime?
   failedAt                DateTime?
+  cancelRequestedAt       DateTime?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
   order                   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -817,6 +819,7 @@ enum PaymentStatus {
   PARTIALLY_REFUNDED
   REFUNDED
   FAILED
+  CANCELLED
   EXPIRED
 }
 

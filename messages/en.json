@@ -491,6 +491,8 @@
     },
     "submit": "Continue to secure payment",
     "submitting": "Opening payment...",
+    "cancelled": "Payment was cancelled. Your basket is still available if you want to try again.",
+    "cancelError": "We could not cancel the payment session safely. Please try again or contact the clinic.",
     "errors": {
       "product_unavailable": "One or more products are no longer available online.",
       "currency_unavailable": "This basket cannot be charged in EUR.",
@@ -516,6 +518,7 @@
       "PARTIALLY_REFUNDED": "Partially refunded",
       "REFUNDED": "Refunded",
       "FAILED": "Payment failed",
+      "CANCELLED": "Payment cancelled",
       "EXPIRED": "Payment expired"
     },
     "metaTitle": "Order received",
@@ -770,6 +773,7 @@
       "PARTIALLY_REFUNDED": "Partially refunded",
       "REFUNDED": "Refunded",
       "FAILED": "Failed",
+      "CANCELLED": "Cancelled",
       "EXPIRED": "Expired"
     },
     "orders": "Orders",
@@ -826,6 +830,7 @@
       "READY_FOR_PICKUP": "Ready for pickup",
       "SHIPPED": "Shipped",
       "PENDING": "Pending",
+      "AWAITING_PAYMENT": "Awaiting payment",
       "PAID": "Paid (legacy)",
       "FULFILLED": "Fulfilled",
       "BOOKED": "Awaiting confirmation",

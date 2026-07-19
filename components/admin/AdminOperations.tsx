@@ -32,6 +32,7 @@ const orderStatuses: OrderStatus[] = [
   "FULFILLED",
   "CANCELLED",
 ];
+const orderFilterStatuses = ["AWAITING_PAYMENT", ...orderStatuses] as const;
 const appointmentStatuses: AppointmentStatus[] = [
   "BOOKED",
   "CONFIRMED",
@@ -117,7 +118,10 @@ function PageTitle({
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
   const active =
-    status === "PENDING" || status === "BOOKED" || status === "RESCHEDULED";
+    status === "PENDING" ||
+    status === "AWAITING_PAYMENT" ||
+    status === "BOOKED" ||
+    status === "RESCHEDULED";
   const cancelled = status === "CANCELLED";
   return (
     <span
@@ -126,6 +130,18 @@ function StatusBadge({ status, label }: { status: string; label: string }) {
       {label}
     </span>
   );
+}
+
+function adminOrderStatus(order: {
+  source: string;
+  status: OrderStatus;
+  paymentStatus: string;
+}) {
+  return order.source === "WEBSITE_STRIPE" &&
+    order.status === "PENDING" &&
+    ["UNPAID", "PROCESSING"].includes(order.paymentStatus)
+    ? "AWAITING_PAYMENT"
+    : order.status;
 }
 
 function Pagination({
@@ -211,10 +227,15 @@ export async function OrdersAdmin({
             title={`${t("orders")} ${reference(order.id)}`}
             description={`${order.client?.fullName ?? order.email} · ${formatDate(order.createdAt, locale)}`}
           />
-          <StatusBadge
-            status={order.status}
-            label={t(`statusLabels.${order.status}`)}
-          />
+          {(() => {
+            const status = adminOrderStatus(order);
+            return (
+              <StatusBadge
+                status={status}
+                label={t(`statusLabels.${status}`)}
+              />
+            );
+          })()}
         </div>
         <div className="mt-[22px] grid gap-[18px] xl:grid-cols-[1.25fr_.75fr]">
           <section className={panel}>
@@ -456,18 +477,25 @@ export async function OrdersAdmin({
   const status = orderStatuses.includes(rawStatus as OrderStatus)
     ? (rawStatus as OrderStatus)
     : undefined;
+  const awaitingPayment = rawStatus === "AWAITING_PAYMENT";
   const page = pageNumber(searchParams);
   const createdAt = operationsDateRange(from, to);
   const where: Prisma.OrderWhereInput = {
-    ...(status
-      ? { status }
-      : rawStatus === "ACTIVE"
-        ? {
-            status: {
-              in: ["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "SHIPPED"],
-            },
-          }
-        : {}),
+    ...(awaitingPayment
+      ? {
+          source: "WEBSITE_STRIPE",
+          status: "PENDING",
+          paymentStatus: { in: ["UNPAID", "PROCESSING"] },
+        }
+      : status
+        ? { status }
+        : rawStatus === "ACTIVE"
+          ? {
+              status: {
+                in: ["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "SHIPPED"],
+              },
+            }
+          : {}),
     ...(createdAt ? { createdAt } : {}),
     ...(q
       ? {
@@ -503,8 +531,14 @@ export async function OrdersAdmin({
       <FilterForm
         locale={locale}
         q={q}
-        status={rawStatus === "ACTIVE" ? "ACTIVE" : (status ?? "")}
-        statuses={orderStatuses}
+        status={
+          awaitingPayment
+            ? "AWAITING_PAYMENT"
+            : rawStatus === "ACTIVE"
+              ? "ACTIVE"
+              : (status ?? "")
+        }
+        statuses={orderFilterStatuses}
         from={from}
         to={to}
         t={t}
@@ -533,10 +567,15 @@ export async function OrdersAdmin({
               <span className="font-sans text-[14px]">
                 {money(order.total, order.currency, locale)}
               </span>
-              <StatusBadge
-                status={order.status}
-                label={t(`statusLabels.${order.status}`)}
-              />
+              {(() => {
+                const status = adminOrderStatus(order);
+                return (
+                  <StatusBadge
+                    status={status}
+                    label={t(`statusLabels.${status}`)}
+                  />
+                );
+              })()}
             </Link>
           ))
         ) : (
@@ -551,7 +590,11 @@ export async function OrdersAdmin({
         pages={Math.ceil(count / 25)}
         params={{
           q,
-          status: rawStatus === "ACTIVE" ? "ACTIVE" : status,
+          status: awaitingPayment
+            ? "AWAITING_PAYMENT"
+            : rawStatus === "ACTIVE"
+              ? "ACTIVE"
+              : status,
           from,
           to,
         }}

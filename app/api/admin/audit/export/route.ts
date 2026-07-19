@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireApiUser, auditForUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { normalizeAuditFilters } from "@/lib/audit-filter";
 
 function csv(value: unknown) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
@@ -9,16 +10,16 @@ function csv(value: unknown) {
 export async function GET(req: NextRequest) {
   const admin = await requireApiUser(["ADMIN"]);
   if (!admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  const staff = req.nextUrl.searchParams.get("staff") ?? "";
-  const action = (req.nextUrl.searchParams.get("action") ?? "").slice(0, 80);
-  const outcome = req.nextUrl.searchParams.get("outcome");
+  const { staff, action, outcome } = normalizeAuditFilters({
+    staff: req.nextUrl.searchParams.get("staff"),
+    action: req.nextUrl.searchParams.get("action"),
+    outcome: req.nextUrl.searchParams.get("outcome"),
+  });
   const rows = await prisma.auditLog.findMany({
     where: {
       ...(staff ? { actorUserId: staff } : {}),
       ...(action ? { action: { contains: action, mode: "insensitive" } } : {}),
-      ...(outcome === "SUCCESS" || outcome === "FAILURE" || outcome === "DENIED"
-        ? { outcome }
-        : {}),
+      ...(outcome ? { outcome } : {}),
     },
     orderBy: { at: "desc" },
     take: 10_000,

@@ -483,6 +483,8 @@
     },
     "submit": "Lähetä tilaus",
     "submitting": "Lähetetään...",
+    "cancelled": "Maksu peruttiin. Ostoskorisi on edelleen tallessa, jos haluat yrittää uudelleen.",
+    "cancelError": "Maksuistuntoa ei voitu perua turvallisesti. Yritä uudelleen tai ota yhteyttä klinikkaan.",
     "errors": {
       "product_unavailable": "Yksi tai useampi tuote ei ole enää saatavilla verkossa.",
       "currency_unavailable": "Tätä ostoskoria ei voida veloittaa euroina.",
@@ -508,6 +510,7 @@
       "PARTIALLY_REFUNDED": "Osittain hyvitetty",
       "REFUNDED": "Hyvitetty",
       "FAILED": "Maksu epäonnistui",
+      "CANCELLED": "Maksu peruttu",
       "EXPIRED": "Maksuaika päättyi"
     },
     "metaTitle": "Tilaus vastaanotettu",
@@ -762,6 +765,7 @@
       "PARTIALLY_REFUNDED": "Osittain hyvitetty",
       "REFUNDED": "Hyvitetty",
       "FAILED": "Epäonnistui",
+      "CANCELLED": "Peruttu",
       "EXPIRED": "Vanhentui"
     },
     "orders": "Tilaukset",
@@ -818,6 +822,7 @@
       "READY_FOR_PICKUP": "Valmis noutoon",
       "SHIPPED": "Lähetetty",
       "PENDING": "Odottaa",
+      "AWAITING_PAYMENT": "Odottaa maksua",
       "PAID": "Maksettu (vanha)",
       "FULFILLED": "Toimitettu",
       "BOOKED": "Odottaa vahvistusta",

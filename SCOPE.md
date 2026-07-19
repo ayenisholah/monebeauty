@@ -4,7 +4,9 @@ Checkout and webhook-authoritative payment state. The online catalog supports ph
 products, balance gift cards, and single-use prepaid treatment vouchers, with free clinic
 pickup or a Stripe-configured Finland shipping rate for physical goods. Payment success,
 refunds, voucher issuance/redemption, fulfilment, and localized customer/staff notifications
-are persisted and audited. Ordinary appointment bookings remain unpaid online and are paid
+are persisted and audited. Returning from an unpaid hosted Checkout expires that session;
+the signed webhook cancels the order, while admin views expose an Awaiting payment state and
+filter for open website orders. Ordinary appointment bookings remain unpaid online and are paid
 at the clinic by credit card; the system never sends a Stripe invoice after an appointment.
 
 Account portals and read-only staff access (owner-approved, 2026-07-19): clients may create
@@ -12,8 +14,11 @@ verified accounts without being required to sign in before booking. `/oma-tili` 
 authenticated client's past and upcoming procedures and submits cancellation/reschedule
 requests for admin approval. Guest appointments can be claimed only through a single-use
 link sent to the booking email. Admin and staff use separate login surfaces. Admins create
-staff credentials, choose a temporary password, and manage linked employee accounts; staff
-must replace that password on first login and receive no confirmation email. Staff see only
+staff credentials and the matching private calendar employee in one step, choose a non-empty
+temporary password, and manage every staff account. Admins may reset passwords, revoke
+sessions or access, reactivate accounts, and delete credentials while retaining calendar and
+appointment history; staff must replace the temporary password on first login and receive no
+confirmation email. Staff see only
 their own calendar column and clinical essentials, cannot change clinic data, and sensitive
 access/security events are recorded in an immutable admin-visible audit log.
 

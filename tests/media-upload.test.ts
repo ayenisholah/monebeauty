@@ -88,4 +88,8 @@ test("committed environment templates contain placeholders, never credentials", 
   assert.match(example, /CLOUDINARY_CLOUD_NAME=""/);
   assert.match(example, /CLOUDINARY_API_KEY=""/);
   assert.match(example, /CLOUDINARY_API_SECRET=""/);
+  assert.match(example, /CLOUDINARY_URL=""/);
+  const workflow = readFileSync(".github/workflows/deploy.yml", "utf8");
+  assert.match(workflow, /CLOUDINARY_URL: \$\{\{ secrets\.CLOUDINARY_URL \}\}/);
+  assert.match(workflow, /printf 'CLOUDINARY_URL=%s\\n' "\$CLOUDINARY_URL"/);
 });

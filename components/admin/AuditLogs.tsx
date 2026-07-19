@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
 import { adminHref } from "@/lib/admin-routing";
 import type { Locale } from "@/i18n/routing";
-import { ThemedSelect } from "@/components/ui/ThemedSelect";
-import type { AuditOutcome, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { AuditLogFilter } from "@/components/admin/AuditLogFilter";
+import { auditFilterQuery, normalizeAuditFilters } from "@/lib/audit-filter";
 
 function one(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -16,7 +17,8 @@ const copy = {
     allStaff: "Koko henkilöstö",
     action: "Toiminto",
     outcomes: "Kaikki tulokset",
-    filter: "Suodata",
+    filtering: "Suodatetaan…",
+    automatic: "Suodattimet päivittyvät automaattisesti.",
     time: "Aika",
     actor: "Tekijä",
     outcome: "Tulos",
@@ -33,7 +35,8 @@ const copy = {
     allStaff: "All staff",
     action: "Action",
     outcomes: "All outcomes",
-    filter: "Filter",
+    filtering: "Filtering…",
+    automatic: "Filters update automatically.",
     time: "Time",
     actor: "Actor",
     outcome: "Outcome",
@@ -50,7 +53,8 @@ const copy = {
     allStaff: "Все сотрудники",
     action: "Действие",
     outcomes: "Все результаты",
-    filter: "Фильтр",
+    filtering: "Фильтрация…",
+    automatic: "Фильтры обновляются автоматически.",
     time: "Время",
     actor: "Пользователь",
     outcome: "Результат",
@@ -70,21 +74,20 @@ export async function AuditLogs({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const t = copy[locale];
-  const staffId = one(searchParams.staff) ?? "";
-  const action = (one(searchParams.action) ?? "").slice(0, 80);
-  const outcome = one(searchParams.outcome);
+  const filters = normalizeAuditFilters({
+    staff: one(searchParams.staff),
+    action: one(searchParams.action),
+    outcome: one(searchParams.outcome),
+  });
+  const { staff: staffId, action, outcome } = filters;
   const page = Math.max(1, Number(one(searchParams.page)) || 1);
   const take = 50;
-  const normalizedOutcome: AuditOutcome | undefined =
-    outcome === "SUCCESS" || outcome === "FAILURE" || outcome === "DENIED"
-      ? outcome
-      : undefined;
   const where: Prisma.AuditLogWhereInput = {
     ...(staffId ? { actorUserId: staffId } : {}),
     ...(action
       ? { action: { contains: action, mode: "insensitive" as const } }
       : {}),
-    ...(normalizedOutcome ? { outcome: normalizedOutcome } : {}),
+    ...(outcome ? { outcome } : {}),
   };
   const [rows, count, staff] = await Promise.all([
     prisma.auditLog.findMany({
@@ -102,58 +105,30 @@ export async function AuditLogs({
     }),
   ]);
   const base = adminHref(locale, "audit");
-  const params = new URLSearchParams();
-  if (staffId) params.set("staff", staffId);
-  if (action) params.set("action", action);
-  if (outcome) params.set("outcome", outcome);
   return (
     <div>
       <h1 className="font-display text-[clamp(34px,5vw,54px)] font-medium">
         {t.title}
       </h1>
       <p className="mt-[10px] font-sans text-[14px] text-body">{t.intro}</p>
-      <form className="mt-[20px] grid gap-[10px] rounded-[8px] border border-line-card bg-card p-[14px] md:grid-cols-4">
-        <ThemedSelect
-          name="staff"
-          defaultValue={staffId}
-          placeholder={t.allStaff}
-          options={[
-            { value: "", label: t.allStaff },
-            ...staff.map((item) => ({
-              value: item.id,
-              label: item.name ?? item.email,
-            })),
-          ]}
-        />
-        <input
-          name="action"
-          defaultValue={action}
-          placeholder={t.action}
-          className="min-h-[44px] rounded border border-line-btn bg-page px-3"
-        />
-        <ThemedSelect
-          name="outcome"
-          defaultValue={outcome ?? ""}
-          placeholder={t.outcomes}
-          options={[
-            { value: "", label: t.outcomes },
-            { value: "SUCCESS", label: "SUCCESS" },
-            { value: "FAILURE", label: "FAILURE" },
-            { value: "DENIED", label: "DENIED" },
-          ]}
-        />
-        <div className="flex gap-2">
-          <button className="min-h-[44px] flex-1 rounded bg-accent px-3 text-page">
-            {t.filter}
-          </button>
-          <a
-            className="inline-flex min-h-[44px] items-center rounded border border-line-btn px-3"
-            href={`/api/admin/audit/export?${params}`}
-          >
-            CSV
-          </a>
-        </div>
-      </form>
+      <AuditLogFilter
+        key={`${filters.staff}:${filters.action}:${filters.outcome}`}
+        initial={filters}
+        staffOptions={[
+          { value: "", label: t.allStaff },
+          ...staff.map((item) => ({
+            value: item.id,
+            label: item.name ?? item.email,
+          })),
+        ]}
+        labels={{
+          allStaff: t.allStaff,
+          action: t.action,
+          outcomes: t.outcomes,
+          filtering: t.filtering,
+          automatic: t.automatic,
+        }}
+      />
       <div className="mt-[16px] overflow-x-auto rounded-[8px] border border-line-card bg-card">
         <table className="w-full min-w-[820px] text-left font-sans text-[13px]">
           <thead className="bg-btn-fill text-muted">
@@ -202,12 +177,16 @@ export async function AuditLogs({
         </span>
         <div className="flex gap-2">
           {page > 1 ? (
-            <a href={`${base}?${params}&page=${page - 1}`}>{t.previous}</a>
+            <a href={`${base}?${auditFilterQuery(filters, page - 1)}`}>
+              {t.previous}
+            </a>
           ) : (
             <span />
           )}
           {page * take < count ? (
-            <a href={`${base}?${params}&page=${page + 1}`}>{t.next}</a>
+            <a href={`${base}?${auditFilterQuery(filters, page + 1)}`}>
+              {t.next}
+            </a>
           ) : null}
         </div>
       </div>

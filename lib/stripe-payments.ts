@@ -99,6 +99,7 @@ export async function reconcileCheckoutSession(
         status: "PAID",
         stripePaymentIntentId: paymentIntentId,
         paidAt: attempt.paidAt ?? now,
+        cancelRequestedAt: null,
       },
     });
     if (!claimed.count) return;
@@ -183,23 +184,27 @@ export async function markCheckoutSessionEnded(
   if (["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(attempt.status)) {
     return attempt.order;
   }
+  const nextStatus =
+    status === "EXPIRED" && attempt.cancelRequestedAt ? "CANCELLED" : status;
   const now = new Date();
   const changed = await prisma.$transaction(async (tx) => {
     const claim = await tx.paymentAttempt.updateMany({
       where: { id: attempt.id, status: { in: ["UNPAID", "PROCESSING"] } },
-      data: { status, failedAt: now },
+      data: { status: nextStatus, failedAt: now },
     });
     if (!claim.count) return false;
     await tx.order.update({
       where: { id: attempt.orderId },
       data: {
-        paymentStatus: status,
+        paymentStatus: nextStatus,
         status: "CANCELLED",
         cancelledAt: now,
         cancellationReason:
-          status === "EXPIRED"
-            ? "stripe_checkout_expired"
-            : "stripe_payment_failed",
+          nextStatus === "CANCELLED"
+            ? "customer_cancelled_stripe_checkout"
+            : nextStatus === "EXPIRED"
+              ? "stripe_checkout_expired"
+              : "stripe_payment_failed",
       },
     });
     return true;
@@ -208,7 +213,7 @@ export async function markCheckoutSessionEnded(
     where: { id: attempt.orderId },
     include: orderNotificationInclude,
   });
-  if (order && changed && status === "FAILED") {
+  if (order && changed && nextStatus === "FAILED") {
     await notifyOrderPaymentUpdate(
       order,
       order.locale as Locale,

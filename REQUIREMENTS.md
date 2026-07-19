@@ -9,6 +9,9 @@ vouchers may be purchased online. Physical orders offer free clinic pickup or on
 Dashboard-managed Finland shipping rate; digital-only orders require neither. Paid-order,
 fulfilment, voucher, refund, and localized customer/staff notifications are durable and
 audited. Stripe events that are not tied to a known Mone Beauty website order are ignored.
+Stripe's Checkout return link securely expires the open Session, and the resulting signed
+expiry webhook is authoritative for customer cancellation. Admin order lists/details label
+open unpaid website orders Awaiting payment and support filtering by that derived state.
 
 Appointment booking remains Service -> Time -> You and never takes online payment. Clients
 pay for in-person appointments at the clinic by credit card, and no Stripe invoice or
@@ -24,10 +27,15 @@ shows only that client's past/upcoming procedures and submits cancellation/resch
 requests; requests never change an appointment until an admin approves them after repeating
 all employee, room, device, availability, and overlap checks.
 
-Admin, staff, and client login surfaces are separate. Admins create staff accounts linked
-one-to-one with existing employees, choose temporary passwords, disable/reactivate accounts,
-reset passwords, and revoke sessions. Staff receive no account confirmation email and must
-replace the temporary password at first login. Staff see only their own calendar column and
+Admin, staff, and client login surfaces are separate. Creating a staff account automatically
+creates and links its one-to-one employee calendar profile; no employee selector is exposed in
+the account form. Admin-created and reset temporary passwords must be non-empty and at most
+128 characters, while the required first-login replacement retains the normal 12-character
+minimum. Admins can view every staff account, reset passwords, revoke sessions, revoke or
+restore access, inspect audit history, and permanently delete credentials after confirming the
+staff email. Credential deletion retains the employee calendar profile, appointments, and
+audit records. Staff receive no account confirmation email and must replace the temporary
+password at first login. Staff see only their own calendar column and
 may reveal their own appointment's contact details, booking notes, and contraindication
 warning, but cannot mutate schedules, appointments, resources, availability, or clinic data.
 Only password changes and logout remain available to staff.

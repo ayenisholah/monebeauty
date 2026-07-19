@@ -63,6 +63,19 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /appointment\.room\?\.name/);
 });
 
+test("calendar view persists independently for admin and staff", () => {
+  assert.match(calendar, /mone-calendar-view:admin/);
+  assert.match(calendar, /mone-calendar-view:staff/);
+  assert.match(calendar, /localStorage\.getItem\(viewStorageKey\)/);
+  assert.match(calendar, /localStorage\.setItem\(viewStorageKey, next\)/);
+  assert.match(
+    calendar,
+    /value === "day" \|\| value === "week" \|\| value === "month"/,
+  );
+  assert.match(calendar, /if \(!viewReady\) return/);
+  assert.match(calendar, /changeView\("day"\)/);
+});
+
 test("calendar primary actions keep a contrasting accent treatment", () => {
   const primaryButton = calendar.match(
     /const primaryButtonCls = cn\(([\s\S]*?)\);/,

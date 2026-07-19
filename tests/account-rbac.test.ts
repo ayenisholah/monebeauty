@@ -1,10 +1,23 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { temporaryPasswordError } from "../lib/password-policy";
 
 const schema = readFileSync("prisma/schema.prisma", "utf8");
 const auth = readFileSync("lib/auth.ts", "utf8");
 const staffActions = readFileSync("lib/staff-account-actions.ts", "utf8");
+const staffAccounts = readFileSync(
+  "components/admin/StaffAccounts.tsx",
+  "utf8",
+);
+const passwordField = readFileSync(
+  "components/admin/AdminPasswordField.tsx",
+  "utf8",
+);
+const deleteControl = readFileSync(
+  "components/admin/DeleteStaffAccount.tsx",
+  "utf8",
+);
 const clientActions = readFileSync("lib/client-account-actions.ts", "utf8");
 const booking = readFileSync("app/api/booking/route.ts", "utf8");
 const staffDetails = readFileSync(
@@ -34,6 +47,41 @@ test("staff credentials are admin-created and force a first-login reset without 
   assert.match(staffActions, /changeStaffPasswordAction/);
   assert.match(staffActions, /session\.deleteMany/);
   assert.doesNotMatch(staffActions, /sendEmail/);
+});
+
+test("staff creation owns its calendar profile and temporary password policy", () => {
+  assert.equal(temporaryPasswordError(""), "password_required");
+  assert.equal(temporaryPasswordError("x"), null);
+  assert.equal(temporaryPasswordError("x".repeat(128)), null);
+  assert.equal(temporaryPasswordError("x".repeat(129)), "password_too_long");
+  assert.match(staffActions, /prisma\.\$transaction/);
+  assert.match(staffActions, /tx\.practitioner\.findMany/);
+  assert.match(staffActions, /tx\.practitioner\.create/);
+  assert.match(
+    staffActions,
+    /staff: \{ create: \{ practitionerId, daysOff: \[\] \} \}/,
+  );
+  assert.doesNotMatch(staffAccounts, /Calendar employee|name="practitionerId"/);
+  assert.doesNotMatch(staffAccounts, /minLength=\{12\}/);
+});
+
+test("staff account controls are complete, visible, and admin-only", () => {
+  assert.match(staffAccounts, /All staff accounts/);
+  assert.match(staffAccounts, /resetStaffPasswordAction/);
+  assert.match(staffAccounts, /revokeStaffSessionsAction/);
+  assert.match(staffAccounts, /setStaffStatusAction/);
+  assert.match(staffAccounts, /<DeleteStaffAccount/);
+  assert.match(passwordField, /visible \? "text" : "password"/);
+  assert.match(passwordField, /<EyeSlash/);
+  assert.match(passwordField, /aria-pressed=\{visible\}/);
+  assert.match(deleteControl, /confirmation\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(staffActions, /deleteStaffAccountAction/);
+  assert.match(
+    staffActions,
+    /confirmationEmail !== normalizeEmail\(target\.email\)/,
+  );
+  assert.match(staffActions, /where: \{ id, role: "STAFF" \}/);
+  assert.match(staffActions, /retainedCalendarHistory: true/);
 });
 
 test("staff data is read-only and sensitive appointment access is audited", () => {

@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth";
 import { staffHref } from "@/lib/account-routing";
 import type { Locale } from "@/i18n/routing";
+import { temporaryPasswordError } from "@/lib/password-policy";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -139,41 +140,61 @@ export async function createStaffAccountAction(formData: FormData) {
   const returnTo = adminReturn(formData);
   const email = normalizeEmail(text(formData, "email"));
   const name = text(formData, "name");
-  const practitionerId = text(formData, "practitionerId");
   const password = text(formData, "temporaryPassword");
   const locale = localeFrom(formData);
-  if (
-    !email.includes("@") ||
-    !name ||
-    !practitionerId ||
-    passwordError(password)
-  )
+  if (!email.includes("@") || !name || temporaryPasswordError(password))
     redirect(`${returnTo}?error=validation`);
-  const [existing, practitioner] = await Promise.all([
-    prisma.user.findUnique({ where: { email } }),
-    prisma.practitioner.findUnique({
-      where: { id: practitionerId },
-      include: { staff: true },
-    }),
-  ]);
-  if (existing || !practitioner || practitioner.staff)
+  if (await prisma.user.findUnique({ where: { email }, select: { id: true } }))
     redirect(`${returnTo}?error=duplicate`);
 
-  const created = await prisma.user.create({
-    data: {
-      email,
-      name,
-      locale,
-      role: "STAFF",
-      status: "ACTIVE",
-      emailVerifiedAt: new Date(),
-      mustChangePassword: true,
-      passwordHash: await hashPassword(password),
-      staff: { create: { practitionerId, daysOff: [] } },
-    },
+  const passwordHash = await hashPassword(password);
+  const created = await prisma.$transaction(async (tx) => {
+    const matches = await tx.practitioner.findMany({
+      where: {
+        name: { equals: name, mode: "insensitive" },
+        staff: null,
+      },
+      orderBy: [{ active: "desc" }, { displayOrder: "asc" }],
+      take: 2,
+    });
+    let practitionerId: string;
+    if (matches.length === 1) {
+      const practitioner = await tx.practitioner.update({
+        where: { id: matches[0].id },
+        data: { active: true },
+      });
+      practitionerId = practitioner.id;
+    } else {
+      const order = await tx.practitioner.aggregate({
+        _max: { displayOrder: true },
+      });
+      const practitioner = await tx.practitioner.create({
+        data: {
+          name,
+          role: "Specialist",
+          active: true,
+          displayOrder: (order._max.displayOrder ?? -1) + 1,
+        },
+      });
+      practitionerId = practitioner.id;
+    }
+    const user = await tx.user.create({
+      data: {
+        email,
+        name,
+        locale,
+        role: "STAFF",
+        status: "ACTIVE",
+        emailVerifiedAt: new Date(),
+        mustChangePassword: true,
+        passwordHash,
+        staff: { create: { practitionerId, daysOff: [] } },
+      },
+    });
+    return { user, practitionerId };
   });
-  await auditForUser(admin, "staff_account_created", "User", created.id, {
-    metadata: { practitionerId },
+  await auditForUser(admin, "staff_account_created", "User", created.user.id, {
+    metadata: { practitionerId: created.practitionerId },
   });
   revalidatePath(returnTo);
   redirect(`${returnTo}?saved=1`);
@@ -184,19 +205,26 @@ export async function resetStaffPasswordAction(formData: FormData) {
   const returnTo = adminReturn(formData);
   const id = text(formData, "id");
   const password = text(formData, "temporaryPassword");
-  if (!id || passwordError(password)) redirect(`${returnTo}?error=validation`);
-  const changed = await prisma.user.updateMany({
-    where: { id, role: "STAFF" },
-    data: {
-      passwordHash: await hashPassword(password),
-      mustChangePassword: true,
-      passwordChangedAt: new Date(),
-    },
+  if (!id || temporaryPasswordError(password))
+    redirect(`${returnTo}?error=validation`);
+  const passwordHash = await hashPassword(password);
+  const result = await prisma.$transaction(async (tx) => {
+    const changed = await tx.user.updateMany({
+      where: { id, role: "STAFF" },
+      data: {
+        passwordHash,
+        mustChangePassword: true,
+        passwordChangedAt: new Date(),
+      },
+    });
+    const revoked = changed.count
+      ? await tx.session.deleteMany({ where: { userId: id } })
+      : { count: 0 };
+    return { changed: changed.count, revoked: revoked.count };
   });
-  if (!changed.count) redirect(`${returnTo}?error=not_found`);
-  const revoked = await prisma.session.deleteMany({ where: { userId: id } });
+  if (!result.changed) redirect(`${returnTo}?error=not_found`);
   await auditForUser(admin, "staff_password_reset", "User", id, {
-    metadata: { revokedSessions: revoked.count },
+    metadata: { revokedSessions: result.revoked },
   });
   revalidatePath(returnTo);
   redirect(`${returnTo}?saved=1`);
@@ -207,15 +235,18 @@ export async function setStaffStatusAction(formData: FormData) {
   const returnTo = adminReturn(formData);
   const id = text(formData, "id");
   const status = text(formData, "status") === "ACTIVE" ? "ACTIVE" : "DISABLED";
-  const changed = await prisma.user.updateMany({
-    where: { id, role: "STAFF" },
-    data: { status },
+  const result = await prisma.$transaction(async (tx) => {
+    const changed = await tx.user.updateMany({
+      where: { id, role: "STAFF" },
+      data: { status },
+    });
+    const revoked =
+      changed.count && status === "DISABLED"
+        ? await tx.session.deleteMany({ where: { userId: id } })
+        : { count: 0 };
+    return { changed: changed.count, revoked: revoked.count };
   });
-  if (!changed.count) redirect(`${returnTo}?error=not_found`);
-  const revoked =
-    status === "DISABLED"
-      ? await prisma.session.deleteMany({ where: { userId: id } })
-      : { count: 0 };
+  if (!result.changed) redirect(`${returnTo}?error=not_found`);
   await auditForUser(
     admin,
     status === "ACTIVE"
@@ -223,7 +254,7 @@ export async function setStaffStatusAction(formData: FormData) {
       : "staff_account_disabled",
     "User",
     id,
-    { metadata: { revokedSessions: revoked.count } },
+    { metadata: { revokedSessions: result.revoked } },
   );
   revalidatePath(returnTo);
   redirect(`${returnTo}?saved=1`);
@@ -239,5 +270,38 @@ export async function revokeStaffSessionsAction(formData: FormData) {
   await auditForUser(admin, "staff_sessions_revoked", "User", id, {
     metadata: { revokedSessions: revoked.count },
   });
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=1`);
+}
+
+export async function deleteStaffAccountAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const returnTo = adminReturn(formData);
+  const id = text(formData, "id");
+  const confirmationEmail = normalizeEmail(text(formData, "confirmationEmail"));
+  const target = await prisma.user.findFirst({
+    where: { id, role: "STAFF" },
+    include: { staff: { select: { practitionerId: true } } },
+  });
+  if (!target) redirect(`${returnTo}?error=not_found`);
+  if (confirmationEmail !== normalizeEmail(target.email))
+    redirect(`${returnTo}?error=confirmation`);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const revoked = await tx.session.deleteMany({ where: { userId: id } });
+    const deleted = await tx.user.deleteMany({ where: { id, role: "STAFF" } });
+    return { revoked: revoked.count, deleted: deleted.count };
+  });
+  if (!result.deleted) redirect(`${returnTo}?error=not_found`);
+  await auditForUser(admin, "staff_account_deleted", "User", id, {
+    metadata: {
+      targetEmail: target.email,
+      targetName: target.name ?? null,
+      practitionerId: target.staff?.practitionerId ?? null,
+      revokedSessions: result.revoked,
+      retainedCalendarHistory: true,
+    },
+  });
+  revalidatePath(returnTo);
   redirect(`${returnTo}?saved=1`);
 }

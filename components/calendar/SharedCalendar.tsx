@@ -22,6 +22,10 @@ import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { cn } from "@/lib/cn";
 
 type View = "day" | "week" | "month";
+const VIEW_STORAGE_KEYS = {
+  admin: "mone-calendar-view:admin",
+  staff: "mone-calendar-view:staff",
+} as const;
 type Practitioner = {
   id: string;
   name: string;
@@ -210,6 +214,10 @@ function rangeFor(value: string, view: View) {
   return { from, to: new Date(from.getTime() + 42 * 86400000) };
 }
 
+function validView(value: string | null): value is View {
+  return value === "day" || value === "week" || value === "month";
+}
+
 export function SharedCalendar({
   locale,
   setupHref,
@@ -220,6 +228,7 @@ export function SharedCalendar({
   const t = copy[locale];
   const [date, setDate] = useState(today());
   const [view, setView] = useState<View>("day");
+  const [viewReady, setViewReady] = useState(false);
   const [data, setData] = useState<Payload | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,7 +252,24 @@ export function SharedCalendar({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
+  const viewStorageKey = setupHref
+    ? VIEW_STORAGE_KEYS.admin
+    : VIEW_STORAGE_KEYS.staff;
   const range = useMemo(() => rangeFor(date, view), [date, view]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      let stored: string | null = null;
+      try {
+        stored = window.localStorage.getItem(viewStorageKey);
+      } catch {
+        // Storage can be unavailable in hardened/private browser contexts.
+      }
+      setView(validView(stored) ? stored : "day");
+      setViewReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [viewStorageKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -272,9 +298,10 @@ export function SharedCalendar({
   }, [range.from, range.to, t.conflict]);
 
   useEffect(() => {
+    if (!viewReady) return;
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, viewReady]);
 
   const visiblePractitioners =
     data?.practitioners.filter((item) => selected.includes(item.id)) ?? [];
@@ -286,6 +313,15 @@ export function SharedCalendar({
         direction * (view === "day" ? 1 : view === "week" ? 7 : 28),
       ),
     );
+  }
+
+  function changeView(next: View) {
+    setView(next);
+    try {
+      window.localStorage.setItem(viewStorageKey, next);
+    } catch {
+      // The active view still works when persistence is unavailable.
+    }
   }
 
   function openEditor(
@@ -416,7 +452,7 @@ export function SharedCalendar({
             <button
               key={item}
               type="button"
-              onClick={() => setView(item)}
+              onClick={() => changeView(item)}
               className={view === item ? activeButtonCls : buttonCls}
             >
               {t[item]}
@@ -539,7 +575,7 @@ export function SharedCalendar({
               fmtTime={fmtTime}
               onOpenDay={(next) => {
                 setDate(next);
-                setView("day");
+                changeView("day");
               }}
             />
           ) : (

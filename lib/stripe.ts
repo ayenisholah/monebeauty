@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from "node:crypto";
 import Stripe from "stripe";
 
 let client: Stripe | undefined;
@@ -43,4 +44,13 @@ export function minorToEuros(amount: number) {
 
 export function stripeObjectId(value: string | { id: string } | null) {
   return typeof value === "string" ? value : (value?.id ?? null);
+}
+
+export function createCheckoutCancelToken() {
+  const token = randomBytes(32).toString("base64url");
+  return { token, hash: checkoutCancelTokenHash(token) };
+}
+
+export function checkoutCancelTokenHash(token: string) {
+  return createHash("sha256").update(token).digest("hex");
 }

@@ -22,12 +22,23 @@ export async function generateMetadata({
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ payment?: string | string[] }>;
 }) {
   const { locale } = await params;
+  const query = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Checkout");
+  const payment =
+    typeof query.payment === "string" ? query.payment : query.payment?.[0];
+  const notice =
+    payment === "cancelled"
+      ? { text: t("cancelled"), error: false }
+      : payment === "cancel_error"
+        ? { text: t("cancelError"), error: true }
+        : null;
 
   return (
     <section className="bg-page py-[clamp(52px,7vw,104px)]">
@@ -39,6 +50,14 @@ export default async function CheckoutPage({
         <p className="mt-[16px] max-w-[620px] font-sans text-lead font-light text-body">
           {t("intro")}
         </p>
+        {notice ? (
+          <p
+            role={notice.error ? "alert" : "status"}
+            className={`mt-[18px] max-w-[720px] rounded-[4px] border px-[14px] py-[11px] font-sans text-[14px] ${notice.error ? "border-red-300 bg-red-50 text-red-800" : "border-line-btn bg-btn-fill text-ink"}`}
+          >
+            {notice.text}
+          </p>
+        ) : null}
         <div className="mt-[clamp(28px,4vw,48px)]">
           <CheckoutForm />
         </div>

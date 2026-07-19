@@ -7,6 +7,8 @@
   checkout consent.
 - Reconcile payments, delayed methods, expiry, and full/partial refunds through signed,
   idempotent Stripe webhooks and durable Prisma payment/event records.
+- Secure Stripe's return link with a per-attempt hashed cancellation token, explicitly expire
+  abandoned Sessions, and expose a localized Awaiting payment admin badge/filter.
 - Add free clinic pickup or one Dashboard-managed Finland shipping rate, automatic balance
   gift cards and single-use treatment vouchers, admin redemption/refunds, and localized
   payment/fulfilment/refund notifications.
@@ -297,7 +299,10 @@ and `/api/staff/schedule` require staff/admin, and staff users are limited to th
 `Practitioner`. `/admin` includes CRM client search/profile editing, audited
 contraindication access/edits, service/product/pricing/blog management, and editable
 `ContentPage` overrides seeded from generated scraped content. Public pages and catalog
-prefer Prisma edits with generated JSON fallback. **Verify:** role gating enforced;
+prefer Prisma edits with generated JSON fallback. Staff-account creation automatically creates
+and links the employee calendar profile. Admins can list all staff, reveal newly entered
+temporary passwords, reset passwords, revoke sessions or access, reactivate accounts, inspect
+audit history, and delete credentials without deleting clinical/calendar history. **Verify:** role gating enforced;
 medical-field access audited; admin edits appear on site after migration + content sync.
 
 ## Phase 6 — Notifications + reminders ✅ implemented
