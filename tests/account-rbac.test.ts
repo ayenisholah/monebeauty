@@ -18,6 +18,18 @@ const authPasswordField = readFileSync(
   "components/account/AuthPasswordField.tsx",
   "utf8",
 );
+const clientLogin = readFileSync(
+  "app/(public)/[locale]/oma-tili/kirjaudu/page.tsx",
+  "utf8",
+);
+const clientRegistration = readFileSync(
+  "app/(public)/[locale]/oma-tili/rekisteroidy/page.tsx",
+  "utf8",
+);
+const staffLogin = readFileSync(
+  "app/(public)/[locale]/henkilosto/kirjaudu/page.tsx",
+  "utf8",
+);
 const deleteControl = readFileSync(
   "components/admin/DeleteStaffAccount.tsx",
   "utf8",
@@ -30,6 +42,7 @@ const staffDetails = readFileSync(
 );
 const staffSchedule = readFileSync("app/api/staff/schedule/route.ts", "utf8");
 const auditExport = readFileSync("app/api/admin/audit/export/route.ts", "utf8");
+const adminRouter = readFileSync("components/admin/AdminRouter.tsx", "utf8");
 const migration = readFileSync(
   "prisma/migrations/20260719160000_account_portals_staff_rbac/migration.sql",
   "utf8",
@@ -120,4 +133,33 @@ test("audit export is admin-only and audit records carry security context", () =
   assert.match(schema, /userAgent\s+String\?/);
   assert.match(schema, /outcome\s+AuditOutcome/);
   assert.doesNotMatch(auditExport, /delete/);
+});
+
+test("client sessions can reach admin login while staff stay in their portal", () => {
+  assert.match(
+    adminRouter,
+    /if \(user\.role === "STAFF"\)\s+redirect\(localizedPath\(PUBLIC_PATHS\.staff, locale\)\)/,
+  );
+  assert.match(
+    adminRouter,
+    /if \(user\.role !== "ADMIN"\) redirect\(adminHref\(locale, "login"\)\)/,
+  );
+});
+
+test("authentication screens identify their account role", () => {
+  assert.match(clientLogin, /Sign in to your client account/);
+  assert.match(clientLogin, /eyebrow: "Client portal"/);
+  assert.match(clientRegistration, /Create a client account/);
+  assert.match(clientRegistration, /eyebrow: "Client portal"/);
+  assert.match(staffLogin, /Sign in to the staff portal/);
+  assert.match(staffLogin, /eyebrow: "Staff portal"/);
+});
+
+test("admin login uses the accessible password visibility control", () => {
+  assert.match(passwordField, /autoComplete = "new-password"/);
+  assert.match(passwordField, /autoComplete=\{autoComplete\}/);
+  assert.match(adminRouter, /<AdminPasswordField/);
+  assert.match(adminRouter, /autoComplete="current-password"/);
+  assert.match(adminRouter, /showLabel=\{copy\.login\.showPassword\}/);
+  assert.match(adminRouter, /hideLabel=\{copy\.login\.hidePassword\}/);
 });

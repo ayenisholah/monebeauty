@@ -8,7 +8,7 @@ import type { Locale } from "@/i18n/routing";
 
 const copy = {
   fi: {
-    eyebrow: "Henkilöstö",
+    eyebrow: "Henkilöstöportaali",
     title: "Kirjaudu henkilöstöportaaliin",
     intro: "Käytä ylläpitäjän sinulle luomia tunnuksia.",
     email: "Sähköposti",
@@ -17,7 +17,7 @@ const copy = {
     error: "Sähköposti tai salasana on virheellinen.",
   },
   en: {
-    eyebrow: "Staff",
+    eyebrow: "Staff portal",
     title: "Sign in to the staff portal",
     intro: "Use the credentials created for you by the administrator.",
     email: "Email",
@@ -26,7 +26,7 @@ const copy = {
     error: "The email or password is incorrect.",
   },
   ru: {
-    eyebrow: "Персонал",
+    eyebrow: "Портал для сотрудников",
     title: "Вход для сотрудников",
     intro: "Используйте данные, созданные администратором.",
     email: "Эл. почта",

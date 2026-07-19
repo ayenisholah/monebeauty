@@ -639,10 +639,12 @@
       "chat": "Conversations"
     },
     "login": {
-      "eyebrow": "Mone Beauty Clinic",
+      "eyebrow": "Administration",
       "title": "Admin sign in",
       "email": "Email",
       "password": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "submit": "Sign in",
       "invalid": "The email or password is not valid for admin access."
     },

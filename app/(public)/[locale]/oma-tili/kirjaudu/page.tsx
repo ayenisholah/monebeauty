@@ -8,7 +8,8 @@ import type { Locale } from "@/i18n/routing";
 
 const copy = {
   fi: {
-    title: "Kirjaudu omalle tilille",
+    eyebrow: "Asiakasportaali",
+    title: "Kirjaudu asiakastilillesi",
     intro: "Näet tulevat ja aiemmat hoitosi turvallisesti.",
     email: "Sähköposti",
     password: "Salasana",
@@ -19,7 +20,8 @@ const copy = {
     notice: "Tarkista sähköpostisi jatkaaksesi.",
   },
   en: {
-    title: "Sign in to your account",
+    eyebrow: "Client portal",
+    title: "Sign in to your client account",
     intro: "View your upcoming and previous treatments securely.",
     email: "Email",
     password: "Password",
@@ -30,7 +32,8 @@ const copy = {
     notice: "Check your email to continue.",
   },
   ru: {
-    title: "Вход в личный кабинет",
+    eyebrow: "Личный кабинет клиента",
+    title: "Вход в аккаунт клиента",
     intro: "Безопасно просматривайте будущие и прошлые процедуры.",
     email: "Эл. почта",
     password: "Пароль",
@@ -56,7 +59,7 @@ export default async function Page({
   const t = copy[locale] ?? copy.fi;
   return (
     <AuthCard
-      eyebrow="Mone Beauty Clinic"
+      eyebrow={t.eyebrow}
       title={t.title}
       intro={t.intro}
       error={q.error ? t.invalid : q.notice ? t.notice : null}

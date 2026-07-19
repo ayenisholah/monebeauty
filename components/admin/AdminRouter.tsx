@@ -35,6 +35,7 @@ import {
   updateChatAction,
 } from "@/lib/admin-actions";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminPasswordField } from "@/components/admin/AdminPasswordField";
 import { MediaField } from "@/components/admin/MediaField";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { SharedCalendar } from "@/components/calendar/SharedCalendar";
@@ -91,6 +92,8 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
       title: t("login.title"),
       email: t("login.email"),
       password: t("login.password"),
+      showPassword: t("login.showPassword"),
+      hidePassword: t("login.hidePassword"),
       submit: t("login.submit"),
       invalid: t("login.invalid"),
     },
@@ -225,8 +228,9 @@ export async function AdminRouter({
 
   const user = await currentUser();
   if (!user) redirect(adminHref(locale, "login"));
-  if (user.role !== "ADMIN")
+  if (user.role === "STAFF")
     redirect(localizedPath(PUBLIC_PATHS.staff, locale));
+  if (user.role !== "ADMIN") redirect(adminHref(locale, "login"));
 
   const adminModule = moduleFromSegment(first);
   if (!adminModule || adminModule === "login") notFound();
@@ -317,12 +321,12 @@ async function Login({
           />
         </Field>
         <Field label={copy.login.password}>
-          <input
+          <AdminPasswordField
             name="password"
-            type="password"
             autoComplete="current-password"
-            required
             className={inputCls}
+            showLabel={copy.login.showPassword}
+            hideLabel={copy.login.hidePassword}
           />
         </Field>
         <button className={`${primaryButton} mt-[24px] w-full`}>

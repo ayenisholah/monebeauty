@@ -5,6 +5,7 @@ import { accountHref } from "@/lib/account-routing";
 import type { Locale } from "@/i18n/routing";
 const copy = {
   fi: {
+    eyebrow: "Asiakasportaali",
     title: "Luo asiakastili",
     intro: "Vahvistamme sähköpostiosoitteesi ennen ensimmäistä kirjautumista.",
     name: "Nimi",
@@ -19,6 +20,7 @@ const copy = {
     login: "Minulla on jo tili",
   },
   en: {
+    eyebrow: "Client portal",
     title: "Create a client account",
     intro: "We will verify your email before the first sign-in.",
     name: "Full name",
@@ -33,6 +35,7 @@ const copy = {
     login: "I already have an account",
   },
   ru: {
+    eyebrow: "Личный кабинет клиента",
     title: "Создать аккаунт клиента",
     intro: "Перед первым входом мы подтвердим электронную почту.",
     name: "Имя и фамилия",
@@ -60,7 +63,7 @@ export default async function Page({
   const t = copy[locale] ?? copy.fi;
   return (
     <AuthCard
-      eyebrow="Mone Beauty Clinic"
+      eyebrow={t.eyebrow}
       title={t.title}
       intro={t.intro}
       error={q.error ? t.error : null}

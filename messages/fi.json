@@ -631,10 +631,12 @@
       "chat": "Keskustelut"
     },
     "login": {
-      "eyebrow": "Mone Beauty Clinic",
+      "eyebrow": "Hallinta",
       "title": "Kirjaudu hallintaan",
       "email": "Sähköposti",
       "password": "Salasana",
+      "showPassword": "Näytä salasana",
+      "hidePassword": "Piilota salasana",
       "submit": "Kirjaudu",
       "invalid": "Sähköposti tai salasana ei kelpaa hallintakäyttöön."
     },

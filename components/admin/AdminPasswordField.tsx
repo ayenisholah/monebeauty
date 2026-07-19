@@ -8,6 +8,7 @@ export function AdminPasswordField({
   placeholder,
   showLabel,
   hideLabel,
+  autoComplete = "new-password",
   className = "",
   wrapperClassName = "",
 }: {
@@ -15,6 +16,7 @@ export function AdminPasswordField({
   placeholder?: string;
   showLabel: string;
   hideLabel: string;
+  autoComplete?: "current-password" | "new-password";
   className?: string;
   wrapperClassName?: string;
 }) {
@@ -26,7 +28,7 @@ export function AdminPasswordField({
         className={`${className} pr-[46px]`}
         name={name}
         type={visible ? "text" : "password"}
-        autoComplete="new-password"
+        autoComplete={autoComplete}
         maxLength={128}
         placeholder={placeholder}
         required
