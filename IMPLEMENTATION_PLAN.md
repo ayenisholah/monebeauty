@@ -1,8 +1,20 @@
 # Implementation Plan — Mone Beauty
 
+## Account portals, staff RBAC, and audit (owner-approved, 2026-07-19) ✅ implemented
+
+- Add optional verified client accounts under `/oma-tili`, secure guest-appointment claims,
+  isolated past/upcoming procedure history, and admin-reviewed change requests.
+- Add separate staff login, admin-managed temporary credentials, forced first-login password
+  replacement, account disable/reset/session revocation, and no staff confirmation email.
+- Restrict staff to their own read-only calendar column and audited clinical-detail access;
+  enforce admin-only mutations at the server boundary.
+- Add admin staff management and immutable security/access audit views with filters and CSV
+  export; retain audit records until a legally reviewed clinic policy replaces that default.
+
 ## Shared employee calendar (owner-approved, 2026-07-19) ✅ implemented
 
-- Add localized `/admin/kalenteri` navigation and reuse the shared calendar at `/henkilosto`.
+- Add localized `/admin/kalenteri` navigation and reuse the calendar presentation at
+  `/henkilosto` with role-specific data and controls.
 - Replace the synthetic default-provider assignment with a fixed primary employee per
   service plus qualified internal backups; preserve historical relations.
 - Add admin setup for employees, working hours, rooms, physical devices, and service/resource

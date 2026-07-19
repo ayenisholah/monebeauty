@@ -6,6 +6,10 @@ import { notifyAppointmentReceipt } from "@/lib/notifications";
 import { normalizeInternationalPhone } from "@/lib/phone";
 import { routing, type Locale } from "@/i18n/routing";
 import { resolveProcedure } from "@/lib/procedures";
+import { createAccountToken, currentUser } from "@/lib/auth";
+import { sendEmail } from "@/lib/notifications";
+import { accountHref } from "@/lib/account-routing";
+import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -29,7 +33,9 @@ export async function POST(req: NextRequest) {
   const start = String(payload.start ?? "");
   const fullName = String(payload.fullName ?? "").trim();
   const phone = normalizeInternationalPhone(String(payload.phone ?? ""));
-  const email = String(payload.email ?? "").trim();
+  const submittedEmail = String(payload.email ?? "")
+    .trim()
+    .toLowerCase();
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const locale = routing.locales.includes(payload.locale as Locale)
     ? (payload.locale as Locale)
@@ -61,6 +67,12 @@ export async function POST(req: NextRequest) {
   if (!start || Number.isNaN(Date.parse(start))) return bad("invalid_start");
   if (!fullName) return bad("name_required");
   if (!phone) return bad("phone_invalid");
+  const authUser = await currentUser();
+  const accountClient =
+    authUser?.role === "CLIENT"
+      ? await prisma.client.findUnique({ where: { userId: authUser.id } })
+      : null;
+  const email = accountClient ? authUser!.email : submittedEmail;
   if (!EMAIL_RE.test(email)) return bad("email_required");
   if (!consentGdpr) return bad("consent_required");
 
@@ -103,8 +115,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "slot_taken" }, { status: 409 });
     }
 
-    // Match an existing client by email, else create (email is indexed, not unique).
-    const existing = await prisma.client.findFirst({ where: { email } });
+    // Authenticated bookings attach directly. Guest records never auto-claim an account.
+    const existing = accountClient
+      ? accountClient
+      : await prisma.client.findFirst({ where: { email, userId: null } });
     const client = existing
       ? await prisma.client.update({
           where: { id: existing.id },
@@ -152,6 +166,38 @@ export async function POST(req: NextRequest) {
           entityId: appointment.id,
         },
       });
+    }
+
+    if (!accountClient) {
+      try {
+        const claim = await createAccountToken({
+          email,
+          purpose: "CLAIM_APPOINTMENT",
+          appointmentId: appointment.id,
+          ttlMs: 7 * 24 * 60 * 60 * 1000,
+        });
+        const path = accountHref(locale, "claim").replace(
+          /^\/(?:en|ru)(?=\/)/,
+          "",
+        );
+        const claimUrl = `${absoluteLocalizedUrl(siteUrl(), path, locale)}?token=${encodeURIComponent(claim)}`;
+        await sendEmail({
+          to: email,
+          subject: "Mone Beauty · add appointment to your account",
+          text: `Add this appointment to your secure client account:\n\n${claimUrl}`,
+          idempotencyKey: `appointment-claim:${appointment.id}`,
+        });
+      } catch {
+        await prisma.auditLog.create({
+          data: {
+            actor: "system",
+            action: "appointment_claim_link_failed",
+            outcome: "FAILURE",
+            entity: "Appointment",
+            entityId: appointment.id,
+          },
+        });
+      }
     }
 
     return NextResponse.json({

@@ -18,11 +18,13 @@ export function MobileMenu({
   bookOnline,
   openLabel,
   closeLabel,
+  accountLabel,
 }: {
   links: SectionLink[];
   bookOnline: string;
   openLabel: string;
   closeLabel: string;
+  accountLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const previousOverflow = useRef("");
@@ -67,8 +69,15 @@ export function MobileMenu({
               <span className={cormorant.className}>0{index + 1}</span>
             </Link>
           ))}
-          <Link href={PUBLIC_PATHS.booking} className="hr-btn dark" onClick={close}>
+          <Link
+            href={PUBLIC_PATHS.booking}
+            className="hr-btn dark"
+            onClick={close}
+          >
             {bookOnline}
+          </Link>
+          <Link href={PUBLIC_PATHS.account} onClick={close}>
+            {accountLabel}
           </Link>
         </nav>
       ) : null}

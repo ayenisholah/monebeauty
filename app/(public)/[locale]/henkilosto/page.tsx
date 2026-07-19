@@ -3,7 +3,10 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { SharedCalendar } from "@/components/calendar/SharedCalendar";
-import { requireUser } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { staffHref } from "@/lib/account-routing";
+import { staffLogoutAction } from "@/lib/staff-account-actions";
 
 export async function generateMetadata({
   params,
@@ -21,7 +24,10 @@ export default async function StaffPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  await requireUser(["ADMIN", "STAFF"]);
+  const user = await currentUser();
+  const appLocale = locale as "en" | "fi" | "ru";
+  if (!user || user.role !== "STAFF") redirect(staffHref(appLocale, "login"));
+  if (user.mustChangePassword) redirect(staffHref(appLocale, "password"));
   setRequestLocale(locale);
   const t = await getTranslations("Staff");
 
@@ -32,11 +38,23 @@ export default async function StaffPage({
         <h1 className="font-display text-h2 leading-[1.06] font-medium text-ink">
           {t("heading")}
         </h1>
-        <p className="mt-[16px] max-w-[660px] font-sans text-lead font-light text-body">
-          {t("intro")}
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-[16px]">
+          <p className="mt-[16px] max-w-[660px] font-sans text-lead font-light text-body">
+            {t("intro")}
+          </p>
+          <form action={staffLogoutAction}>
+            <input type="hidden" name="locale" value={locale} />
+            <button className="min-h-[44px] rounded-[4px] border border-line-btn px-[16px] font-sans text-[12px] tracking-[.1em] uppercase">
+              {locale === "fi"
+                ? "Kirjaudu ulos"
+                : locale === "ru"
+                  ? "Выйти"
+                  : "Sign out"}
+            </button>
+          </form>
+        </div>
         <div className="mt-[clamp(28px,4vw,48px)]">
-          <SharedCalendar locale={locale as "en" | "fi" | "ru"} />
+          <SharedCalendar locale={appLocale} />
         </div>
       </Container>
     </section>

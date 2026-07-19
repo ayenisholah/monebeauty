@@ -162,12 +162,20 @@ async function main() {
         name: process.env.ADMIN_NAME?.trim() || "Mone Beauty Admin",
         passwordHash: await hashPassword(adminPassword),
         role: "ADMIN",
+        status: "ACTIVE",
+        mustChangePassword: false,
+        emailVerifiedAt: new Date(),
+        passwordChangedAt: new Date(),
       },
       create: {
         email: adminEmail,
         name: process.env.ADMIN_NAME?.trim() || "Mone Beauty Admin",
         passwordHash: await hashPassword(adminPassword),
         role: "ADMIN",
+        status: "ACTIVE",
+        mustChangePassword: false,
+        emailVerifiedAt: new Date(),
+        passwordChangedAt: new Date(),
       },
     });
     console.log(`Seeded admin user ${adminEmail}.`);

@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
-import { requireApiUser } from "@/lib/auth";
+import { auditForUser, requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   calendarUpdatedChanges,
   overlapsWhere,
-  staffPractitionerId,
   type CalendarConflict,
 } from "@/lib/calendar-scheduling";
 import { availabilityCovers } from "@/lib/staff-schedule";
@@ -22,6 +21,13 @@ export async function PATCH(
 ) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (user.role !== "ADMIN") {
+    await auditForUser(user, "calendar_mutation_denied", "Appointment", null, {
+      outcome: "DENIED",
+      request: req,
+    });
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const { id } = await params;
   const payload = (await req.json().catch(() => null)) as Record<
     string,
@@ -48,10 +54,6 @@ export async function PATCH(
   if (!["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(appointment.status))
     return conflict("not_movable");
 
-  const ownPractitionerId = await staffPractitionerId(user);
-  if (user.role !== "ADMIN" && ownPractitionerId !== appointment.practitionerId)
-    return conflict("forbidden");
-
   const start = new Date(String(payload.start ?? ""));
   if (Number.isNaN(start.getTime())) return conflict("invalid_time");
   const duration = appointment.end.getTime() - appointment.start.getTime();
@@ -59,9 +61,6 @@ export async function PATCH(
   const practitionerId = String(
     payload.practitionerId ?? appointment.practitionerId,
   );
-  if (user.role !== "ADMIN" && practitionerId !== appointment.practitionerId)
-    return conflict("forbidden");
-
   const qualified = new Set([
     appointment.service.primaryPractitionerId,
     ...appointment.service.practitioners.map((item) => item.id),

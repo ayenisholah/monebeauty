@@ -21,6 +21,7 @@ const operationsFilter = readFileSync(
 const actions = readFileSync("lib/admin-actions.ts", "utf8");
 const checkout = readFileSync("app/api/checkout/route.ts", "utf8");
 const reschedule = readFileSync("app/api/booking/reschedule/route.ts", "utf8");
+const changeRequests = readFileSync("lib/change-request-actions.ts", "utf8");
 
 test("orders and appointments are first-class admin modules", () => {
   assert.match(shell, /module: "appointments"/);
@@ -121,12 +122,16 @@ test("operation lifecycle data and delivery attempts are durable", () => {
   assert.match(actions, /reason\.length < 3/);
 });
 
-test("checkout retains notes and public rescheduling requires reconfirmation", () => {
+test("checkout retains notes and client rescheduling requires admin approval", () => {
   assert.match(checkout, /phone,\s*notes,\s*consentGdpr/);
   assert.match(checkout, /notifyOrderReceipt/);
-  assert.match(reschedule, /status: "BOOKED"/);
-  assert.match(reschedule, /confirmedAt: null/);
-  assert.match(reschedule, /notifyAppointmentChange/);
+  assert.match(reschedule, /appointmentChangeRequest\.create/);
+  assert.match(reschedule, /status: change\.status/);
+  assert.doesNotMatch(reschedule, /appointment\.update/);
+  assert.match(changeRequests, /status: "APPROVED"/);
+  assert.match(changeRequests, /status: "BOOKED"/);
+  assert.match(changeRequests, /confirmedAt: null/);
+  assert.match(changeRequests, /notifyAppointmentChange/);
 });
 
 test("international phone numbers normalize to E.164", () => {

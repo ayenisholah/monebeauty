@@ -16,6 +16,7 @@ export const PUBLIC_PATHS = {
   terms: "/kayttoehdot",
   cookies: "/evastekaytanto",
   staff: "/henkilosto",
+  account: "/oma-tili",
 } as const;
 
 export const SERVICE_PUBLIC_PATHS = {
@@ -80,6 +81,7 @@ const LEGACY_EXACT_PATHS: Record<string, string> = {
   "/terms-of-use": PUBLIC_PATHS.terms,
   "/cookies-policy": PUBLIC_PATHS.cookies,
   "/staff": PUBLIC_PATHS.staff,
+  "/account": PUBLIC_PATHS.account,
 };
 
 const LEGACY_PREFIX_PATHS: Array<[string, string]> = [

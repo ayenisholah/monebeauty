@@ -22,7 +22,8 @@
   "Header": {
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "language": "Language"
+    "language": "Language",
+    "account": "My account"
   },
   "Footer": {
     "navHeading": "Navigation",
@@ -593,6 +594,8 @@
     "nav": {
       "dashboard": "Dashboard",
       "clients": "Clients",
+      "staff": "Staff accounts",
+      "audit": "Audit log",
       "calendar": "Calendar",
       "appointments": "Appointments",
       "orders": "Orders",
@@ -709,6 +712,8 @@
     },
     "modules": {
       "clients": "Clients",
+      "staff": "Staff accounts",
+      "audit": "Audit log",
       "calendar": "Calendar",
       "appointments": "Appointments",
       "orders": "Orders",

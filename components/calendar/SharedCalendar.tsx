@@ -62,6 +62,21 @@ type Payload = {
   }>;
   appointments: Appointment[];
 };
+type AppointmentDetail = {
+  id: string;
+  client: {
+    fullName: string;
+    email: string;
+    phone: string;
+    contraindications: string | null;
+  };
+  procedure: string;
+  start: string;
+  end: string;
+  notes: string | null;
+  room: string | null;
+  device: string | null;
+};
 
 const HOUR_START = 6;
 const HOUR_END = 22;
@@ -217,6 +232,7 @@ export function SharedCalendar({
     deviceId: string;
   } | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
+  const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [hours, setHours] = useState({
     practitionerId: "",
     startHour: 10,
@@ -284,6 +300,19 @@ export function SharedCalendar({
       roomId: appointment.roomId ?? appointment.allowedRoomIds[0] ?? "",
       deviceId: appointment.deviceId ?? appointment.allowedDeviceIds[0] ?? "",
     });
+  }
+
+  async function openAppointment(appointment: Appointment) {
+    if (appointment.editable) {
+      openEditor(appointment);
+      return;
+    }
+    const response = await fetch(`/api/staff/appointments/${appointment.id}`);
+    if (!response.ok) {
+      setMessage(t.conflict);
+      return;
+    }
+    setDetail((await response.json()) as AppointmentDetail);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -388,7 +417,7 @@ export function SharedCalendar({
               key={item}
               type="button"
               onClick={() => setView(item)}
-              className={cn(buttonCls, view === item && activeButtonCls)}
+              className={view === item ? activeButtonCls : buttonCls}
             >
               {t[item]}
             </button>
@@ -431,7 +460,7 @@ export function SharedCalendar({
           >
             <ArrowClockwise size={18} />
           </button>
-          {data ? (
+          {data?.canEditAll ? (
             <button
               type="button"
               onClick={() => {
@@ -521,10 +550,62 @@ export function SharedCalendar({
               practitioners={visiblePractitioners}
               fmtDate={fmtDate}
               fmtTime={fmtTime}
-              onOpen={openEditor}
+              onOpen={(appointment) => void openAppointment(appointment)}
             />
           )}
         </DndContext>
+      ) : null}
+
+      {detail ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-ink/35 p-[12px] sm:items-center"
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-[540px] rounded-[10px] border border-line-card bg-card p-[clamp(18px,3vw,28px)] shadow-card"
+          >
+            <h2 className="font-display text-[30px] font-medium">
+              {detail.procedure}
+            </h2>
+            <p className="mt-2 font-sans text-sm text-body">
+              {fmtTime.format(new Date(detail.start))}–
+              {fmtTime.format(new Date(detail.end))} · {detail.room ?? "—"}
+              {detail.device ? ` · ${detail.device}` : ""}
+            </p>
+            <dl className="mt-5 grid gap-3 font-sans text-sm">
+              <div>
+                <dt className="text-muted">Client</dt>
+                <dd className="font-medium">{detail.client.fullName}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Contact</dt>
+                <dd>
+                  {detail.client.phone} · {detail.client.email}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">Booking notes</dt>
+                <dd>{detail.notes ?? "—"}</dd>
+              </div>
+              <div className="rounded-[5px] border border-[#c98383] bg-[#fff4f2] p-3">
+                <dt className="font-medium">Contraindication warning</dt>
+                <dd className="mt-1">
+                  {detail.client.contraindications ??
+                    "No contraindications recorded."}
+                </dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              onClick={() => setDetail(null)}
+              className="mt-5 min-h-[44px] w-full rounded border border-line-btn"
+            >
+              {t.cancel}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {editing && data ? (
@@ -610,7 +691,7 @@ export function SharedCalendar({
               <button
                 type="button"
                 onClick={() => void saveEdit()}
-                className={cn(buttonCls, "border-accent bg-accent text-page")}
+                className={primaryButtonCls}
               >
                 {t.save}
               </button>
@@ -706,7 +787,7 @@ export function SharedCalendar({
                           : [...hours.openDays, day],
                       })
                     }
-                    className={cn(buttonCls, active && activeButtonCls)}
+                    className={active ? activeButtonCls : buttonCls}
                   >
                     {new Intl.DateTimeFormat(locale, {
                       weekday: "short",
@@ -727,7 +808,7 @@ export function SharedCalendar({
               <button
                 type="button"
                 onClick={() => void applyHours()}
-                className={cn(buttonCls, "border-accent bg-accent text-page")}
+                className={primaryButtonCls}
               >
                 {t.applyHours}
               </button>
@@ -933,14 +1014,12 @@ function AppointmentCard({
     <button
       ref={setNodeRef}
       type="button"
-      onClick={() => {
-        if (appointment.editable) onOpen(appointment);
-      }}
+      onClick={() => onOpen(appointment)}
       {...attributes}
       {...listeners}
       className={cn(
         "absolute inset-x-[3px] z-10 overflow-hidden rounded-[4px] border px-[6px] py-[4px] text-left font-sans shadow-sm focus:ring-2 focus:ring-accent focus:outline-none",
-        !appointment.editable && "cursor-default",
+        !appointment.editable && "cursor-pointer",
         isDragging && "z-50 opacity-60",
       )}
       style={{
@@ -1054,8 +1133,19 @@ function Field({
   );
 }
 
-const buttonCls =
-  "inline-flex min-h-[40px] items-center justify-center rounded-[4px] border border-line-btn bg-card px-[12px] font-sans text-[12px] text-body hover:bg-btn-fill";
-const activeButtonCls = "border-accent bg-btn-fill text-ink";
+const buttonBaseCls =
+  "inline-flex min-h-[40px] items-center justify-center rounded-[4px] border px-[12px] font-sans text-[12px]";
+const buttonCls = cn(
+  buttonBaseCls,
+  "border-line-btn bg-card text-body hover:bg-btn-fill",
+);
+const activeButtonCls = cn(
+  buttonBaseCls,
+  "border-accent bg-btn-fill text-ink hover:bg-btn-fill",
+);
+const primaryButtonCls = cn(
+  buttonBaseCls,
+  "border-accent bg-accent text-page hover:brightness-95",
+);
 const iconButtonCls =
   "inline-flex size-[40px] items-center justify-center rounded-[4px] border border-line-btn bg-card text-ink hover:bg-btn-fill";

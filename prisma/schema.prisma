@@ -8,16 +8,40 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String?
-  role         Role       @default(CLIENT)
-  name         String?
-  locale       Locale?
-  createdAt    DateTime   @default(now())
-  client       Client?
-  sessions     Session[]
-  staff        StaffUser?
+  id                     String                     @id @default(cuid())
+  email                  String                     @unique
+  passwordHash           String?
+  role                   Role                       @default(CLIENT)
+  status                 AccountStatus              @default(ACTIVE)
+  mustChangePassword     Boolean                    @default(false)
+  emailVerifiedAt        DateTime?
+  passwordChangedAt      DateTime?
+  name                   String?
+  locale                 Locale?
+  createdAt              DateTime                   @default(now())
+  client                 Client?
+  sessions               Session[]
+  staff                  StaffUser?
+  accountTokens          AccountToken[]
+  auditLogs              AuditLog[]                 @relation("AuditActor")
+  reviewedChangeRequests AppointmentChangeRequest[] @relation("ChangeRequestReviewer")
+}
+
+model AccountToken {
+  id            String              @id @default(cuid())
+  tokenHash     String              @unique
+  userId        String?
+  email         String
+  purpose       AccountTokenPurpose
+  appointmentId String?
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime            @default(now())
+  user          User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointment   Appointment?        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, expiresAt])
+  @@index([appointmentId])
 }
 
 model Session {
@@ -310,40 +334,64 @@ model Availability {
 }
 
 model Appointment {
-  id                 String             @id @default(cuid())
+  id                 String                     @id @default(cuid())
   clientId           String
   practitionerId     String
   serviceId          String
   roomId             String?
   deviceId           String?
-  locale             Locale             @default(fi)
+  locale             Locale                     @default(fi)
   start              DateTime
   end                DateTime
-  status             AppointmentStatus  @default(BOOKED)
+  status             AppointmentStatus          @default(BOOKED)
   channel            String?
   notes              String?
   procedureIndex     Int?
   procedureTitle     String?
   procedurePrice     String?
   history            Json?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @default(now()) @updatedAt
-  version            Int                @default(1)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @default(now()) @updatedAt
+  version            Int                        @default(1)
   confirmedAt        DateTime?
   completedAt        DateTime?
   cancelledAt        DateTime?
   cancellationReason String?
-  client             Client             @relation(fields: [clientId], references: [id])
-  practitioner       Practitioner       @relation(fields: [practitionerId], references: [id])
-  service            Service            @relation(fields: [serviceId], references: [id])
-  room               Room?              @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  device             Device?            @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  client             Client                     @relation(fields: [clientId], references: [id])
+  practitioner       Practitioner               @relation(fields: [practitionerId], references: [id])
+  service            Service                    @relation(fields: [serviceId], references: [id])
+  room               Room?                      @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  device             Device?                    @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   events             AppointmentEvent[]
   messages           OutboundMessage[]
+  accountTokens      AccountToken[]
+  changeRequests     AppointmentChangeRequest[]
 
   @@index([practitionerId, start, end])
   @@index([roomId, start, end])
   @@index([deviceId, start, end])
+}
+
+model AppointmentChangeRequest {
+  id             String                         @id @default(cuid())
+  appointmentId  String
+  clientId       String
+  type           AppointmentChangeType
+  status         AppointmentChangeRequestStatus @default(PENDING)
+  requestedStart DateTime?
+  reason         String?
+  decisionReason String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
+  appointment    Appointment                    @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  client         Client                         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  reviewedBy     User?                          @relation("ChangeRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId, status])
+  @@index([clientId, createdAt])
+  @@index([status, createdAt])
 }
 
 model AppointmentEvent {
@@ -401,22 +449,23 @@ model DeliveryAttempt {
 }
 
 model Client {
-  id                String        @id @default(cuid())
-  userId            String?       @unique
+  id                String                     @id @default(cuid())
+  userId            String?                    @unique
   fullName          String
   phone             String
   email             String
   notes             String?
   contraindications String?
-  consentGdpr       Boolean       @default(false)
-  consentMarketing  Boolean       @default(false)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  consentGdpr       Boolean                    @default(false)
+  consentMarketing  Boolean                    @default(false)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
   archivedAt        DateTime?
   appointments      Appointment[]
+  changeRequests    AppointmentChangeRequest[]
   carts             Cart[]
   chatSessions      ChatSession[]
-  user              User?         @relation(fields: [userId], references: [id])
+  user              User?                      @relation(fields: [userId], references: [id])
   orders            Order[]
 
   @@index([phone])
@@ -519,18 +568,59 @@ model Consent {
 }
 
 model AuditLog {
-  id       String   @id @default(cuid())
-  actor    String
-  action   String
-  entity   String
-  entityId String?
-  at       DateTime @default(now())
+  id          String       @id @default(cuid())
+  actor       String
+  actorUserId String?
+  actorRole   Role?
+  action      String
+  outcome     AuditOutcome @default(SUCCESS)
+  entity      String
+  entityId    String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  at          DateTime     @default(now())
+  actorUser   User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, at])
+  @@index([action, at])
+  @@index([entity, entityId, at])
 }
 
 enum Role {
   ADMIN
   STAFF
   CLIENT
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  DISABLED
+}
+
+enum AccountTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  CLAIM_APPOINTMENT
+}
+
+enum AppointmentChangeType {
+  CANCEL
+  RESCHEDULE
+}
+
+enum AppointmentChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+  DENIED
 }
 
 enum Locale {

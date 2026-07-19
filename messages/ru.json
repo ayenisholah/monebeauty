@@ -22,7 +22,8 @@
   "Header": {
     "openMenu": "Открыть меню",
     "closeMenu": "Закрыть меню",
-    "language": "Язык"
+    "language": "Язык",
+    "account": "Личный кабинет"
   },
   "Footer": {
     "navHeading": "Навигация",
@@ -585,6 +586,8 @@
     "nav": {
       "dashboard": "Обзор",
       "clients": "Клиенты",
+      "staff": "Учётные записи сотрудников",
+      "audit": "Журнал аудита",
       "calendar": "Календарь",
       "appointments": "Записи",
       "orders": "Заказы",
@@ -701,6 +704,8 @@
     },
     "modules": {
       "clients": "Клиенты",
+      "staff": "Учётные записи сотрудников",
+      "audit": "Журнал аудита",
       "calendar": "Календарь",
       "appointments": "Записи",
       "orders": "Заказы",

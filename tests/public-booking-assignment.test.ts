@@ -10,6 +10,7 @@ const rescheduleRoute = readFileSync(
   "app/api/booking/reschedule/route.ts",
   "utf8",
 );
+const changeRequests = readFileSync("lib/change-request-actions.ts", "utf8");
 
 test("the public wizard is Service -> Time -> You", () => {
   assert.match(wizard, /type Step = 1 \| 2 \| 3;/);
@@ -68,9 +69,11 @@ test("the service owner and exclusive resources control new and rescheduled avai
   assert.match(bookingLib, /record\.svc\.rooms\.length === 0/);
   assert.match(bookingLib, /record\.svc\.requiresDevice/);
   assert.match(bookingLib, /booking\.deviceId !== item\.id/);
-  assert.match(rescheduleRoute, /practitionerId: matchingSlot\.practitionerId/);
-  assert.match(rescheduleRoute, /roomId: matchingSlot\.roomId/);
-  assert.match(rescheduleRoute, /deviceId: matchingSlot\.deviceId/);
+  assert.match(rescheduleRoute, /openSlots/);
+  assert.match(rescheduleRoute, /appointmentChangeRequest\.create/);
+  assert.match(changeRequests, /practitionerId: matching\.practitionerId/);
+  assert.match(changeRequests, /roomId: matching\.roomId/);
+  assert.match(changeRequests, /deviceId: matching\.deviceId/);
   assert.match(
     bookingRoute,
     /OR: \[[\s\S]*?\{ practitionerId \}[\s\S]*?roomId: matchingSlot\.roomId/,

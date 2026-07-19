@@ -1,11 +1,21 @@
 Project Overview
+Account portals and read-only staff access (owner-approved, 2026-07-19): clients may create
+verified accounts without being required to sign in before booking. `/oma-tili` shows the
+authenticated client's past and upcoming procedures and submits cancellation/reschedule
+requests for admin approval. Guest appointments can be claimed only through a single-use
+link sent to the booking email. Admin and staff use separate login surfaces. Admins create
+staff credentials, choose a temporary password, and manage linked employee accounts; staff
+must replace that password on first login and receive no confirmation email. Staff see only
+their own calendar column and clinical essentials, cannot change clinic data, and sensitive
+access/security events are recorded in an immutable admin-visible audit log.
+
 Shared calendar and employee-owned booking (owner-approved, 2026-07-19): the admin exposes
 `/admin/kalenteri` as a Timma-inspired shared day/week/month calendar. All active employees
 are visible in separate time-based columns; appointment cards show client, procedure, room,
 and time. Services have one fixed public owner plus optional qualified backup employees.
 Public booking remains Service -> Time -> You, but the selected service now writes directly
 to its configured employee schedule. Admins may confirm and drag appointments between
-qualified employees or rooms; staff see the shared calendar and edit only their own column.
+qualified employees or rooms; staff access is read-only and restricted to their own column.
 Rooms and physical treatment devices are separate exclusive resources, so employee, room,
 and device overlaps are rejected server-side and at the database boundary.
 

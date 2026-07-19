@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireApiUser } from "@/lib/auth";
+import { auditForUser, requireApiUser } from "@/lib/auth";
 import { getDefaultPractitionerId } from "@/lib/booking";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -88,6 +88,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
+  if (user.role !== "ADMIN") {
+    await auditForUser(
+      user,
+      "availability_mutation_denied",
+      "Availability",
+      null,
+      {
+        outcome: "DENIED",
+        request: req,
+      },
+    );
+    return forbidden();
+  }
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -121,6 +134,19 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
+  if (user.role !== "ADMIN") {
+    await auditForUser(
+      user,
+      "availability_mutation_denied",
+      "Availability",
+      null,
+      {
+        outcome: "DENIED",
+        request: req,
+      },
+    );
+    return forbidden();
+  }
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();

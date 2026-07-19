@@ -36,6 +36,7 @@ export async function Header() {
             {t("common.bookOnline")}
           </Link>
           <HeaderCartLink />
+          <Link href={PUBLIC_PATHS.account}>{th("account")}</Link>
           <LanguageSwitcher />
         </nav>
 
@@ -44,6 +45,7 @@ export async function Header() {
           bookOnline={t("common.bookOnline")}
           openLabel={th("openMenu")}
           closeLabel={th("closeMenu")}
+          accountLabel={th("account")}
         />
       </div>
     </header>

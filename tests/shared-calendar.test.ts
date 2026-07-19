@@ -63,14 +63,27 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /appointment\.room\?\.name/);
 });
 
-test("calendar permissions expose all columns but staff edit only their own", () => {
+test("calendar primary actions keep a contrasting accent treatment", () => {
+  const primaryButton = calendar.match(
+    /const primaryButtonCls = cn\(([\s\S]*?)\);/,
+  )?.[1];
+
+  assert.ok(primaryButton);
+  assert.match(primaryButton, /bg-accent/);
+  assert.match(primaryButton, /text-page/);
+  assert.doesNotMatch(primaryButton, /bg-card|text-body/);
+  assert.equal(calendar.match(/className=\{primaryButtonCls\}/g)?.length, 2);
+});
+
+test("calendar permissions restrict staff to their own read-only column", () => {
   assert.match(calendarApi, /requireApiUser\(\["ADMIN", "STAFF"\]\)/);
   assert.match(
     calendarApi,
-    /ownPractitionerId === appointment\.practitionerId/,
+    /user\.role === "STAFF"[\s\S]*?id: ownPractitionerId/,
   );
+  assert.match(calendarApi, /editable: user\.role === "ADMIN"/);
   assert.match(moveApi, /user\.role !== "ADMIN"/);
-  assert.match(moveApi, /ownPractitionerId !== appointment\.practitionerId/);
+  assert.match(moveApi, /calendar_mutation_denied/);
   assert.match(moveApi, /qualified\.has\(practitionerId\)/);
 });
 

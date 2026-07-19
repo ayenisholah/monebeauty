@@ -4,6 +4,8 @@ export const ADMIN_SEGMENTS = {
   dashboard: "",
   login: "kirjaudu",
   clients: "asiakkaat",
+  staff: "henkilosto",
+  audit: "lokit",
   calendar: "kalenteri",
   appointments: "ajanvaraukset",
   orders: "tilaukset",
@@ -21,6 +23,8 @@ export type AdminModule = keyof typeof ADMIN_SEGMENTS;
 export const LEGACY_ADMIN_SEGMENTS: Record<string, string> = {
   login: ADMIN_SEGMENTS.login,
   clients: ADMIN_SEGMENTS.clients,
+  staff: ADMIN_SEGMENTS.staff,
+  audit: ADMIN_SEGMENTS.audit,
   calendar: ADMIN_SEGMENTS.calendar,
   appointments: ADMIN_SEGMENTS.appointments,
   orders: ADMIN_SEGMENTS.orders,

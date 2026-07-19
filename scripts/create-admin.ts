@@ -54,10 +54,27 @@ async function main() {
     const user = existing
       ? await tx.user.update({
           where: { id: existing.id },
-          data: { name, passwordHash, role: "ADMIN" },
+          data: {
+            name,
+            passwordHash,
+            role: "ADMIN",
+            status: "ACTIVE",
+            mustChangePassword: false,
+            emailVerifiedAt: new Date(),
+            passwordChangedAt: new Date(),
+          },
         })
       : await tx.user.create({
-          data: { email, name, passwordHash, role: "ADMIN" },
+          data: {
+            email,
+            name,
+            passwordHash,
+            role: "ADMIN",
+            status: "ACTIVE",
+            mustChangePassword: false,
+            emailVerifiedAt: new Date(),
+            passwordChangedAt: new Date(),
+          },
         });
 
     const sessions = await tx.session.deleteMany({

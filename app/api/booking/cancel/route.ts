@@ -1,86 +1,54 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
+import { auditForUser, requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { appointmentByReference } from "@/lib/booking";
-import { notifyAppointmentChange } from "@/lib/notifications";
-import type { Locale } from "@/i18n/routing";
-
-function bad(error: string) {
-  return NextResponse.json({ error }, { status: 400 });
-}
-
-function matchesContact(value: string, email: string, phone: string) {
-  const normalized = value.trim().toLowerCase();
-  return (
-    normalized === email.toLowerCase() ||
-    normalized.replace(/\s+/g, "") === phone.replace(/\s+/g, "")
-  );
-}
 
 export async function POST(req: NextRequest) {
-  let payload: Record<string, unknown>;
-  try {
-    payload = await req.json();
-  } catch {
-    return bad("invalid_json");
-  }
-
-  const reference = String(payload.reference ?? "").trim();
-  const contact = String(payload.contact ?? "").trim();
+  const user = await requireApiUser(["CLIENT"]);
+  if (!user)
+    return NextResponse.json(
+      { error: "authentication_required" },
+      { status: 401 },
+    );
+  const payload = (await req.json().catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
+  const appointmentId = String(
+    payload?.appointmentId ?? payload?.reference ?? "",
+  ).trim();
   const reason =
-    String(payload.reason ?? "")
+    String(payload?.reason ?? "")
       .trim()
       .slice(0, 500) || null;
-  if (!reference) return bad("reference_required");
-  if (!contact) return bad("contact_required");
-
-  const appointment = await appointmentByReference(reference);
-  if (
-    !appointment ||
-    !matchesContact(contact, appointment.client.email, appointment.client.phone)
-  ) {
+  const client = await prisma.client.findUnique({ where: { userId: user.id } });
+  const appointment = client
+    ? await prisma.appointment.findFirst({
+        where: { id: appointmentId, clientId: client.id },
+      })
+    : null;
+  if (!appointment)
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (appointment.start <= new Date() || appointment.status === "CANCELLED")
+    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  try {
+    const change = await prisma.appointmentChangeRequest.create({
+      data: { appointmentId, clientId: client!.id, type: "CANCEL", reason },
+    });
+    await auditForUser(
+      user,
+      "appointment_change_requested",
+      "AppointmentChangeRequest",
+      change.id,
+      { request: req, metadata: { appointmentId, type: "CANCEL" } },
+    );
+    return NextResponse.json(
+      { id: change.id, status: change.status },
+      { status: 202 },
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError)
+      return NextResponse.json({ error: "request_exists" }, { status: 409 });
+    throw error;
   }
-
-  if (appointment.status === "CANCELLED") {
-    return NextResponse.json({
-      id: appointment.id,
-      status: appointment.status,
-    });
-  }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const row = await tx.appointment.update({
-      where: { id: appointment.id },
-      data: {
-        status: "CANCELLED",
-        cancelledAt: new Date(),
-        cancellationReason: reason,
-        history: {
-          cancelledAt: new Date().toISOString(),
-          previousStatus: appointment.status,
-        },
-      },
-      include: { client: true, service: true },
-    });
-    await tx.appointmentEvent.create({
-      data: {
-        appointmentId: appointment.id,
-        kind: "CANCELLED",
-        actor: appointment.client.email,
-        previousStatus: appointment.status,
-        nextStatus: "CANCELLED",
-        reason,
-      },
-    });
-    return row;
-  });
-  await notifyAppointmentChange(
-    updated,
-    "cancellation",
-    updated.locale as Locale,
-    reason,
-    appointment.client.email,
-  );
-
-  return NextResponse.json({ id: updated.id, status: updated.status });
 }

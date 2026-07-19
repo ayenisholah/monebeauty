@@ -11,10 +11,12 @@ import type {
 import { prisma } from "@/lib/db";
 import {
   audit,
+  authRateLimited,
   createSession,
   currentUser,
   destroySession,
   requireUser,
+  requestAuditContext,
   verifyPassword,
 } from "@/lib/auth";
 import { adminBase, adminHref } from "@/lib/admin-routing";
@@ -122,17 +124,42 @@ export async function adminLoginAction(formData: FormData) {
   const locale = (value(formData, "locale") || "fi") as AppLocale;
   const email = value(formData, "email").toLowerCase();
   const password = value(formData, "password");
+  const context = await requestAuditContext();
   const user = await prisma.user.findUnique({ where: { email } });
+  const blocked = await authRateLimited(
+    email,
+    "admin_login",
+    context.ipAddress,
+  );
   if (
+    blocked ||
     !user ||
     !(await verifyPassword(password, user.passwordHash)) ||
-    user.role === "CLIENT"
+    user.role !== "ADMIN" ||
+    user.status !== "ACTIVE"
   ) {
+    await audit({
+      actor: email || "unknown",
+      actorUserId: user?.id,
+      actorRole: user?.role,
+      action: "admin_login",
+      outcome: blocked ? "DENIED" : "FAILURE",
+      entity: "User",
+      entityId: user?.id,
+      ...context,
+    });
     redirect(`${adminHref(locale, "login")}?error=invalid`);
   }
   await createSession(user.id);
-  if (user.role === "STAFF")
-    redirect(localizedPublicPath(locale, PUBLIC_PATHS.staff));
+  await audit({
+    actor: user.email,
+    actorUserId: user.id,
+    actorRole: user.role,
+    action: "admin_login",
+    entity: "User",
+    entityId: user.id,
+    ...context,
+  });
   redirect(adminBase(locale));
 }
 

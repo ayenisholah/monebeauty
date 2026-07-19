@@ -22,7 +22,8 @@
   "Header": {
     "openMenu": "Avaa valikko",
     "closeMenu": "Sulje valikko",
-    "language": "Kieli"
+    "language": "Kieli",
+    "account": "Oma tili"
   },
   "Footer": {
     "navHeading": "Navigointi",
@@ -585,6 +586,8 @@
     "nav": {
       "dashboard": "Yhteenveto",
       "clients": "Asiakkaat",
+      "staff": "Henkilöstötilit",
+      "audit": "Tapahtumaloki",
       "calendar": "Kalenteri",
       "appointments": "Ajanvaraukset",
       "orders": "Tilaukset",
@@ -701,6 +704,8 @@
     },
     "modules": {
       "clients": "Asiakkaat",
+      "staff": "Henkilöstötilit",
+      "audit": "Tapahtumaloki",
       "calendar": "Kalenteri",
       "appointments": "Ajanvaraukset",
       "orders": "Tilaukset",
