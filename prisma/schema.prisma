@@ -253,38 +253,42 @@ model CartItem {
 }
 
 model Order {
-  id                 String             @id @default(cuid())
-  clientId           String?
-  locale             Locale             @default(fi)
-  status             OrderStatus        @default(PENDING)
-  source             OrderSource        @default(LEGACY_REQUEST)
-  paymentStatus      PaymentStatus      @default(UNPAID)
-  fulfillmentMethod  FulfillmentMethod?
-  subtotal           Decimal
-  total              Decimal
-  shippingAmount     Decimal            @default(0)
-  shippingAddress    Json?
-  currency           String             @default("EUR")
-  email              String
-  phone              String?
-  notes              String?
-  consentGdpr        Boolean            @default(false)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @default(now()) @updatedAt
-  confirmedAt        DateTime?
-  fulfilledAt        DateTime?
-  readyAt            DateTime?
-  shippedAt          DateTime?
-  cancelledAt        DateTime?
-  cancellationReason String?
-  client             Client?            @relation(fields: [clientId], references: [id])
-  items              OrderItem[]
-  messages           OutboundMessage[]
-  payments           PaymentAttempt[]
-  refunds            Refund[]
+  id                  String               @id @default(cuid())
+  clientId            String?
+  savedAddressId      String?
+  locale              Locale               @default(fi)
+  status              OrderStatus          @default(PENDING)
+  source              OrderSource          @default(LEGACY_REQUEST)
+  paymentStatus       PaymentStatus        @default(UNPAID)
+  fulfillmentMethod   FulfillmentMethod?
+  subtotal            Decimal
+  total               Decimal
+  shippingAmount      Decimal              @default(0)
+  shippingAddress     Json?
+  currency            String               @default("EUR")
+  email               String
+  phone               String?
+  notes               String?
+  consentGdpr         Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  confirmedAt         DateTime?
+  fulfilledAt         DateTime?
+  readyAt             DateTime?
+  shippedAt           DateTime?
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  client              Client?              @relation(fields: [clientId], references: [id])
+  savedAddress        SavedAddress?        @relation(fields: [savedAddressId], references: [id], onDelete: SetNull)
+  items               OrderItem[]
+  messages            OutboundMessage[]
+  payments            PaymentAttempt[]
+  refunds             Refund[]
+  externalApiAttempts ExternalApiAttempt[]
 
   @@index([source, paymentStatus, createdAt])
   @@index([status, createdAt])
+  @@index([savedAddressId])
 }
 
 model OrderItem {
@@ -463,38 +467,39 @@ model Availability {
 }
 
 model Appointment {
-  id                 String                     @id @default(cuid())
-  clientId           String
-  practitionerId     String
-  serviceId          String
-  roomId             String?
-  deviceId           String?
-  locale             Locale                     @default(fi)
-  start              DateTime
-  end                DateTime
-  status             AppointmentStatus          @default(BOOKED)
-  channel            String?
-  notes              String?
-  procedureIndex     Int?
-  procedureTitle     String?
-  procedurePrice     String?
-  history            Json?
-  createdAt          DateTime                   @default(now())
-  updatedAt          DateTime                   @default(now()) @updatedAt
-  version            Int                        @default(1)
-  confirmedAt        DateTime?
-  completedAt        DateTime?
-  cancelledAt        DateTime?
-  cancellationReason String?
-  client             Client                     @relation(fields: [clientId], references: [id])
-  practitioner       Practitioner               @relation(fields: [practitionerId], references: [id])
-  service            Service                    @relation(fields: [serviceId], references: [id])
-  room               Room?                      @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  device             Device?                    @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  events             AppointmentEvent[]
-  messages           OutboundMessage[]
-  accountTokens      AccountToken[]
-  changeRequests     AppointmentChangeRequest[]
+  id                  String                     @id @default(cuid())
+  clientId            String
+  practitionerId      String
+  serviceId           String
+  roomId              String?
+  deviceId            String?
+  locale              Locale                     @default(fi)
+  start               DateTime
+  end                 DateTime
+  status              AppointmentStatus          @default(BOOKED)
+  channel             String?
+  notes               String?
+  procedureIndex      Int?
+  procedureTitle      String?
+  procedurePrice      String?
+  history             Json?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @default(now()) @updatedAt
+  version             Int                        @default(1)
+  confirmedAt         DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  client              Client                     @relation(fields: [clientId], references: [id])
+  practitioner        Practitioner               @relation(fields: [practitionerId], references: [id])
+  service             Service                    @relation(fields: [serviceId], references: [id])
+  room                Room?                      @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  device              Device?                    @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  events              AppointmentEvent[]
+  messages            OutboundMessage[]
+  accountTokens       AccountToken[]
+  changeRequests      AppointmentChangeRequest[]
+  externalApiAttempts ExternalApiAttempt[]
 
   @@index([practitionerId, start, end])
   @@index([roomId, start, end])
@@ -543,36 +548,39 @@ model AppointmentEvent {
 }
 
 model OutboundMessage {
-  id            String               @id @default(cuid())
-  orderId       String?
-  appointmentId String?
-  kind          OutboundMessageKind
-  channel       CommunicationChannel
-  locale        Locale
-  recipient     String
-  subject       String?
-  body          String
-  html          String?
-  actor         String
-  dedupeKey     String?              @unique
-  createdAt     DateTime             @default(now())
-  order         Order?               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  appointment   Appointment?         @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  attempts      DeliveryAttempt[]
+  id                  String               @id @default(cuid())
+  orderId             String?
+  appointmentId       String?
+  kind                OutboundMessageKind
+  channel             CommunicationChannel
+  locale              Locale
+  recipient           String
+  subject             String?
+  body                String
+  html                String?
+  actor               String
+  dedupeKey           String?              @unique
+  createdAt           DateTime             @default(now())
+  order               Order?               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  appointment         Appointment?         @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  attempts            DeliveryAttempt[]
+  externalApiAttempts ExternalApiAttempt[]
 
   @@index([orderId, createdAt])
   @@index([appointmentId, createdAt])
 }
 
 model DeliveryAttempt {
-  id                String          @id @default(cuid())
-  messageId         String
-  status            DeliveryStatus
-  provider          String?
-  providerMessageId String?
-  errorDetail       String?
-  attemptedAt       DateTime        @default(now())
-  message           OutboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id                   String              @id @default(cuid())
+  messageId            String
+  status               DeliveryStatus
+  provider             String?
+  providerMessageId    String?
+  errorDetail          String?
+  externalApiAttemptId String?             @unique
+  attemptedAt          DateTime            @default(now())
+  message              OutboundMessage     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  externalApiAttempt   ExternalApiAttempt? @relation(fields: [externalApiAttemptId], references: [id], onDelete: SetNull)
 
   @@index([messageId, attemptedAt])
 }
@@ -590,16 +598,72 @@ model Client {
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
   archivedAt        DateTime?
+  stripeCustomerId  String?                    @unique
   appointments      Appointment[]
   changeRequests    AppointmentChangeRequest[]
   carts             Cart[]
   chatSessions      ChatSession[]
   user              User?                      @relation(fields: [userId], references: [id])
   orders            Order[]
+  savedAddresses    SavedAddress[]
 
   @@index([phone])
   @@index([email])
   @@index([archivedAt])
+}
+
+model SavedAddress {
+  id            String    @id @default(cuid())
+  clientId      String
+  label         String
+  recipientName String
+  phone         String
+  line1         String
+  line2         String?
+  postalCode    String
+  city          String
+  country       String    @default("FI")
+  isDefault     Boolean   @default(false)
+  lastUsedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  orders        Order[]
+
+  @@index([clientId, updatedAt])
+}
+
+model ExternalApiAttempt {
+  id                String           @id @default(cuid())
+  provider          String
+  operation         String
+  outcome           String
+  httpStatus        Int?
+  providerRequestId String?
+  providerMessageId String?
+  correlationId     String?
+  retryNumber       Int              @default(0)
+  durationMs        Int?
+  requestMetadata   Json?
+  responseMetadata  Json?
+  errorClass        String?
+  errorCode         String?
+  errorMessage      String?
+  appointmentId     String?
+  orderId           String?
+  messageId         String?
+  attemptedAt       DateTime         @default(now())
+  expiresAt         DateTime
+  appointment       Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  order             Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  message           OutboundMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  deliveryAttempt   DeliveryAttempt?
+
+  @@index([provider, attemptedAt])
+  @@index([outcome, attemptedAt])
+  @@index([appointmentId, attemptedAt])
+  @@index([orderId, attemptedAt])
+  @@index([expiresAt])
 }
 
 model Article {
@@ -791,6 +855,8 @@ enum AppointmentStatus {
 }
 
 enum AppointmentEventKind {
+  CREATED
+  DETAILS_UPDATED
   CONFIRMED
   RESCHEDULED
   COMPLETED

@@ -21,8 +21,11 @@
   isolated past/upcoming procedure history, and admin-reviewed change requests.
 - Add separate staff login, admin-managed temporary credentials, forced first-login password
   replacement, account disable/reset/session revocation, and no staff confirmation email.
-- Restrict staff to their own read-only calendar column and audited clinical-detail access;
-  enforce admin-only mutations at the server boundary.
+- Give staff audited assigned-calendar operational access: create, edit, confirm, complete,
+  cancel, and reschedule appointments for their linked employee while restricting working
+  hours and availability changes to their own linked employee.
+- Keep website content, pricing, service/resource setup, CRM administration, staff accounts,
+  and every other clinic configuration mutation admin-only at the server boundary.
 - Add admin staff management and immutable security/access audit views with filters and CSV
   export; retain audit records until a legally reviewed clinic policy replaces that default.
 
@@ -36,7 +39,21 @@
   mappings.
 - Render Timma-inspired day/week/month views with all employees visible, availability
   backgrounds, client/procedure/room/time cards, and confirmed drag-to-move behavior.
+- Add a persistent Create appointment action and empty-time click creation with CRM client
+  search/inline creation, confirmed staff bookings, lifecycle editing, auditing, and localized
+  durable notifications.
 - Enforce employee, room, and device overlap protection in shared booking logic and PostgreSQL.
+
+## Client account and integration observability expansion (owner-approved, 2026-07-19)
+
+- Redesign `/oma-tili` into overview, appointments, orders, addresses, and profile views; expose
+  verified identity details, audited profile edits, paginated history, and secure order ownership.
+- Add reusable Finland saved addresses and authenticated booking/checkout prefilling. Preserve an
+  immutable order address snapshot and never write Stripe's final address back to the address book.
+- Render rich localized booking emails with appointment, practitioner, clinic, policy, map,
+  calendar, pay-at-clinic, and secure management details.
+- Add redacted durable request/response attempt logs for messaging, Stripe, Anthropic, and
+  Cloudinary, an admin viewer, and a daily 30-day cleanup command.
 
 ## Superseded public specialist selection removal (owner-approved, 2026-07-17)
 

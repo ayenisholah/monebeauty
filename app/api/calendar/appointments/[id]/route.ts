@@ -5,66 +5,126 @@ import { prisma } from "@/lib/db";
 import {
   calendarUpdatedChanges,
   overlapsWhere,
+  staffPractitionerId,
   type CalendarConflict,
 } from "@/lib/calendar-scheduling";
-import { availabilityCovers } from "@/lib/staff-schedule";
-import { notifyAppointmentChange } from "@/lib/notifications";
-import type { Locale } from "@/i18n/routing";
+import { availabilityCovers, generateStaffSlots } from "@/lib/staff-schedule";
+import {
+  notifyAppointmentChange,
+  notifyAppointmentConfirmation,
+} from "@/lib/notifications";
+import { resolveProcedure } from "@/lib/procedures";
+import { routing, type Locale } from "@/i18n/routing";
 
-function conflict(error: CalendarConflict) {
-  return NextResponse.json({ error }, { status: 409 });
+function conflict(error: CalendarConflict | string, status = 409) {
+  return NextResponse.json({ error }, { status });
 }
+
+const include = {
+  client: { select: { fullName: true, email: true, phone: true } },
+  practitioner: { select: { name: true } },
+  service: {
+    include: {
+      contents: { select: { locale: true, status: true, whatItIs: true } },
+      practitioners: { where: { active: true }, select: { id: true } },
+      rooms: { where: { active: true }, select: { id: true } },
+      devices: { where: { active: true }, select: { id: true } },
+    },
+  },
+} satisfies Prisma.AppointmentInclude;
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
-  if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  if (user.role !== "ADMIN") {
-    await auditForUser(user, "calendar_mutation_denied", "Appointment", null, {
-      outcome: "DENIED",
-      request: req,
-    });
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  if (!user) return conflict("forbidden", 403);
   const { id } = await params;
   const payload = (await req.json().catch(() => null)) as Record<
     string,
     unknown
   > | null;
-  if (!payload)
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  if (!payload) return conflict("invalid_json", 400);
+  const intent = String(payload.intent ?? "schedule");
+  const expectedVersion = Number(payload.version);
 
   const appointment = await prisma.appointment.findUnique({
     where: { id },
-    include: {
-      client: { select: { fullName: true, email: true, phone: true } },
-      service: {
-        include: {
-          practitioners: { select: { id: true } },
-          rooms: { where: { active: true }, select: { id: true } },
-          devices: { where: { active: true }, select: { id: true } },
-        },
-      },
-    },
+    include,
   });
-  if (!appointment)
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!appointment) return conflict("not_found", 404);
+  const ownPractitionerId = await staffPractitionerId(user);
+  if (user.role === "STAFF" && (!ownPractitionerId || appointment.practitionerId !== ownPractitionerId))
+    return conflict("forbidden_employee", 403);
+  if (!Number.isSafeInteger(expectedVersion)) return conflict("stale");
+
+  if (["confirm", "complete", "cancel"].includes(intent)) {
+    return lifecycle({
+      req,
+      user,
+      appointment,
+      intent,
+      expectedVersion,
+      payload,
+    });
+  }
+  if (!["schedule", "details"].includes(intent))
+    return conflict("invalid_action", 400);
   if (!["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(appointment.status))
     return conflict("not_movable");
 
-  const start = new Date(String(payload.start ?? ""));
+  const locale = routing.locales.includes(payload.locale as Locale)
+    ? (payload.locale as Locale)
+    : (appointment.locale as Locale);
+  const serviceId =
+    intent === "details"
+      ? String(payload.serviceId ?? appointment.serviceId)
+      : appointment.serviceId;
+  const service =
+    serviceId === appointment.serviceId
+      ? appointment.service
+      : await prisma.service.findFirst({
+          where: {
+            id: serviceId,
+            bookable: true,
+            archivedAt: null,
+            contents: { some: { locale, status: "PUBLISHED" } },
+          },
+          include: {
+            contents: {
+              select: { locale: true, status: true, whatItIs: true },
+            },
+            practitioners: { where: { active: true }, select: { id: true } },
+            rooms: { where: { active: true }, select: { id: true } },
+            devices: { where: { active: true }, select: { id: true } },
+          },
+        });
+  if (!service) return conflict("unknown_service", 400);
+  const content = service.contents.find(
+    (row) => row.locale === locale && row.status === "PUBLISHED",
+  );
+  if (!content) return conflict("unknown_service", 400);
+
+  const start = new Date(
+    String(payload.start ?? appointment.start.toISOString()),
+  );
   if (Number.isNaN(start.getTime())) return conflict("invalid_time");
-  const duration = appointment.end.getTime() - appointment.start.getTime();
+  if (start.getTime() <= Date.now()) return conflict("start_in_past");
+  if (start.getUTCMinutes() % 15 !== 0 || start.getUTCSeconds() !== 0)
+    return conflict("invalid_time");
+  const duration = service.durationMin * 60_000;
   const end = new Date(start.getTime() + duration);
   const practitionerId = String(
     payload.practitionerId ?? appointment.practitionerId,
   );
-  const qualified = new Set([
-    appointment.service.primaryPractitionerId,
-    ...appointment.service.practitioners.map((item) => item.id),
-  ]);
+  if (user.role === "STAFF" && practitionerId !== ownPractitionerId)
+    return conflict("forbidden_employee", 403);
+  const qualified = new Set(
+    [
+      service.primaryPractitionerId,
+      ...service.practitioners.map((item) => item.id),
+    ].filter((value): value is string => Boolean(value)),
+  );
   if (!qualified.has(practitionerId)) return conflict("invalid_employee");
 
   const date = new Date(`${start.toISOString().slice(0, 10)}T00:00:00.000Z`);
@@ -72,24 +132,57 @@ export async function PATCH(
     where: { practitionerId_date: { practitionerId, date } },
     select: { slots: true },
   });
-  if (availability && !availabilityCovers(availability.slots, start, end))
+  const coverage =
+    availability?.slots ?? generateStaffSlots(start.toISOString().slice(0, 10));
+  if (!availabilityCovers(coverage, start, end))
     return conflict("outside_availability");
 
   const roomId = String(payload.roomId ?? appointment.roomId ?? "") || null;
-  const allowedRoomIds = new Set(
-    appointment.service.rooms.map((item) => item.id),
-  );
-  if (!roomId || !allowedRoomIds.has(roomId)) return conflict("invalid_room");
-
+  if (!roomId || !service.rooms.some((item) => item.id === roomId))
+    return conflict("invalid_room");
   const deviceId =
     String(payload.deviceId ?? appointment.deviceId ?? "") || null;
-  const allowedDeviceIds = new Set(
-    appointment.service.devices.map((item) => item.id),
-  );
-  if (appointment.service.requiresDevice && !deviceId)
-    return conflict("device_required");
-  if (deviceId && !allowedDeviceIds.has(deviceId))
+  if (service.requiresDevice && !deviceId) return conflict("device_required");
+  if (deviceId && !service.devices.some((item) => item.id === deviceId))
     return conflict("invalid_device");
+
+  const clientId =
+    intent === "details"
+      ? String(payload.clientId ?? appointment.clientId)
+      : appointment.clientId;
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, archivedAt: null },
+    select: { id: true },
+  });
+  if (!client) return conflict("client_not_found", 404);
+  const procedureRequested =
+    intent === "details" &&
+    payload.procedureIndex !== undefined &&
+    payload.procedureIndex !== null &&
+    payload.procedureIndex !== "";
+  const procedure = procedureRequested
+    ? resolveProcedure(content.whatItIs, payload.procedureIndex)
+    : null;
+  if (procedureRequested && !procedure)
+    return conflict("invalid_procedure", 400);
+  const procedureIndex =
+    intent === "details"
+      ? (procedure?.index ?? null)
+      : appointment.procedureIndex;
+  const procedureTitle =
+    intent === "details"
+      ? (procedure?.procedure.title ?? null)
+      : appointment.procedureTitle;
+  const procedurePrice =
+    intent === "details"
+      ? (procedure?.procedure.price ?? null)
+      : appointment.procedurePrice;
+  const notes =
+    intent === "details"
+      ? String(payload.notes ?? "")
+          .trim()
+          .slice(0, 2000) || null
+      : appointment.notes;
 
   const baseOverlap = overlapsWhere(start, end, id);
   const [employeeOverlap, roomOverlap, deviceOverlap] = await Promise.all([
@@ -120,7 +213,16 @@ export async function PATCH(
     deviceId: appointment.deviceId,
   };
   const next = { start, end, practitionerId, roomId, deviceId };
-  const expectedVersion = Number(payload.version);
+  const detailChanges = {
+    previous: {
+      clientId: appointment.clientId,
+      serviceId: appointment.serviceId,
+      procedureIndex: appointment.procedureIndex,
+      notes: appointment.notes,
+      locale: appointment.locale,
+    },
+    next: { clientId, serviceId, procedureIndex, notes, locale },
+  };
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
@@ -128,6 +230,13 @@ export async function PATCH(
         where: { id, version: expectedVersion },
         data: {
           ...next,
+          clientId,
+          serviceId,
+          procedureIndex,
+          procedureTitle,
+          procedurePrice,
+          notes,
+          locale,
           version: { increment: 1 },
         },
       });
@@ -135,7 +244,7 @@ export async function PATCH(
       await tx.appointmentEvent.create({
         data: {
           appointmentId: id,
-          kind: "CALENDAR_UPDATED",
+          kind: intent === "details" ? "DETAILS_UPDATED" : "CALENDAR_UPDATED",
           actor: user.email,
           previousStatus: appointment.status,
           nextStatus: appointment.status,
@@ -143,15 +252,10 @@ export async function PATCH(
           previousEnd: appointment.end,
           nextStart: start,
           nextEnd: end,
-          changes: calendarUpdatedChanges({ previous, next }),
-        },
-      });
-      await tx.auditLog.create({
-        data: {
-          actor: user.email,
-          action: "appointment_calendar_updated",
-          entity: "Appointment",
-          entityId: id,
+          changes:
+            intent === "details"
+              ? detailChanges
+              : calendarUpdatedChanges({ previous, next }),
         },
       });
       return tx.appointment.findUniqueOrThrow({
@@ -162,22 +266,36 @@ export async function PATCH(
         },
       });
     });
-
-    const timeOrEmployeeChanged =
+    await auditForUser(
+      user,
+      intent === "details"
+        ? "appointment_details_updated"
+        : "appointment_calendar_updated",
+      "Appointment",
+      id,
+      { request: req },
+    );
+    const scheduleChanged =
       previous.start.getTime() !== start.getTime() ||
       previous.practitionerId !== practitionerId;
-    if (timeOrEmployeeChanged) {
+    const materialDetailsChanged =
+      appointment.serviceId !== serviceId ||
+      appointment.procedureIndex !== procedureIndex ||
+      appointment.clientId !== clientId;
+    if (scheduleChanged || materialDetailsChanged) {
       await notifyAppointmentChange(
         updated,
         "rescheduled",
         updated.locale as Locale,
         null,
         user.email,
+        `v${updated.version}`,
       );
     }
     return NextResponse.json({
       id: updated.id,
       version: updated.version,
+      status: updated.status,
       start: updated.start.toISOString(),
       end: updated.end.toISOString(),
       practitionerId: updated.practitionerId,
@@ -191,4 +309,111 @@ export async function PATCH(
       return conflict("stale");
     throw error;
   }
+}
+
+async function lifecycle({
+  req,
+  user,
+  appointment,
+  intent,
+  expectedVersion,
+  payload,
+}: {
+  req: NextRequest;
+  user: NonNullable<Awaited<ReturnType<typeof requireApiUser>>>;
+  appointment: Prisma.AppointmentGetPayload<{ include: typeof include }>;
+  intent: string;
+  expectedVersion: number;
+  payload: Record<string, unknown>;
+}) {
+  const now = new Date();
+  let nextStatus: "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  if (intent === "confirm") {
+    if (!["BOOKED", "RESCHEDULED"].includes(appointment.status))
+      return conflict("invalid_status");
+    nextStatus = "CONFIRMED";
+  } else if (intent === "complete") {
+    if (appointment.status !== "CONFIRMED" || appointment.end > now)
+      return conflict("invalid_status");
+    nextStatus = "COMPLETED";
+  } else {
+    if (!["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(appointment.status))
+      return conflict("invalid_status");
+    nextStatus = "CANCELLED";
+  }
+  const reason = String(payload.reason ?? "")
+    .trim()
+    .slice(0, 500);
+  if (nextStatus === "CANCELLED" && reason.length < 3)
+    return conflict("reason_required", 400);
+
+  const eventKind =
+    nextStatus === "CONFIRMED"
+      ? "CONFIRMED"
+      : nextStatus === "COMPLETED"
+        ? "COMPLETED"
+        : "CANCELLED";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const changed = await tx.appointment.updateMany({
+        where: { id: appointment.id, version: expectedVersion },
+        data: {
+          status: nextStatus,
+          version: { increment: 1 },
+          ...(nextStatus === "CONFIRMED" ? { confirmedAt: now } : {}),
+          ...(nextStatus === "COMPLETED" ? { completedAt: now } : {}),
+          ...(nextStatus === "CANCELLED"
+            ? { cancelledAt: now, cancellationReason: reason }
+            : {}),
+        },
+      });
+      if (!changed.count) throw new Error("stale");
+      await tx.appointmentEvent.create({
+        data: {
+          appointmentId: appointment.id,
+          kind: eventKind,
+          actor: user.email,
+          previousStatus: appointment.status,
+          nextStatus,
+          reason: reason || null,
+        },
+      });
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "stale")
+      return conflict("stale");
+    throw error;
+  }
+  await auditForUser(
+    user,
+    `appointment_${nextStatus.toLowerCase()}`,
+    "Appointment",
+    appointment.id,
+    { request: req },
+  );
+  const notificationAppointment = {
+    ...appointment,
+    status: nextStatus,
+    version: expectedVersion + 1,
+  };
+  if (nextStatus === "CONFIRMED")
+    await notifyAppointmentConfirmation(
+      notificationAppointment,
+      appointment.locale as Locale,
+      user.email,
+    );
+  if (nextStatus === "CANCELLED")
+    await notifyAppointmentChange(
+      notificationAppointment,
+      "cancellation",
+      appointment.locale as Locale,
+      reason,
+      user.email,
+      `v${expectedVersion + 1}`,
+    );
+  return NextResponse.json({
+    id: appointment.id,
+    version: expectedVersion + 1,
+    status: nextStatus,
+  });
 }

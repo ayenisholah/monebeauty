@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auditForUser, requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { staffPractitionerId } from "@/lib/calendar-scheduling";
 
 export async function GET(
   req: NextRequest,
@@ -10,7 +9,6 @@ export async function GET(
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const { id } = await params;
-  const own = await staffPractitionerId(user);
   const appointment = await prisma.appointment.findUnique({
     where: { id },
     include: {
@@ -22,15 +20,12 @@ export async function GET(
           contraindications: true,
         },
       },
-      service: { select: { slug: true } },
-      room: { select: { name: true } },
-      device: { select: { name: true } },
+      service: { select: { id: true, slug: true } },
+      room: { select: { id: true, name: true } },
+      device: { select: { id: true, name: true } },
     },
   });
-  if (
-    !appointment ||
-    (user.role === "STAFF" && appointment.practitionerId !== own)
-  ) {
+  if (!appointment) {
     await auditForUser(
       user,
       "appointment_sensitive_access_denied",
@@ -50,12 +45,21 @@ export async function GET(
     );
   return NextResponse.json({
     id: appointment.id,
+    version: appointment.version,
+    status: appointment.status,
     client: appointment.client,
+    clientId: appointment.clientId,
+    serviceId: appointment.serviceId,
+    procedureIndex: appointment.procedureIndex,
     procedure: appointment.procedureTitle ?? appointment.service.slug,
     start: appointment.start.toISOString(),
     end: appointment.end.toISOString(),
     notes: appointment.notes,
+    practitionerId: appointment.practitionerId,
     room: appointment.room?.name ?? null,
+    roomId: appointment.roomId,
     device: appointment.device?.name ?? null,
+    deviceId: appointment.deviceId,
+    locale: appointment.locale,
   });
 }

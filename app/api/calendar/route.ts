@@ -23,10 +23,9 @@ export async function GET(req: NextRequest) {
   const ownPractitionerId = await staffPractitionerId(user);
   if (user.role === "STAFF" && !ownPractitionerId)
     return NextResponse.json({ error: "staff_not_linked" }, { status: 403 });
-  const practitionerWhere =
-    user.role === "STAFF"
-      ? { active: true, id: ownPractitionerId! }
-      : { active: true };
+  const practitionerWhere = user.role === "STAFF"
+    ? { active: true, id: ownPractitionerId! }
+    : { active: true };
   const [practitioners, rooms, devices, availabilities, appointments] =
     await Promise.all([
       prisma.practitioner.findMany({
@@ -87,7 +86,9 @@ export async function GET(req: NextRequest) {
     rooms,
     devices,
     ownPractitionerId,
-    canEditAll: user.role === "ADMIN",
+    canManageAppointments: true,
+    canEditAllAvailability: user.role === "ADMIN",
+    canEditOwnAvailability: Boolean(ownPractitionerId),
     availabilities: availabilities.map((row) => ({
       practitionerId: row.practitionerId,
       date: row.date.toISOString().slice(0, 10),
@@ -117,7 +118,9 @@ export async function GET(req: NextRequest) {
       allowedRoomIds: appointment.service.rooms.map((item) => item.id),
       allowedDeviceIds: appointment.service.devices.map((item) => item.id),
       requiresDevice: appointment.service.requiresDevice,
-      editable: user.role === "ADMIN",
+      editable: ["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(
+        appointment.status,
+      ),
     })),
   });
 }

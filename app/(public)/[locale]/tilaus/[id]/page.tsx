@@ -9,6 +9,8 @@ import { formatPrice } from "@/content/products";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
 import { reconcileCheckoutSession } from "@/lib/stripe-payments";
 import { ClearPaidCart } from "@/components/shop/ClearPaidCart";
+import { currentUser } from "@/lib/auth";
+import { validOrderAccessToken } from "@/lib/order-access";
 
 export async function generateMetadata({
   params,
@@ -25,20 +27,22 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; token?: string }>;
 }) {
   const { locale, id } = await params;
-  const { session_id: sessionId } = await searchParams;
+  const { session_id: sessionId, token } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Order");
-  if (sessionId) {
-    await reconcileCheckoutSession(sessionId).catch(() => undefined);
-  }
+  const reconciled = sessionId ? await reconcileCheckoutSession(sessionId).catch(() => null) : null;
   const order = await prisma.order.findUnique({
     where: { id },
     include: { items: { include: { vouchers: true } } },
   });
   if (!order) notFound();
+  const user = await currentUser();
+  const accountClient = user?.role === "CLIENT" ? await prisma.client.findUnique({ where: { userId: user.id }, select: { id: true } }) : null;
+  const allowed = reconciled?.id === order.id || accountClient?.id === order.clientId || validOrderAccessToken(order.id, token ?? "");
+  if (!allowed) notFound();
   const paid = ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
     order.paymentStatus,
   );

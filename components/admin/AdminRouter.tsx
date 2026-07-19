@@ -42,6 +42,7 @@ import { SharedCalendar } from "@/components/calendar/SharedCalendar";
 import { CalendarSetup } from "@/components/calendar/CalendarSetup";
 import { StaffAccounts } from "@/components/admin/StaffAccounts";
 import { AuditLogs } from "@/components/admin/AuditLogs";
+import { IntegrationLogs } from "@/components/admin/IntegrationLogs";
 import { ChangeRequestQueue } from "@/components/admin/ChangeRequestQueue";
 import {
   AppointmentsAdmin,
@@ -116,6 +117,7 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
       clients: t("nav.clients"),
       staff: t("nav.staff"),
       audit: t("nav.audit"),
+      integrations: t("nav.integrations"),
       calendar: t("nav.calendar"),
       appointments: t("nav.appointments"),
       orders: t("nav.orders"),
@@ -131,6 +133,7 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
       clients: t("modules.clients"),
       staff: t("modules.staff"),
       audit: t("modules.audit"),
+      integrations: t("modules.integrations"),
       calendar: t("modules.calendar"),
       appointments: t("modules.appointments"),
       orders: t("modules.orders"),
@@ -364,6 +367,8 @@ async function renderModule({
   if (adminModule === "staff") return <StaffAccounts locale={locale} id={id} />;
   if (adminModule === "audit")
     return <AuditLogs locale={locale} searchParams={searchParams} />;
+  if (adminModule === "integrations")
+    return <IntegrationLogs locale={locale} searchParams={searchParams} />;
   if (adminModule === "calendar") {
     const calendarHref = adminHref(locale, "calendar");
     if (id === "asetukset")

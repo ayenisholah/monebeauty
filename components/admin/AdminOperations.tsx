@@ -208,7 +208,7 @@ export async function OrdersAdmin({
         payments: { orderBy: { createdAt: "desc" } },
         refunds: { orderBy: { createdAt: "desc" } },
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" } } },
+          include: { attempts: { orderBy: { attemptedAt: "desc" }, include: { externalApiAttempt: true } } },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -516,7 +516,7 @@ export async function OrdersAdmin({
         client: true,
         items: true,
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" }, take: 1 } },
+          include: { attempts: { orderBy: { attemptedAt: "desc" }, take: 1, include: { externalApiAttempt: true } } },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -626,7 +626,7 @@ export async function AppointmentsAdmin({
         },
         events: { orderBy: { at: "desc" } },
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" } } },
+          include: { attempts: { orderBy: { attemptedAt: "desc" }, include: { externalApiAttempt: true } } },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -1060,7 +1060,15 @@ function CommunicationHistory({
       id: string;
       status: string;
       provider: string | null;
+      providerMessageId: string | null;
+      errorDetail: string | null;
       attemptedAt: Date;
+      externalApiAttempt: {
+        httpStatus: number | null;
+        providerRequestId: string | null;
+        durationMs: number | null;
+        errorMessage: string | null;
+      } | null;
     }>;
   }>;
   locale: Locale;
@@ -1125,6 +1133,14 @@ function CommunicationHistory({
                     </form>
                   ) : null}
                 </div>
+                {latest && (latest.errorDetail || latest.externalApiAttempt?.errorMessage) ? (
+                  <p className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 font-sans text-xs text-red-800">
+                    {latest.externalApiAttempt?.httpStatus ? `HTTP ${latest.externalApiAttempt.httpStatus} · ` : ""}
+                    {latest.externalApiAttempt?.errorMessage ?? latest.errorDetail}
+                    {latest.externalApiAttempt?.providerRequestId ? ` · request ${latest.externalApiAttempt.providerRequestId}` : ""}
+                    {latest.externalApiAttempt?.durationMs != null ? ` · ${latest.externalApiAttempt.durationMs} ms` : ""}
+                  </p>
+                ) : null}
               </article>
             );
           })

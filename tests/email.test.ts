@@ -7,6 +7,7 @@ import {
   renderAccountActionEmail,
   renderStaffAppointmentEmail,
   renderStaffOrderEmail,
+  renderAppointmentLifecycleEmail,
   type AppointmentEmailData,
   type OrderEmailData,
 } from "../lib/email";
@@ -168,6 +169,23 @@ test("all customer appointment messages are localized and use Helsinki time", ()
       assert.match(message.text, /95 €/);
     }
   }
+});
+
+test("confirmed booking email contains calendar, clinic, policy, payment, and management details", () => {
+  const message = renderAppointmentLifecycleEmail(
+    { ...appointment, practitioner: { name: "Ada Specialist" }, manageUrl: "https://clinic.example/en/oma-tili?view=appointments" },
+    "en",
+    "confirmation",
+  );
+  assert.match(message.html, /Google Calendar/);
+  assert.match(message.html, /Apple Calendar/);
+  assert.match(message.html, /Outlook/);
+  assert.match(message.html, /Solvikinkatu 5/);
+  assert.match(message.html, /Pay at the clinic/);
+  assert.match(message.html, /less than 24 hours/);
+  assert.match(message.html, /Cancel or reschedule/);
+  assert.match(message.html, /Ada Specialist/);
+  assert.equal(message.attachments?.[0]?.contentType, "text/calendar; charset=utf-8");
 });
 
 test("customer and database values are escaped in HTML without damaging plain text", () => {

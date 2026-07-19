@@ -20,6 +20,7 @@ import {
   UserCircle,
   UsersThree,
   ShieldCheck,
+  PlugsConnected,
   X,
 } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/routing";
@@ -44,6 +45,7 @@ const nav: Array<{
   { module: "clients", icon: AddressBook },
   { module: "staff", icon: UsersThree },
   { module: "audit", icon: ShieldCheck },
+  { module: "integrations", icon: PlugsConnected },
   { module: "calendar", icon: CalendarBlank },
   { module: "appointments", icon: CalendarCheck },
   { module: "orders", icon: ShoppingBag },

@@ -43,10 +43,14 @@ export function BookingWizard({
   services,
   initialContext,
   fallback,
+  initialDetails,
+  verifiedEmail,
 }: {
   services: BookingServiceOption[];
   initialContext?: BookingContext;
   fallback: Fallback;
+  initialDetails?: { fullName: string; phone: string; email: string };
+  verifiedEmail?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -66,9 +70,9 @@ export function BookingWizard({
   const [slotsDegraded, setSlotsDegraded] = useState(false);
 
   const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
+    fullName: initialDetails?.fullName ?? "",
+    phone: initialDetails?.phone ?? "",
+    email: initialDetails?.email ?? "",
     notes: "",
   });
   const [consent, setConsent] = useState(false);
@@ -124,9 +128,11 @@ export function BookingWizard({
       const text = (value: unknown) =>
         typeof value === "string" ? value.slice(0, 2000) : "";
       setForm({
-        fullName: text(handoff.fullName),
-        phone: text(handoff.phone),
-        email: text(handoff.email),
+        fullName: text(handoff.fullName) || initialDetails?.fullName || "",
+        phone: text(handoff.phone) || initialDetails?.phone || "",
+        email: verifiedEmail
+          ? initialDetails?.email ?? ""
+          : text(handoff.email) || initialDetails?.email || "",
         notes: text(handoff.notes),
       });
 
@@ -152,7 +158,7 @@ export function BookingWizard({
         void loadSlots(preferredDate, resolvedService);
       }
     });
-  }, [initialService, loadSlots, router, services]);
+  }, [initialDetails, initialService, loadSlots, router, services, verifiedEmail]);
 
   function pickService(key: string) {
     setService(key);
@@ -467,6 +473,7 @@ export function BookingWizard({
                 type="email"
                 required
                 autoComplete="email"
+                readOnly={verifiedEmail}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className={inputCls}

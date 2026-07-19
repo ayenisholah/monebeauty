@@ -148,6 +148,7 @@ export async function POST(req: NextRequest) {
       include: {
         client: { select: { fullName: true, email: true, phone: true } },
         service: { select: { slug: true } },
+        practitioner: { select: { name: true } },
       },
     });
 

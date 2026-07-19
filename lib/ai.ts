@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Locale } from "@/i18n/routing";
 import type { KnowledgeSnippet } from "@/lib/chat-knowledge";
 import { claudeRuntimeConfig } from "@/lib/chat-reliability";
+import { runExternalApiAttempt } from "@/lib/external-api";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -88,11 +89,12 @@ export async function completeChat({
 }) {
   const config = claudeRuntimeConfig();
   try {
-    const response = await client().messages.create({
-      model: config.model,
-      max_tokens: 700,
-      system: groundedSystemPrompt(locale, snippets),
-      messages,
+    const { value: response } = await runExternalApiAttempt({
+      provider: "anthropic",
+      operation: "messages.create",
+      requestMetadata: { model: config.model, locale, messageCount: messages.length, snippetCount: snippets.length },
+      run: () => client().messages.create({ model: config.model, max_tokens: 700, system: groundedSystemPrompt(locale, snippets), messages }),
+      responseMetadata: (value) => ({ id: value.id, model: value.model, stopReason: value.stop_reason, inputTokens: value.usage.input_tokens, outputTokens: value.usage.output_tokens }),
     });
 
     const answer = response.content

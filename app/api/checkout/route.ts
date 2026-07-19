@@ -5,6 +5,8 @@ import { routing, type Locale } from "@/i18n/routing";
 import { normalizeInternationalPhone } from "@/lib/phone";
 import { localizedPath, siteUrl } from "@/lib/seo";
 import { orderPath } from "@/lib/public-routes";
+import { currentUser } from "@/lib/auth";
+import { runExternalApiAttempt } from "@/lib/external-api";
 import {
   eurosToMinor,
   createCheckoutCancelToken,
@@ -34,11 +36,15 @@ export async function POST(req: NextRequest) {
     return bad("invalid_json");
   }
 
-  const fullName = String(payload.fullName ?? "")
+  const user = await currentUser();
+  const accountClient = user?.role === "CLIENT"
+    ? await prisma.client.findUnique({ where: { userId: user.id } })
+    : null;
+  const fullName = String(accountClient?.fullName ?? payload.fullName ?? "")
     .trim()
     .slice(0, 180);
-  const phone = normalizeInternationalPhone(String(payload.phone ?? ""));
-  const email = String(payload.email ?? "")
+  const phone = normalizeInternationalPhone(String(accountClient?.phone ?? payload.phone ?? ""));
+  const email = String(accountClient?.email ?? payload.email ?? "")
     .trim()
     .toLowerCase();
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
@@ -94,6 +100,32 @@ export async function POST(req: NextRequest) {
     : "DIGITAL";
   if (!fulfillmentMethod) return bad("fulfillment_required");
 
+  const requestedAddressId = String(payload.savedAddressId ?? "");
+  const savedAddress = fulfillmentMethod === "SHIPPING" && accountClient && requestedAddressId
+    ? await prisma.savedAddress.findFirst({ where: { id: requestedAddressId, clientId: accountClient.id } })
+    : null;
+  const rawAddress = payload.shippingAddress && typeof payload.shippingAddress === "object"
+    ? payload.shippingAddress as Record<string, unknown>
+    : null;
+  const oneOffAddress = rawAddress ? {
+    label: String(rawAddress.label ?? "Home").trim().slice(0, 60),
+    recipientName: String(rawAddress.recipientName ?? "").trim().slice(0, 160),
+    phone: normalizeInternationalPhone(String(rawAddress.phone ?? "")) ?? "",
+    line1: String(rawAddress.line1 ?? "").trim().slice(0, 180),
+    line2: String(rawAddress.line2 ?? "").trim().slice(0, 180) || null,
+    postalCode: String(rawAddress.postalCode ?? "").trim(),
+    city: String(rawAddress.city ?? "").trim().slice(0, 100),
+    country: "FI",
+  } : null;
+  if (fulfillmentMethod === "SHIPPING" && requestedAddressId && !savedAddress)
+    return bad("address_invalid");
+  if (
+    fulfillmentMethod === "SHIPPING" &&
+    !savedAddress &&
+    (!oneOffAddress || !oneOffAddress.recipientName || !oneOffAddress.phone || !oneOffAddress.line1 || !/^\d{5}$/.test(oneOffAddress.postalCode) || !oneOffAddress.city)
+  ) return bad("address_invalid");
+  const selectedAddress = savedAddress ?? oneOffAddress;
+
   const lineItems = products.map((product) => ({
     quantity: qtyBySlug.get(product.slug)!,
     price_data: {
@@ -122,23 +154,64 @@ export async function POST(req: NextRequest) {
   let orderId: string | undefined;
   try {
     const cancellation = createCheckoutCancelToken();
-    const existing = await prisma.client.findFirst({ where: { email } });
-    const client = existing
+    const existing = accountClient ?? await prisma.client.findFirst({ where: { email, userId: null } });
+    const client = accountClient ?? (existing
       ? await prisma.client.update({
           where: { id: existing.id },
           data: { fullName, phone, consentGdpr: true },
         })
       : await prisma.client.create({
           data: { fullName, phone, email, consentGdpr: true },
+        }));
+    let selectedSavedAddressId = savedAddress?.id ?? null;
+    if (fulfillmentMethod === "SHIPPING" && !savedAddress && oneOffAddress && payload.saveAddress === true && accountClient) {
+      const count = await prisma.savedAddress.count({ where: { clientId: accountClient.id } });
+      if (count < 10) {
+        const created = await prisma.savedAddress.create({
+          data: { ...oneOffAddress, clientId: accountClient.id, isDefault: count === 0 },
         });
+        selectedSavedAddressId = created.id;
+      }
+    }
+
+    let stripeCustomerId = accountClient?.stripeCustomerId ?? null;
+    if (accountClient) {
+      const address = selectedAddress ? {
+        line1: selectedAddress.line1,
+        line2: selectedAddress.line2 ?? undefined,
+        postal_code: selectedAddress.postalCode,
+        city: selectedAddress.city,
+        country: "FI" as const,
+      } : undefined;
+      const shipping = address && selectedAddress
+        ? { name: selectedAddress.recipientName, phone: selectedAddress.phone, address }
+        : undefined;
+      if (stripeCustomerId) {
+        await runExternalApiAttempt({ provider: "stripe", operation: "customers.update", context: { correlationId: accountClient.id }, requestMetadata: { hasAddress: Boolean(address) }, run: () => stripeClient().customers.update(stripeCustomerId!, { name: fullName, email, phone, ...(address ? { address, shipping } : {}) }), responseMetadata: (value) => ({ id: value.id }) });
+      } else {
+        const { value: customer } = await runExternalApiAttempt({ provider: "stripe", operation: "customers.create", context: { correlationId: accountClient.id }, requestMetadata: { hasAddress: Boolean(address) }, run: () => stripeClient().customers.create({ name: fullName, email, phone, ...(address ? { address, shipping } : {}), metadata: { clientId: accountClient.id } }), responseMetadata: (value) => ({ id: value.id }) });
+        stripeCustomerId = customer.id;
+        await prisma.client.update({ where: { id: accountClient.id }, data: { stripeCustomerId } });
+      }
+    }
 
     const order = await prisma.order.create({
       data: {
         clientId: client.id,
+        savedAddressId: selectedSavedAddressId,
         locale,
         source: "WEBSITE_STRIPE",
         paymentStatus: "UNPAID",
         fulfillmentMethod,
+        shippingAddress: selectedAddress ? {
+          recipientName: selectedAddress.recipientName,
+          phone: selectedAddress.phone,
+          line1: selectedAddress.line1,
+          line2: selectedAddress.line2,
+          postalCode: selectedAddress.postalCode,
+          city: selectedAddress.city,
+          country: "FI",
+        } : undefined,
         subtotal: minorToEuros(subtotalMinor),
         total: minorToEuros(subtotalMinor),
         currency: "EUR",
@@ -178,12 +251,16 @@ export async function POST(req: NextRequest) {
       locale,
       fulfillmentMethod,
     };
-    const session = await stripeClient().checkout.sessions.create(
-      {
+    const { value: session } = await runExternalApiAttempt({
+      provider: "stripe",
+      operation: "checkout.sessions.create",
+      context: { orderId: order.id, correlationId: attempt.idempotencyKey },
+      requestMetadata: { fulfillmentMethod, itemCount: lineItems.length, currency: "EUR" },
+      run: () => stripeClient().checkout.sessions.create({
         mode: "payment",
         locale,
         client_reference_id: order.id,
-        customer_email: email,
+        ...(stripeCustomerId ? { customer: stripeCustomerId } : { customer_email: email }),
         line_items: lineItems,
         success_url: successUrl,
         cancel_url: cancelUrl.toString(),
@@ -193,11 +270,12 @@ export async function POST(req: NextRequest) {
           ? {
               shipping_address_collection: { allowed_countries: ["FI"] },
               shipping_options: [{ shipping_rate: stripeShippingRateId() }],
+              ...(stripeCustomerId ? { customer_update: { shipping: "auto" as const } } : {}),
             }
           : {}),
-      },
-      { idempotencyKey: attempt.idempotencyKey },
-    );
+      }, { idempotencyKey: attempt.idempotencyKey }),
+      responseMetadata: (value) => ({ id: value.id, status: value.status, paymentStatus: value.payment_status, amountTotal: value.amount_total }),
+    });
     if (!session.url || session.amount_total == null) {
       throw new Error("stripe_session_incomplete");
     }
@@ -222,6 +300,9 @@ export async function POST(req: NextRequest) {
       prisma.consent.create({
         data: { clientId: client.id, type: "gdpr_checkout", granted: true },
       }),
+      ...(selectedSavedAddressId
+        ? [prisma.savedAddress.update({ where: { id: selectedSavedAddressId }, data: { lastUsedAt: new Date() } })]
+        : []),
     ]);
     return NextResponse.json({ orderId: order.id, checkoutUrl: session.url });
   } catch {

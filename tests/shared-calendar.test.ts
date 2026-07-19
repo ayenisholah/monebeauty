@@ -9,6 +9,14 @@ const moveApi = readFileSync(
   "app/api/calendar/appointments/[id]/route.ts",
   "utf8",
 );
+const createApi = readFileSync(
+  "app/api/calendar/appointments/route.ts",
+  "utf8",
+);
+const appointmentForm = readFileSync(
+  "components/calendar/AppointmentForm.tsx",
+  "utf8",
+);
 const migration = readFileSync(
   "prisma/migrations/20260719110000_shared_employee_calendar/migration.sql",
   "utf8",
@@ -85,19 +93,40 @@ test("calendar primary actions keep a contrasting accent treatment", () => {
   assert.match(primaryButton, /bg-accent/);
   assert.match(primaryButton, /text-page/);
   assert.doesNotMatch(primaryButton, /bg-card|text-body/);
-  assert.equal(calendar.match(/className=\{primaryButtonCls\}/g)?.length, 2);
+  assert.ok(
+    (calendar.match(/className=\{primaryButtonCls\}/g)?.length ?? 0) >= 3,
+  );
 });
 
-test("calendar permissions restrict staff to their own read-only column", () => {
+test("calendar permissions restrict staff operations to their linked employee", () => {
   assert.match(calendarApi, /requireApiUser\(\["ADMIN", "STAFF"\]\)/);
-  assert.match(
-    calendarApi,
-    /user\.role === "STAFF"[\s\S]*?id: ownPractitionerId/,
-  );
-  assert.match(calendarApi, /editable: user\.role === "ADMIN"/);
-  assert.match(moveApi, /user\.role !== "ADMIN"/);
-  assert.match(moveApi, /calendar_mutation_denied/);
+  assert.match(calendarApi, /user\.role === "STAFF"/);
+  assert.match(calendarApi, /id: ownPractitionerId!/);
+  assert.match(calendarApi, /canManageAppointments: true/);
+  assert.match(calendarApi, /canEditOwnAvailability/);
+  assert.doesNotMatch(moveApi, /user\.role !== "ADMIN"/);
+  assert.match(moveApi, /appointment\.practitionerId !== ownPractitionerId/);
+  assert.match(moveApi, /practitionerId !== ownPractitionerId/);
+  assert.match(createApi, /practitionerId !== ownPractitionerId/);
   assert.match(moveApi, /qualified\.has\(practitionerId\)/);
+});
+
+test("staff can create confirmed appointments from a button or open time", () => {
+  assert.match(calendar, /t\.create/);
+  assert.match(calendar, /onCreate\(slot\.start, practitioner\.id\)/);
+  assert.match(appointmentForm, /Search clients/);
+  assert.match(appointmentForm, /Add a new client/);
+  assert.match(createApi, /status: "CONFIRMED"/);
+  assert.match(createApi, /channel: "staff"/);
+  assert.match(createApi, /notifyAppointmentConfirmation/);
+  assert.match(createApi, /gdpr_booking_staff/);
+});
+
+test("staff can edit open and closed times only through own availability", () => {
+  assert.match(calendar, /openAvailabilityEditor/);
+  assert.match(calendar, /saveAvailability/);
+  assert.match(calendar, /\["open", "closed"\]/);
+  assert.match(calendarApi, /canEditOwnAvailability/);
 });
 
 test("database rejects employee, room, and device overlaps", () => {
@@ -111,6 +140,6 @@ test("database rejects employee, room, and device overlaps", () => {
 test("time and employee moves are audited and notify the client", () => {
   assert.match(moveApi, /CALENDAR_UPDATED/);
   assert.match(moveApi, /appointment_calendar_updated/);
-  assert.match(moveApi, /timeOrEmployeeChanged/);
+  assert.match(moveApi, /scheduleChanged/);
   assert.match(moveApi, /notifyAppointmentChange/);
 });

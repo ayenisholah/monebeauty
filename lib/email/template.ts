@@ -6,6 +6,11 @@ export type EmailMessage = {
   subject: string;
   text: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    content: string;
+    contentType: string;
+  }>;
 };
 
 export type EmailDetail = {

@@ -26,6 +26,7 @@ export async function GET(
       },
       carts: { include: { items: true } },
       chatSessions: true,
+      savedAddresses: true,
     },
   });
   if (!client)

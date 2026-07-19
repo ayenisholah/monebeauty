@@ -3,6 +3,7 @@ import { bookingServiceTitle } from "@/content/booking-services";
 import type { Locale } from "@/i18n/routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { PUBLIC_PATHS, orderPath } from "@/lib/public-routes";
+import { orderAccessToken } from "@/lib/order-access";
 import {
   escapeHtml,
   plainTextFooter,
@@ -23,7 +24,9 @@ export type AppointmentEmailData = {
   start: Date;
   end: Date;
   client: { fullName: string; email: string; phone: string };
-  service: { slug: string; title?: string; staffTitle?: string };
+  service: { slug: string; title?: string; staffTitle?: string; description?: string };
+  practitioner?: { name: string } | null;
+  manageUrl?: string;
   procedureIndex?: number | null;
   procedureTitle?: string | null;
   procedurePrice?: string | null;
@@ -333,7 +336,16 @@ export function renderCustomerAppointmentEmail(
   ];
   const cta =
     kind === "confirmation"
-      ? renderCta(copy.bookAnother, localizedUrl(PUBLIC_PATHS.booking, locale))
+      ? renderCta(
+          appointment.manageUrl
+            ? locale === "fi"
+              ? "Hallinnoi ajanvarausta"
+              : locale === "ru"
+                ? "Управлять записью"
+                : "Manage appointment"
+            : copy.bookAnother,
+          appointment.manageUrl ?? localizedUrl(PUBLIC_PATHS.booking, locale),
+        )
       : "";
   const body = [
     paragraph(copy.greeting(appointment.client.fullName)),
@@ -393,7 +405,7 @@ export function renderCustomerOrderEmail(
   const reference = emailReference(order.id);
   const items = orderItems(order, locale);
   const total = formatEmailMoney(order.total, order.currency, locale);
-  const orderPage = localizedUrl(orderPath(order.id), locale);
+  const orderPage = `${localizedUrl(orderPath(order.id), locale)}?token=${encodeURIComponent(orderAccessToken(order.id))}`;
   const greeting = order.client?.fullName
     ? paragraph(copy.greeting(order.client.fullName))
     : "";

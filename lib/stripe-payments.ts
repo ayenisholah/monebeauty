@@ -7,6 +7,7 @@ import {
   notifyOrderReceipt,
 } from "@/lib/notifications";
 import { minorToEuros, stripeClient, stripeObjectId } from "@/lib/stripe";
+import { runExternalApiAttempt } from "@/lib/external-api";
 
 const orderNotificationInclude = {
   items: true,
@@ -41,7 +42,7 @@ export async function reconcileCheckoutSession(
 ) {
   const session =
     typeof sessionOrId === "string"
-      ? await stripeClient().checkout.sessions.retrieve(sessionOrId)
+      ? (await runExternalApiAttempt({ provider: "stripe", operation: "checkout.sessions.retrieve", context: { correlationId: sessionOrId }, run: () => stripeClient().checkout.sessions.retrieve(sessionOrId), responseMetadata: (value) => ({ id: value.id, status: value.status, paymentStatus: value.payment_status }) })).value
       : sessionOrId;
   const orderId = session.metadata?.orderId;
   if (session.metadata?.source !== "website" || !orderId) return null;
@@ -230,7 +231,7 @@ export async function reconcileStripeRefund(
 ) {
   const refund =
     typeof refundOrId === "string"
-      ? await stripeClient().refunds.retrieve(refundOrId)
+      ? (await runExternalApiAttempt({ provider: "stripe", operation: "refunds.retrieve", context: { correlationId: refundOrId }, run: () => stripeClient().refunds.retrieve(refundOrId), responseMetadata: (value) => ({ id: value.id, status: value.status }) })).value
       : refundOrId;
   const paymentIntentId = stripeObjectId(refund.payment_intent);
   if (!paymentIntentId) return null;

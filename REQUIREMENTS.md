@@ -35,10 +35,12 @@ minimum. Admins can view every staff account, reset passwords, revoke sessions, 
 restore access, inspect audit history, and permanently delete credentials after confirming the
 staff email. Credential deletion retains the employee calendar profile, appointments, and
 audit records. Staff receive no account confirmation email and must replace the temporary
-password at first login. Staff see only their own calendar column and
-may reveal their own appointment's contact details, booking notes, and contraindication
-warning, but cannot mutate schedules, appointments, resources, availability, or clinic data.
-Only password changes and logout remain available to staff.
+password at first login. Staff see their assigned employee calendar and may reveal appointment
+contact details, booking notes, and contraindication warnings through audited access. Staff
+may create, edit, confirm, complete, cancel, and availability-validate reschedule appointments
+for their linked employee. They may change only their own working hours and
+open/closed availability. Website content, pricing, services, rooms/devices, staff accounts,
+CRM administration, and other clinic configuration remain admin-only.
 
 The admin exposes staff management and immutable audit views. Audit security/authentication,
 password/session events, sensitive staff appointment-detail access, denied mutations, and
@@ -50,8 +52,33 @@ metadata. Audit data has filtering/export but no application deletion or automat
 The admin sidebar exposes `/admin/kalenteri` in every interface locale. The calendar follows
 the supplied Timma Pro reference: day/week/month navigation, all active employees visible in
 separate columns, availability at a glance, and appointment cards showing client, procedure,
-room, and time. Admins may move active appointments in time, change rooms, or reassign them
-to qualified employees after confirmation; staff see only their own column and cannot edit it.
+room, and time. Admins may create appointments, update active appointment details, change
+rooms/devices, and move appointments in time or between qualified employees. Staff may perform
+those operations only for appointments assigned to their linked employee. A Create
+appointment button is always available, and selecting an empty available time in day/week view
+prefills its employee, date, and time. Staff may edit only their own availability and cannot
+change calendar setup or other clinic configuration.
+
+Staff-created appointments search or create a CRM client, require recorded GDPR acknowledgement,
+start as confirmed, and send the localized durable email/SMS confirmation. Creation, detail
+changes, lifecycle actions, schedule moves, sensitive access, and denied mutations are audited.
+
+The verified client account is a localized dashboard with overview, appointments, orders, saved
+addresses, and profile sections. Verified email is visible and read-only; name and phone are
+editable. Exact-email guest orders are linked after verification only when they are not owned by a
+different verified account. Authenticated booking and checkout reuse the exact linked Client rather
+than matching identity from submitted email. Finland shipping checkout can select or create a saved
+address; Stripe's final address updates only the order snapshot.
+
+Appointment confirmations include service/procedure, employee, localized Helsinki date/time and
+duration, pay-at-clinic details, clinic contact/location and map links, Google/Apple/Outlook calendar
+actions, the published 24-hour cancellation policy, and a secure account-based cancel/reschedule
+action. Cancellation remains an admin-reviewed request until approved.
+
+Every server-side email, SMS, Stripe, Anthropic, and Cloudinary request records an admin-visible,
+redacted integration attempt with provider operation, outcome, HTTP status, provider/request ID,
+latency, safe response metadata, retry number, and related entity. Logs expire after 30 days and
+must exclude secrets, authorization data, raw payment data, and unnecessary personal content.
 
 Public booking remains **Service -> Time -> You**. Every bookable service has one fixed
 primary employee, so service selection directly determines the employee schedule without a

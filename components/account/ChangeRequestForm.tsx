@@ -60,7 +60,7 @@ export function ChangeRequestForm({
   const label =
     locale === "fi"
       ? {
-          cancel: "Pyydä peruutusta",
+          cancel: "Peruuta aika",
           reschedule: "Pyydä uutta aikaa",
           reason: "Syy tai lisätieto",
           submit: "Lähetä pyyntö",
@@ -69,7 +69,7 @@ export function ChangeRequestForm({
         }
       : locale === "ru"
         ? {
-            cancel: "Запросить отмену",
+            cancel: "Отменить запись",
             reschedule: "Запросить другое время",
             reason: "Причина или комментарий",
             submit: "Отправить запрос",
@@ -77,7 +77,7 @@ export function ChangeRequestForm({
             none: "Нет свободного времени.",
           }
         : {
-            cancel: "Request cancellation",
+            cancel: "Cancel appointment",
             reschedule: "Request another time",
             reason: "Reason or additional information",
             submit: "Submit request",

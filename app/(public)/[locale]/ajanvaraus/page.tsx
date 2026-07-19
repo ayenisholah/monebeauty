@@ -18,6 +18,8 @@ import { CONTACT } from "@/content/site";
 import { localeAlternates } from "@/lib/seo";
 import type { Locale } from "@/i18n/routing";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { currentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 export async function generateMetadata({
   params,
@@ -44,12 +46,17 @@ export default async function BookingPage({
   setRequestLocale(locale);
   const t = await getTranslations("Booking");
 
-  const services = await getBookingServiceOptions(locale as Locale);
-  const bookingContext = await getBookingContext(
-    locale as Locale,
-    service,
-    procedure,
-  );
+  const user = await currentUser();
+  const [services, bookingContext, accountClient] = await Promise.all([
+    getBookingServiceOptions(locale as Locale),
+    getBookingContext(locale as Locale, service, procedure),
+    user?.role === "CLIENT"
+      ? prisma.client.findUnique({
+          where: { userId: user.id },
+          select: { fullName: true, phone: true, email: true },
+        })
+      : null,
+  ]);
 
   return (
     <section className="bg-page py-[clamp(52px,7vw,104px)]">
@@ -120,6 +127,8 @@ export default async function BookingPage({
             <BookingWizard
               services={services}
               initialContext={bookingContext ?? undefined}
+              initialDetails={accountClient ?? undefined}
+              verifiedEmail={Boolean(accountClient && user?.emailVerifiedAt)}
               fallback={{
                 phone: CONTACT.phone,
                 phoneHref: CONTACT.phoneHref,

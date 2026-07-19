@@ -16,10 +16,15 @@ import {
   CaretLeft,
   CaretRight,
   GearSix,
+  Plus,
 } from "@phosphor-icons/react";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { cn } from "@/lib/cn";
+import {
+  AppointmentForm,
+  type AppointmentDetail as ManageAppointmentDetail,
+} from "@/components/calendar/AppointmentForm";
 
 type View = "day" | "week" | "month";
 const VIEW_STORAGE_KEYS = {
@@ -58,7 +63,9 @@ type Payload = {
   rooms: Resource[];
   devices: Resource[];
   ownPractitionerId: string | null;
-  canEditAll: boolean;
+  canManageAppointments: boolean;
+  canEditAllAvailability: boolean;
+  canEditOwnAvailability: boolean;
   availabilities: Array<{
     practitionerId: string;
     date: string;
@@ -98,6 +105,11 @@ const copy = {
     refresh: "Refresh",
     setup: "Calendar setup",
     hours: "Working hours",
+    availability: "Open / closed times",
+    saveAvailability: "Save availability",
+    open: "Open",
+    closed: "Closed",
+    booked: "Booked",
     applyHours: "Apply hours",
     startHour: "Start",
     endHour: "End",
@@ -114,6 +126,7 @@ const copy = {
     conflict:
       "The appointment could not be moved. Refresh and try another time or resource.",
     saved: "Appointment updated.",
+    create: "Create appointment",
   },
   fi: {
     title: "Yhteinen kalenteri",
@@ -125,6 +138,11 @@ const copy = {
     refresh: "Päivitä",
     setup: "Kalenterin asetukset",
     hours: "Työajat",
+    availability: "Avoimet / suljetut ajat",
+    saveAvailability: "Tallenna saatavuus",
+    open: "Avoin",
+    closed: "Suljettu",
+    booked: "Varattu",
     applyHours: "Käytä työaikoja",
     startHour: "Alkaa",
     endHour: "Päättyy",
@@ -141,6 +159,7 @@ const copy = {
     conflict:
       "Ajanvarausta ei voitu siirtää. Päivitä ja valitse toinen aika tai resurssi.",
     saved: "Ajanvaraus päivitetty.",
+    create: "Luo ajanvaraus",
   },
   ru: {
     title: "Общий календарь",
@@ -152,6 +171,11 @@ const copy = {
     refresh: "Обновить",
     setup: "Настройки календаря",
     hours: "Рабочее время",
+    availability: "Открытые / закрытые часы",
+    saveAvailability: "Сохранить доступность",
+    open: "Открыто",
+    closed: "Закрыто",
+    booked: "Занято",
     applyHours: "Применить часы",
     startHour: "Начало",
     endHour: "Конец",
@@ -168,6 +192,7 @@ const copy = {
     conflict:
       "Не удалось перенести запись. Обновите календарь и выберите другое время или ресурс.",
     saved: "Запись обновлена.",
+    create: "Создать запись",
   },
 } as const;
 
@@ -241,7 +266,16 @@ export function SharedCalendar({
     deviceId: string;
   } | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [availabilityPractitionerId, setAvailabilityPractitionerId] =
+    useState("");
+  const [availabilitySlots, setAvailabilitySlots] = useState<Slot[]>([]);
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
+  const [managing, setManaging] = useState<{
+    start: string;
+    practitionerId: string;
+    detail?: ManageAppointmentDetail | null;
+  } | null>(null);
   const [hours, setHours] = useState({
     practitionerId: "",
     startHour: 10,
@@ -339,16 +373,40 @@ export function SharedCalendar({
   }
 
   async function openAppointment(appointment: Appointment) {
-    if (appointment.editable) {
-      openEditor(appointment);
-      return;
-    }
     const response = await fetch(`/api/staff/appointments/${appointment.id}`);
     if (!response.ok) {
       setMessage(t.conflict);
       return;
     }
-    setDetail((await response.json()) as AppointmentDetail);
+    const payload = (await response.json()) as ManageAppointmentDetail &
+      AppointmentDetail;
+    if (appointment.editable) {
+      setManaging({
+        start: appointment.start,
+        practitionerId: appointment.practitionerId,
+        detail: payload,
+      });
+    } else {
+      setDetail(payload);
+    }
+  }
+
+  function openCreate(start?: string, practitionerId?: string) {
+    const fallback = new Date(`${date}T10:00:00.000Z`);
+    if (fallback.getTime() <= Date.now()) {
+      const now = new Date();
+      const minutes = Math.ceil(now.getUTCMinutes() / 15) * 15;
+      fallback.setUTCHours(now.getUTCHours(), minutes, 0, 0);
+    }
+    setManaging({
+      start: start ?? fallback.toISOString(),
+      practitionerId:
+        practitionerId ??
+        data?.ownPractitionerId ??
+        selected[0] ??
+        data?.practitioners[0]?.id ??
+        "",
+    });
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -407,6 +465,50 @@ export function SharedCalendar({
       return;
     }
     setHoursOpen(false);
+    setMessage(t.saved);
+    await load();
+  }
+
+  function openAvailabilityEditor() {
+    if (!data) return;
+    const practitionerId = data.canEditAllAvailability
+      ? (selected[0] ?? data.practitioners[0]?.id ?? "")
+      : (data.ownPractitionerId ?? "");
+    if (!practitionerId) return;
+    const existing = data.availabilities.find(
+      (item) => item.date === date && item.practitionerId === practitionerId,
+    );
+    const slots = existing?.slots.length
+      ? existing.slots
+      : Array.from({ length: 36 }, (_, index) => {
+          const minutes = 10 * 60 + index * 15;
+          const next = minutes + 15;
+          return {
+            start: `${date}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00.000Z`,
+            end: `${date}T${pad(Math.floor(next / 60))}:${pad(next % 60)}:00.000Z`,
+            status: "open",
+          };
+        });
+    setAvailabilityPractitionerId(practitionerId);
+    setAvailabilitySlots(slots);
+    setAvailabilityOpen(true);
+  }
+
+  async function saveAvailability() {
+    const response = await fetch("/api/staff/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date,
+        practitionerId: availabilityPractitionerId,
+        slots: availabilitySlots,
+      }),
+    });
+    if (!response.ok) {
+      setMessage(t.conflict);
+      return;
+    }
+    setAvailabilityOpen(false);
     setMessage(t.saved);
     await load();
   }
@@ -496,20 +598,39 @@ export function SharedCalendar({
           >
             <ArrowClockwise size={18} />
           </button>
-          {data?.canEditAll ? (
+          {data?.canManageAppointments ? (
             <button
               type="button"
-              onClick={() => {
-                const practitionerId = data.canEditAll
-                  ? (selected[0] ?? data.practitioners[0]?.id ?? "")
-                  : (data.ownPractitionerId ?? "");
-                setHours((current) => ({ ...current, practitionerId }));
-                setHoursOpen(true);
-              }}
-              className={buttonCls}
+              onClick={() => openCreate()}
+              className={primaryButtonCls}
             >
-              {t.hours}
+              {t.create}
+              <Plus size={17} weight="thin" />
             </button>
+          ) : null}
+          {data?.canEditAllAvailability || data?.canEditOwnAvailability ? (
+            <>
+              <button
+                type="button"
+                onClick={openAvailabilityEditor}
+                className={buttonCls}
+              >
+                {t.availability}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const practitionerId = data.canEditAllAvailability
+                    ? (selected[0] ?? data.practitioners[0]?.id ?? "")
+                    : (data.ownPractitionerId ?? "");
+                  setHours((current) => ({ ...current, practitionerId }));
+                  setHoursOpen(true);
+                }}
+                className={buttonCls}
+              >
+                {t.hours}
+              </button>
+            </>
           ) : null}
         </div>
         <div className="mt-[10px] flex flex-wrap gap-[7px] border-t border-line-hair pt-[10px]">
@@ -587,6 +708,7 @@ export function SharedCalendar({
               fmtDate={fmtDate}
               fmtTime={fmtTime}
               onOpen={(appointment) => void openAppointment(appointment)}
+              onCreate={openCreate}
             />
           )}
         </DndContext>
@@ -642,6 +764,17 @@ export function SharedCalendar({
             </button>
           </div>
         </div>
+      ) : null}
+
+      {managing ? (
+        <AppointmentForm
+          locale={locale}
+          initialStart={managing.start}
+          initialPractitionerId={managing.practitionerId}
+          detail={managing.detail}
+          onClose={() => setManaging(null)}
+          onSaved={load}
+        />
       ) : null}
 
       {editing && data ? (
@@ -735,6 +868,90 @@ export function SharedCalendar({
           </div>
         </div>
       ) : null}
+      {availabilityOpen && data ? (
+        <div
+          className="fixed inset-0 z-[105] flex items-end justify-center bg-ink/35 p-[12px] sm:items-center"
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-[10px] border border-line-card bg-card p-[clamp(18px,3vw,28px)] shadow-card"
+          >
+            <h2 className="font-display text-[30px] font-medium">
+              {t.availability}
+            </h2>
+            <p className="mt-1 font-sans text-sm text-muted">{date}</p>
+            <div className="mt-4 grid gap-2">
+              {availabilitySlots.map((slot, index) => {
+                const slotStart = new Date(slot.start);
+                const slotEnd = new Date(slot.end);
+                const booked = data.appointments.some(
+                  (appointment) =>
+                    appointment.practitionerId === availabilityPractitionerId &&
+                    appointment.status !== "CANCELLED" &&
+                    new Date(appointment.start) < slotEnd &&
+                    new Date(appointment.end) > slotStart,
+                );
+                return (
+                  <div
+                    key={slot.start}
+                    className="grid grid-cols-[1fr_auto] items-center gap-3 rounded border border-line-card bg-page p-2"
+                  >
+                    <span className="font-sans text-sm">
+                      {fmtTime.format(slotStart)}–{fmtTime.format(slotEnd)}
+                      {booked ? ` · ${t.booked}` : ""}
+                    </span>
+                    <div className="flex gap-1">
+                      {(["open", "closed"] as const).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          disabled={booked}
+                          onClick={() =>
+                            setAvailabilitySlots((current) =>
+                              current.map((item, itemIndex) =>
+                                itemIndex === index
+                                  ? { ...item, status }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={cn(
+                            buttonCls,
+                            slot.status === status &&
+                              "border-accent bg-btn-fill text-ink",
+                            booked && "cursor-not-allowed opacity-45",
+                          )}
+                        >
+                          {t[status]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAvailabilityOpen(false)}
+                className={buttonCls}
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveAvailability()}
+                className={primaryButtonCls}
+              >
+                {t.saveAvailability}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {hoursOpen && data ? (
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center bg-ink/35 p-[12px] sm:items-center"
@@ -753,11 +970,12 @@ export function SharedCalendar({
                   onValueChange={(practitionerId) =>
                     setHours({ ...hours, practitionerId })
                   }
-                  disabled={!data.canEditAll}
+                  disabled={!data.canEditAllAvailability}
                   options={data.practitioners
                     .filter(
                       (item) =>
-                        data.canEditAll || item.id === data.ownPractitionerId,
+                        data.canEditAllAvailability ||
+                        item.id === data.ownPractitionerId,
                     )
                     .map((item) => ({ value: item.id, label: item.name }))}
                 />
@@ -864,6 +1082,7 @@ function TimeGrid({
   fmtDate,
   fmtTime,
   onOpen,
+  onCreate,
 }: {
   range: { from: Date; to: Date };
   view: View;
@@ -872,6 +1091,7 @@ function TimeGrid({
   fmtDate: Intl.DateTimeFormat;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
+  onCreate: (start: string, practitionerId: string) => void;
 }) {
   const days = Array.from(
     { length: view === "day" ? 1 : 7 },
@@ -914,6 +1134,7 @@ function TimeGrid({
             data={data}
             fmtTime={fmtTime}
             onOpen={onOpen}
+            onCreate={onCreate}
           />
         ))}
       </div>
@@ -946,12 +1167,14 @@ function CalendarColumn({
   data,
   fmtTime,
   onOpen,
+  onCreate,
 }: {
   day: string;
   practitioner: Practitioner;
   data: Payload;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
+  onCreate: (start: string, practitionerId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `col:${day}:${practitioner.id}`,
@@ -995,9 +1218,13 @@ function CalendarColumn({
             ((end.getTime() - start.getTime()) / 3600000) * HOUR_HEIGHT,
           );
           return (
-            <div
+            <button
+              type="button"
               key={slot.start}
-              className="absolute inset-x-0 bg-card/90"
+              aria-label={`${fmtTime.format(start)} · ${practitioner.name}`}
+              onClick={() => onCreate(slot.start, practitioner.id)}
+              disabled={start.getTime() <= now.getTime()}
+              className="absolute inset-x-0 z-[1] bg-card/90 hover:bg-btn-fill focus:ring-2 focus:ring-accent focus:outline-none disabled:pointer-events-none"
               style={{ top, height }}
             />
           );

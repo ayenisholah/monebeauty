@@ -5,6 +5,8 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { CheckoutForm } from "@/components/shop/CheckoutForm";
 import { localeAlternates } from "@/lib/seo";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { currentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 export async function generateMetadata({
   params,
@@ -31,6 +33,21 @@ export default async function CheckoutPage({
   const query = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Checkout");
+  const user = await currentUser();
+  const accountClient = user?.role === "CLIENT"
+    ? await prisma.client.findUnique({
+        where: { userId: user.id },
+        select: {
+          fullName: true,
+          phone: true,
+          email: true,
+          savedAddresses: {
+            orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
+            select: { id: true, label: true, recipientName: true, phone: true, line1: true, line2: true, postalCode: true, city: true, country: true, isDefault: true },
+          },
+        },
+      })
+    : null;
   const payment =
     typeof query.payment === "string" ? query.payment : query.payment?.[0];
   const notice =
@@ -59,7 +76,11 @@ export default async function CheckoutPage({
           </p>
         ) : null}
         <div className="mt-[clamp(28px,4vw,48px)]">
-          <CheckoutForm />
+          <CheckoutForm
+            initialDetails={accountClient ? { fullName: accountClient.fullName, phone: accountClient.phone, email: accountClient.email } : undefined}
+            addresses={accountClient?.savedAddresses ?? []}
+            verifiedEmail={Boolean(accountClient && user?.emailVerifiedAt)}
+          />
         </div>
       </Container>
     </section>

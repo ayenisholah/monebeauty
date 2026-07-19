@@ -101,10 +101,12 @@ test("staff account controls are complete, visible, and admin-only", () => {
   assert.match(staffActions, /retainedCalendarHistory: true/);
 });
 
-test("staff data is read-only and sensitive appointment access is audited", () => {
-  assert.match(staffSchedule, /user\.role !== "ADMIN"/);
+test("staff operations retain own-availability and audited-sensitive-access boundaries", () => {
+  assert.match(
+    staffSchedule,
+    /String\(payload\.practitionerId\) !== practitionerId/,
+  );
   assert.match(staffSchedule, /availability_mutation_denied/);
-  assert.match(staffDetails, /appointment\.practitionerId !== own/);
   assert.match(staffDetails, /appointment_sensitive_details_viewed/);
   assert.match(staffDetails, /contraindications/);
 });

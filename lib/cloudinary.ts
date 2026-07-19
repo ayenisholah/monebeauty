@@ -1,6 +1,7 @@
 import "server-only";
 
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
+import { runExternalApiAttempt } from "@/lib/external-api";
 
 type CloudinaryConfig = {
   cloudName: string;
@@ -26,23 +27,21 @@ export async function uploadAdminImage(file: File) {
     secure: true,
   });
   const buffer = Buffer.from(await file.arrayBuffer());
-  return new Promise<UploadApiResponse>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: "image",
-        folder: "monebeauty/admin",
-        use_filename: true,
-        unique_filename: true,
-        overwrite: false,
-        allowed_formats: ["jpg", "jpeg", "png", "webp", "avif", "gif"],
-        tags: ["monebeauty-admin"],
-      },
-      (error, result) => {
-        if (error || !result)
-          reject(new Error(error?.message || "cloudinary_upload_failed"));
-        else resolve(result);
-      },
-    );
-    stream.end(buffer);
+  const { value } = await runExternalApiAttempt({
+    provider: "cloudinary",
+    operation: "image.upload",
+    requestMetadata: { bytes: buffer.byteLength, type: file.type, folder: "monebeauty/admin" },
+    run: () => new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: "image", folder: "monebeauty/admin", use_filename: true, unique_filename: true, overwrite: false, allowed_formats: ["jpg", "jpeg", "png", "webp", "avif", "gif"], tags: ["monebeauty-admin"] },
+        (error, result) => {
+          if (error || !result) reject(Object.assign(new Error(error?.message || "cloudinary_upload_failed"), { code: error?.http_code, status: error?.http_code }));
+          else resolve(result);
+        },
+      );
+      stream.end(buffer);
+    }),
+    responseMetadata: (result) => ({ publicId: result.public_id, format: result.format, bytes: result.bytes, width: result.width, height: result.height }),
   });
+  return value;
 }

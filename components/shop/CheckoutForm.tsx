@@ -10,16 +10,49 @@ import { formatPrice } from "@/content/products";
 import { cn } from "@/lib/cn";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
 
-export function CheckoutForm() {
+type CheckoutAddress = {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  postalCode: string;
+  city: string;
+  country: string;
+  isDefault: boolean;
+};
+
+export function CheckoutForm({
+  initialDetails,
+  addresses = [],
+  verifiedEmail = false,
+}: {
+  initialDetails?: { fullName: string; phone: string; email: string };
+  addresses?: CheckoutAddress[];
+  verifiedEmail?: boolean;
+}) {
   const t = useTranslations("Checkout");
   const tb = useTranslations("Basket");
   const locale = useLocale();
   const cart = useCart();
   const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
+    fullName: initialDetails?.fullName ?? "",
+    phone: initialDetails?.phone ?? "",
+    email: initialDetails?.email ?? "",
     notes: "",
+  });
+  const defaultAddress = addresses.find((address) => address.isDefault);
+  const [addressId, setAddressId] = useState(defaultAddress?.id ?? "new");
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState({
+    label: "Home",
+    recipientName: initialDetails?.fullName ?? "",
+    phone: initialDetails?.phone ?? "",
+    line1: "",
+    line2: "",
+    postalCode: "",
+    city: "",
   });
   const [consent, setConsent] = useState(false);
   const [fulfillmentMethod, setFulfillmentMethod] = useState<
@@ -43,6 +76,14 @@ export function CheckoutForm() {
           locale,
           consentGdpr: consent,
           fulfillmentMethod: hasPhysical ? fulfillmentMethod : "DIGITAL",
+          ...(hasPhysical && fulfillmentMethod === "SHIPPING"
+            ? {
+                savedAddressId: addressId === "new" ? null : addressId,
+                shippingAddress:
+                  addressId === "new" ? shippingAddress : undefined,
+                saveAddress: addressId === "new" && saveAddress,
+              }
+            : {}),
           items: cart.items,
         }),
       });
@@ -123,6 +164,7 @@ export function CheckoutForm() {
               required
               type="email"
               autoComplete="email"
+              readOnly={verifiedEmail}
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className={inputCls}
@@ -166,6 +208,40 @@ export function CheckoutForm() {
                 </label>
               ))}
             </div>
+          </fieldset>
+        ) : null}
+
+        {hasPhysical && fulfillmentMethod === "SHIPPING" ? (
+          <fieldset className="mt-[20px] border-t border-line-hair pt-[18px]">
+            <legend className="font-sans text-label tracking-[.04em] text-muted uppercase">
+              {t("address.heading")}
+            </legend>
+            {addresses.length ? (
+              <div className="mt-3 grid gap-2">
+                {addresses.map((address) => (
+                  <label key={address.id} className="flex cursor-pointer items-start gap-3 rounded border border-line-btn bg-page p-3 font-sans text-sm">
+                    <input type="radio" checked={addressId === address.id} onChange={() => setAddressId(address.id)} className="mt-1 accent-[var(--accent)]" />
+                    <span><strong>{address.label}</strong>{address.isDefault ? ` · ${t("address.default")}` : ""}<br />{address.line1}, {address.postalCode} {address.city}</span>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+            <label className="mt-2 flex cursor-pointer items-center gap-3 rounded border border-line-btn bg-page p-3 font-sans text-sm">
+              <input type="radio" checked={addressId === "new"} onChange={() => setAddressId("new")} className="accent-[var(--accent)]" />
+              {t("address.new")}
+            </label>
+            {addressId === "new" ? (
+              <div className="mt-4 grid gap-3">
+                <Field label={t("address.label")} required><input required value={shippingAddress.label} onChange={(e) => setShippingAddress({ ...shippingAddress, label: e.target.value })} className={inputCls} /></Field>
+                <Field label={t("address.recipient")} required><input required autoComplete="name" value={shippingAddress.recipientName} onChange={(e) => setShippingAddress({ ...shippingAddress, recipientName: e.target.value })} className={inputCls} /></Field>
+                <Field label={t("fields.phone")} required><input required type="tel" autoComplete="tel" value={shippingAddress.phone} onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })} className={inputCls} /></Field>
+                <Field label={t("address.line1")} required><input required autoComplete="address-line1" value={shippingAddress.line1} onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })} className={inputCls} /></Field>
+                <Field label={t("address.line2")}><input autoComplete="address-line2" value={shippingAddress.line2} onChange={(e) => setShippingAddress({ ...shippingAddress, line2: e.target.value })} className={inputCls} /></Field>
+                <div className="grid gap-3 sm:grid-cols-2"><Field label={t("address.postalCode")} required><input required pattern="[0-9]{5}" autoComplete="postal-code" value={shippingAddress.postalCode} onChange={(e) => setShippingAddress({ ...shippingAddress, postalCode: e.target.value })} className={inputCls} /></Field><Field label={t("address.city")} required><input required autoComplete="address-level2" value={shippingAddress.city} onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })} className={inputCls} /></Field></div>
+                {verifiedEmail ? <label className="flex items-center gap-2 font-sans text-sm text-body"><input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} className="accent-[var(--accent)]" />{t("address.save")}</label> : null}
+              </div>
+            ) : null}
+            <p className="mt-3 font-sans text-xs leading-5 text-muted">{t("address.stripeConfirm")}</p>
           </fieldset>
         ) : null}
 

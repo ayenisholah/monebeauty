@@ -88,19 +88,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
-  if (user.role !== "ADMIN") {
-    await auditForUser(
-      user,
-      "availability_mutation_denied",
-      "Availability",
-      null,
-      {
-        outcome: "DENIED",
-        request: req,
-      },
-    );
-    return forbidden();
-  }
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -116,6 +103,21 @@ export async function POST(req: NextRequest) {
     payload.practitionerId,
   );
   if (!practitionerId) return forbidden();
+
+  if (
+    user.role === "STAFF" &&
+    payload.practitionerId &&
+    String(payload.practitionerId) !== practitionerId
+  ) {
+    await auditForUser(
+      user,
+      "availability_mutation_denied",
+      "Availability",
+      null,
+      { outcome: "DENIED", request: req },
+    );
+    return forbidden();
+  }
 
   const slots = normalizeSlots(payload.slots);
   const saved = await prisma.availability.upsert({
@@ -134,19 +136,6 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
-  if (user.role !== "ADMIN") {
-    await auditForUser(
-      user,
-      "availability_mutation_denied",
-      "Availability",
-      null,
-      {
-        outcome: "DENIED",
-        request: req,
-      },
-    );
-    return forbidden();
-  }
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -163,6 +152,21 @@ export async function PUT(req: NextRequest) {
     payload.practitionerId,
   );
   if (!practitionerId) return forbidden();
+
+  if (
+    user.role === "STAFF" &&
+    payload.practitionerId &&
+    String(payload.practitionerId) !== practitionerId
+  ) {
+    await auditForUser(
+      user,
+      "availability_mutation_denied",
+      "Availability",
+      null,
+      { outcome: "DENIED", request: req },
+    );
+    return forbidden();
+  }
 
   const hours = normalizeWorkingHours({
     openDays: Array.isArray(payload.openDays)

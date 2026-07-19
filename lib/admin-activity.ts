@@ -51,6 +51,8 @@ export const BUSINESS_AUDIT_ACTIONS = [
 ] as const;
 
 const appointmentActions = {
+  CREATED: "appointmentBooked",
+  DETAILS_UPDATED: "appointmentRescheduled",
   CONFIRMED: "appointmentConfirmed",
   RESCHEDULED: "appointmentRescheduled",
   COMPLETED: "appointmentCompleted",

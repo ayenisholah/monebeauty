@@ -24,6 +24,7 @@
     "db:rollback-procedure-media": "tsx scripts/rollback-procedure-media.ts",
     "notifications:reminders": "tsx scripts/send-reminders.ts",
     "notifications:test": "tsx scripts/test-notifications.ts",
+    "api-logs:cleanup": "tsx scripts/cleanup-api-logs.ts",
     "chat:check-provider": "node --env-file=.env scripts/check-claude.mjs",
     "chat:smoke": "node scripts/smoke-chat.mjs"
   },

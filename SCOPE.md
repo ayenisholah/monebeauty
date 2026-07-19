@@ -9,7 +9,8 @@ the signed webhook cancels the order, while admin views expose an Awaiting payme
 filter for open website orders. Ordinary appointment bookings remain unpaid online and are paid
 at the clinic by credit card; the system never sends a Stripe invoice after an appointment.
 
-Account portals and read-only staff access (owner-approved, 2026-07-19): clients may create
+Account portals and staff operational access (owner-approved, 2026-07-19; expanded
+2026-07-19): clients may create
 verified accounts without being required to sign in before booking. `/oma-tili` shows the
 authenticated client's past and upcoming procedures and submits cancellation/reschedule
 requests for admin approval. Guest appointments can be claimed only through a single-use
@@ -18,19 +19,39 @@ staff credentials and the matching private calendar employee in one step, choose
 temporary password, and manage every staff account. Admins may reset passwords, revoke
 sessions or access, reactivate accounts, and delete credentials while retaining calendar and
 appointment history; staff must replace the temporary password on first login and receive no
-confirmation email. Staff see only
-their own calendar column and clinical essentials, cannot change clinic data, and sensitive
-access/security events are recorded in an immutable admin-visible audit log.
+confirmation email. Staff see their assigned employee calendar and clinical essentials; they may
+create, edit, confirm, complete, cancel, and reschedule appointments assigned to their linked
+employee. Staff may change only their own working hours and availability. Website content,
+services, prices, resources, accounts, and clinic configuration remain admin-only, and
+sensitive access/security events are recorded in an immutable admin-visible audit log.
 
 Shared calendar and employee-owned booking (owner-approved, 2026-07-19): the admin exposes
 `/admin/kalenteri` as a Timma-inspired shared day/week/month calendar. All active employees
 are visible in separate time-based columns; appointment cards show client, procedure, room,
 and time. Services have one fixed public owner plus optional qualified backup employees.
 Public booking remains Service -> Time -> You, but the selected service now writes directly
-to its configured employee schedule. Admins may confirm and drag appointments between
-qualified employees or rooms; staff access is read-only and restricted to their own column.
+to its configured employee schedule. Admins may move appointments between qualified employees;
+staff may create and move appointments only within their linked employee calendar and compatible
+rooms/devices. The calendar exposes a
+Create appointment action and empty available times can be clicked to prefill a new booking.
+Staff availability changes remain restricted to the employee linked to their own account.
 Rooms and physical treatment devices are separate exclusive resources, so employee, room,
 and device overlaps are rejected server-side and at the database boundary.
+
+Expanded client account, saved details, and booking communications (owner-approved,
+2026-07-19): `/oma-tili` is a localized account dashboard for verified identity details,
+appointments and change requests, website orders, saved Finland delivery addresses, and profile
+editing. Authenticated booking and checkout reuse the account's verified contact details; checkout
+may reuse a saved address while Stripe still confirms the final order address. Appointment emails
+use a branded booking card with full timing, service, employee, clinic address, map/calendar links,
+pay-at-clinic information, the published cancellation policy, and a secure account-based cancel or
+reschedule action.
+
+External integration observability (owner-approved, 2026-07-19): server-side email, SMS, Stripe,
+Anthropic, and Cloudinary attempts record redacted request/response metadata, provider identifiers,
+HTTP outcomes, latency, retries, and related business entities. Admin-only integration logs retain
+these records for 30 days; secrets, raw personal content, payment data, and authentication material
+must never be persisted.
 
 Admin operations (owner-approved, 2026-07-18): the multilingual custom admin includes
 dedicated Orders (`tilaukset`) and Appointments (`ajanvaraukset`) modules. Submitted order

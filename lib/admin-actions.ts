@@ -24,6 +24,7 @@ import { adminBase, adminHref } from "@/lib/admin-routing";
 import type { Locale as AppLocale } from "@/i18n/routing";
 import { PUBLIC_PATHS, articlePath, productPath } from "@/lib/public-routes";
 import { openSlots } from "@/lib/booking";
+import { runExternalApiAttempt } from "@/lib/external-api";
 import {
   notifyAppointmentChange,
   notifyAppointmentConfirmation,
@@ -863,10 +864,12 @@ export async function anonymizeClientAction(formData: FormData) {
       },
     }),
     prisma.cart.deleteMany({ where: { clientId: id } }),
+    prisma.savedAddress.deleteMany({ where: { clientId: id } }),
     prisma.client.update({
       where: { id },
       data: {
         userId: null,
+        stripeCustomerId: null,
         fullName: "Anonymized client",
         phone: `anonymized-${id}`,
         email: `anonymized-${id}@privacy.local`,
@@ -1185,15 +1188,19 @@ export async function refundOrderAction(formData: FormData) {
   });
 
   try {
-    const stripeRefund = await stripeClient().refunds.create(
-      {
-        payment_intent: payment.stripePaymentIntentId,
+    const { value: stripeRefund } = await runExternalApiAttempt({
+      provider: "stripe",
+      operation: "refunds.create",
+      context: { orderId: order.id, correlationId: refund.idempotencyKey },
+      requestMetadata: { amount: requestedMinor, currency: order.currency },
+      run: () => stripeClient().refunds.create({
+        payment_intent: payment.stripePaymentIntentId!,
         amount: requestedMinor,
         reason: "requested_by_customer",
         metadata: { source: "website", orderId: order.id, refundId: refund.id },
-      },
-      { idempotencyKey: refund.idempotencyKey },
-    );
+      }, { idempotencyKey: refund.idempotencyKey }),
+      responseMetadata: (value) => ({ id: value.id, status: value.status }),
+    });
     await prisma.refund.update({
       where: { id: refund.id },
       data: { stripeRefundId: stripeRefund.id },

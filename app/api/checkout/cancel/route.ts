@@ -5,6 +5,7 @@ import { localizedPath, siteUrl } from "@/lib/seo";
 import { orderPath, PUBLIC_PATHS } from "@/lib/public-routes";
 import { checkoutCancelTokenHash, stripeClient } from "@/lib/stripe";
 import { reconcileCheckoutSession } from "@/lib/stripe-payments";
+import { runExternalApiAttempt } from "@/lib/external-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,9 +53,7 @@ export async function GET(req: NextRequest) {
 
   let session;
   try {
-    session = await stripeClient().checkout.sessions.retrieve(
-      attempt.stripeCheckoutSessionId,
-    );
+    session = (await runExternalApiAttempt({ provider: "stripe", operation: "checkout.sessions.retrieve", context: { orderId: attempt.orderId, correlationId: attempt.id }, run: () => stripeClient().checkout.sessions.retrieve(attempt.stripeCheckoutSessionId!), responseMetadata: (value) => ({ id: value.id, status: value.status }) })).value;
   } catch {
     return checkoutRedirect(locale, "cancel_error");
   }
@@ -88,12 +87,12 @@ export async function GET(req: NextRequest) {
   if (!claimed.count) return checkoutRedirect(locale, "cancel_error");
 
   try {
-    await stripeClient().checkout.sessions.expire(session.id);
+    await runExternalApiAttempt({ provider: "stripe", operation: "checkout.sessions.expire", context: { orderId: attempt.orderId, correlationId: attempt.id }, run: () => stripeClient().checkout.sessions.expire(session.id), responseMetadata: (value) => ({ id: value.id, status: value.status }) });
     return checkoutRedirect(locale, "cancelled");
   } catch {
     let current;
     try {
-      current = await stripeClient().checkout.sessions.retrieve(session.id);
+      current = (await runExternalApiAttempt({ provider: "stripe", operation: "checkout.sessions.retrieve", context: { orderId: attempt.orderId, correlationId: attempt.id, retryNumber: 1 }, run: () => stripeClient().checkout.sessions.retrieve(session.id), responseMetadata: (value) => ({ id: value.id, status: value.status }) })).value;
     } catch {
       return checkoutRedirect(locale, "cancel_error");
     }
