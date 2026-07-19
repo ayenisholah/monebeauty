@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type {
   Locale,
   ProductCategory,
+  ProductKind,
   PublicationStatus,
   ServiceCategory,
 } from "@prisma/client";
@@ -28,6 +29,7 @@ import {
   notifyAppointmentConfirmation,
   notifyOrderCancellation,
   notifyOrderConfirmation,
+  notifyOrderPaymentUpdate,
   retryOutboundMessage,
   sendCustomMessage,
 } from "@/lib/notifications";
@@ -38,6 +40,7 @@ import {
   isAllowedMediaReference,
   isCloudinaryMediaReference,
 } from "@/lib/media-reference";
+import { eurosToMinor, minorToEuros, stripeClient } from "@/lib/stripe";
 
 const locales: Locale[] = ["fi", "en", "ru"];
 const serviceCategories: ServiceCategory[] = [
@@ -49,7 +52,18 @@ const serviceCategories: ServiceCategory[] = [
   "LASER",
   "CONSULTATION",
 ];
-const productCategories: ProductCategory[] = ["AROSHA_BODY", "DIXIDOX_TRICHO"];
+const productCategories: ProductCategory[] = [
+  "AROSHA_BODY",
+  "DIXIDOX_TRICHO",
+  "GIFT_CARD",
+  "TREATMENT",
+  "OTHER",
+];
+const productKinds: ProductKind[] = [
+  "PHYSICAL",
+  "GIFT_CARD",
+  "TREATMENT_VOUCHER",
+];
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -428,8 +442,20 @@ export async function saveProductAction(formData: FormData) {
   const id = value(formData, "id");
   const slug = value(formData, "slug");
   const category = value(formData, "category") as ProductCategory;
+  const kind = value(formData, "kind") as ProductKind;
+  const serviceId = value(formData, "serviceId") || null;
+  const voucherValidityDays = Math.round(
+    numeric(formData, "voucherValidityDays"),
+  );
   const returnTo = safeReturnPath(formData);
-  if (!validSlug(slug) || !productCategories.includes(category))
+  if (
+    !validSlug(slug) ||
+    !productCategories.includes(category) ||
+    !productKinds.includes(kind) ||
+    (kind !== "PHYSICAL" &&
+      (voucherValidityDays < 1 || voucherValidityDays > 3650)) ||
+    (kind === "TREATMENT_VOUCHER" && !serviceId)
+  )
     redirect(`${returnTo}?error=validation`);
   let images: string[];
   try {
@@ -443,6 +469,9 @@ export async function saveProductAction(formData: FormData) {
         data: {
           slug,
           category,
+          kind,
+          serviceId: kind === "TREATMENT_VOUCHER" ? serviceId : null,
+          voucherValidityDays: kind === "PHYSICAL" ? null : voucherValidityDays,
           size: value(formData, "size") || null,
           price: Math.max(0, numeric(formData, "price")),
           currency: value(formData, "currency") || "EUR",
@@ -456,6 +485,9 @@ export async function saveProductAction(formData: FormData) {
         data: {
           slug,
           category,
+          kind,
+          serviceId: kind === "TREATMENT_VOUCHER" ? serviceId : null,
+          voucherValidityDays: kind === "PHYSICAL" ? null : voucherValidityDays,
           size: value(formData, "size") || null,
           price: Math.max(0, numeric(formData, "price")),
           currency: value(formData, "currency") || "EUR",
@@ -919,9 +951,62 @@ export async function updateOrderAction(formData: FormData) {
       entityId: id,
     });
     await notifyOrderConfirmation(order, order.locale as AppLocale, user.email);
+  } else if (intent === "ready") {
+    const changed = await prisma.order.updateMany({
+      where: {
+        id,
+        status: "CONFIRMED",
+        fulfillmentMethod: "PICKUP",
+        paymentStatus: { in: ["PAID", "PARTIALLY_REFUNDED"] },
+      },
+      data: { status: "READY_FOR_PICKUP", readyAt: new Date() },
+    });
+    if (!changed.count) redirect(`${returnTo}?error=invalid_status`);
+    await audit({
+      actor: user.email,
+      action: "order_ready_for_pickup",
+      entity: "Order",
+      entityId: id,
+    });
+    await notifyOrderPaymentUpdate(
+      order,
+      order.locale as AppLocale,
+      "ready_for_pickup",
+      undefined,
+      "ready_for_pickup",
+      user.email,
+    );
+  } else if (intent === "ship") {
+    const changed = await prisma.order.updateMany({
+      where: {
+        id,
+        status: "CONFIRMED",
+        fulfillmentMethod: "SHIPPING",
+        paymentStatus: { in: ["PAID", "PARTIALLY_REFUNDED"] },
+      },
+      data: { status: "SHIPPED", shippedAt: new Date() },
+    });
+    if (!changed.count) redirect(`${returnTo}?error=invalid_status`);
+    await audit({
+      actor: user.email,
+      action: "order_shipped",
+      entity: "Order",
+      entityId: id,
+    });
+    await notifyOrderPaymentUpdate(
+      order,
+      order.locale as AppLocale,
+      "shipped",
+      undefined,
+      "shipped",
+      user.email,
+    );
   } else if (intent === "fulfill") {
     const changed = await prisma.order.updateMany({
-      where: { id, status: { in: ["CONFIRMED", "PAID"] } },
+      where: {
+        id,
+        status: { in: ["CONFIRMED", "READY_FOR_PICKUP", "SHIPPED"] },
+      },
       data: { status: "FULFILLED", fulfilledAt: new Date() },
     });
     if (!changed.count) redirect(`${returnTo}?error=invalid_status`);
@@ -931,11 +1016,19 @@ export async function updateOrderAction(formData: FormData) {
       entity: "Order",
       entityId: id,
     });
+    await notifyOrderPaymentUpdate(
+      order,
+      order.locale as AppLocale,
+      "fulfilled",
+      undefined,
+      "fulfilled",
+      user.email,
+    );
   } else if (intent === "cancel") {
     const reason = value(formData, "reason").slice(0, 500);
     if (reason.length < 3) redirect(`${returnTo}?error=reason_required`);
     const changed = await prisma.order.updateMany({
-      where: { id, status: { in: ["PENDING", "CONFIRMED", "PAID"] } },
+      where: { id, status: "PENDING", paymentStatus: "UNPAID" },
       data: {
         status: "CANCELLED",
         cancelledAt: new Date(),
@@ -958,6 +1051,242 @@ export async function updateOrderAction(formData: FormData) {
   } else {
     redirect(`${returnTo}?error=invalid_action`);
   }
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=1`);
+}
+
+export async function refundOrderAction(formData: FormData) {
+  const user = await requireAdmin(formData);
+  const id = value(formData, "id");
+  const reason = value(formData, "reason").slice(0, 500);
+  const target = value(formData, "target") || "order";
+  const returnTo = safeReturnPath(formData);
+  const requestedMinor = eurosToMinor(value(formData, "amount"));
+  if (reason.length < 3 || requestedMinor < 1)
+    redirect(`${returnTo}?error=validation`);
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: {
+        include: {
+          vouchers: true,
+          refundAllocations: { include: { refund: true } },
+        },
+      },
+      payments: { orderBy: { createdAt: "desc" } },
+      refunds: { include: { allocations: true } },
+    },
+  });
+  const payment = order?.payments.find((attempt) =>
+    ["PAID", "PARTIALLY_REFUNDED"].includes(attempt.status),
+  );
+  if (
+    !order ||
+    order.source !== "WEBSITE_STRIPE" ||
+    !payment?.stripePaymentIntentId
+  )
+    redirect(`${returnTo}?error=invalid_status`);
+  const reservedMinor = order.refunds
+    .filter((refund) => ["PENDING", "SUCCEEDED"].includes(refund.status))
+    .reduce((sum, refund) => sum + eurosToMinor(refund.amount), 0);
+  if (requestedMinor > eurosToMinor(payment.amount) - reservedMinor)
+    redirect(`${returnTo}?error=invalid_amount`);
+
+  const allocations: Array<{
+    orderItemId?: string;
+    amount: string;
+    shipping?: boolean;
+  }> = [];
+  let unallocated = requestedMinor;
+  const shippingAllocatedMinor = order.refunds
+    .filter((refund) => ["PENDING", "SUCCEEDED"].includes(refund.status))
+    .flatMap((refund) => refund.allocations)
+    .filter((allocation) => allocation.shipping)
+    .reduce((sum, allocation) => sum + eurosToMinor(allocation.amount), 0);
+  const allocateItem = (item: (typeof order.items)[number]) => {
+    const alreadyAllocated = item.refundAllocations
+      .filter((allocation) =>
+        ["PENDING", "SUCCEEDED"].includes(allocation.refund.status),
+      )
+      .reduce((sum, allocation) => sum + eurosToMinor(allocation.amount), 0);
+    const lineAvailable =
+      eurosToMinor(item.unitPrice) * item.qty - alreadyAllocated;
+    const voucherAvailable = item.vouchers.reduce(
+      (sum, voucher) => sum + eurosToMinor(voucher.remainingValue),
+      0,
+    );
+    const available =
+      item.kind === "PHYSICAL"
+        ? lineAvailable
+        : Math.min(lineAvailable, voucherAvailable);
+    const amount = Math.min(unallocated, available);
+    if (amount > 0) {
+      if (item.kind === "TREATMENT_VOUCHER" && amount !== available)
+        redirect(`${returnTo}?error=treatment_refund_must_be_full`);
+      allocations.push({ orderItemId: item.id, amount: minorToEuros(amount) });
+      unallocated -= amount;
+    }
+  };
+
+  if (target === "shipping") {
+    const available =
+      eurosToMinor(order.shippingAmount) - shippingAllocatedMinor;
+    const amount = Math.min(unallocated, available);
+    if (amount > 0) {
+      allocations.push({ amount: minorToEuros(amount), shipping: true });
+      unallocated -= amount;
+    }
+  } else if (target !== "order") {
+    const item = order.items.find((candidate) => candidate.id === target);
+    if (item) allocateItem(item);
+  } else {
+    for (const item of order.items) allocateItem(item);
+    if (unallocated > 0) {
+      const amount = Math.min(
+        unallocated,
+        eurosToMinor(order.shippingAmount) - shippingAllocatedMinor,
+      );
+      if (amount > 0) {
+        allocations.push({ amount: minorToEuros(amount), shipping: true });
+        unallocated -= amount;
+      }
+    }
+  }
+  if (unallocated !== 0 || !allocations.length)
+    redirect(`${returnTo}?error=invalid_amount`);
+
+  const refund = await prisma.$transaction(async (tx) => {
+    const created = await tx.refund.create({
+      data: {
+        orderId: order.id,
+        paymentAttemptId: payment.id,
+        idempotencyKey: `refund:${crypto.randomUUID()}`,
+        amount: minorToEuros(requestedMinor),
+        currency: order.currency,
+        reason,
+        actor: user.email,
+        allocations: { create: allocations },
+      },
+    });
+    const voucherItemIds = allocations
+      .map((allocation) => allocation.orderItemId)
+      .filter((itemId): itemId is string => Boolean(itemId));
+    if (voucherItemIds.length) {
+      await tx.voucher.updateMany({
+        where: {
+          orderItemId: { in: voucherItemIds },
+          status: { in: ["ACTIVE", "PARTIALLY_REDEEMED"] },
+        },
+        data: { status: "REFUND_PENDING" },
+      });
+    }
+    return created;
+  });
+
+  try {
+    const stripeRefund = await stripeClient().refunds.create(
+      {
+        payment_intent: payment.stripePaymentIntentId,
+        amount: requestedMinor,
+        reason: "requested_by_customer",
+        metadata: { source: "website", orderId: order.id, refundId: refund.id },
+      },
+      { idempotencyKey: refund.idempotencyKey },
+    );
+    await prisma.refund.update({
+      where: { id: refund.id },
+      data: { stripeRefundId: stripeRefund.id },
+    });
+    await audit({
+      actor: user.email,
+      action: "order_refund_requested",
+      entity: "Order",
+      entityId: order.id,
+      metadata: { refundId: refund.id, amount: minorToEuros(requestedMinor) },
+    });
+  } catch (error) {
+    await prisma.$transaction([
+      prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: "FAILED",
+          failureReason:
+            error instanceof Error
+              ? error.message.slice(0, 500)
+              : "stripe_error",
+        },
+      }),
+      prisma.voucher.updateMany({
+        where: {
+          orderItemId: {
+            in: allocations
+              .map((allocation) => allocation.orderItemId)
+              .filter((itemId): itemId is string => Boolean(itemId)),
+          },
+          status: "REFUND_PENDING",
+        },
+        data: { status: "ACTIVE" },
+      }),
+    ]);
+    redirect(`${returnTo}?error=refund_failed`);
+  }
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=1`);
+}
+
+export async function redeemVoucherAction(formData: FormData) {
+  const user = await requireAdmin(formData);
+  const code = value(formData, "code").toUpperCase();
+  const note = value(formData, "note").slice(0, 500) || null;
+  const returnTo = safeReturnPath(formData);
+  const voucher = await prisma.voucher.findUnique({ where: { code } });
+  if (!voucher) redirect(`${returnTo}?error=voucher_not_found`);
+  if (voucher.expiresAt <= new Date()) {
+    await prisma.voucher.update({
+      where: { id: voucher.id },
+      data: { status: "EXPIRED" },
+    });
+    redirect(`${returnTo}?error=voucher_expired`);
+  }
+  if (!["ACTIVE", "PARTIALLY_REDEEMED"].includes(voucher.status))
+    redirect(`${returnTo}?error=voucher_unavailable`);
+  const requested =
+    voucher.kind === "TREATMENT_SINGLE_USE"
+      ? eurosToMinor(voucher.remainingValue)
+      : eurosToMinor(value(formData, "amount"));
+  const available = eurosToMinor(voucher.remainingValue);
+  if (requested < 1 || requested > available)
+    redirect(`${returnTo}?error=invalid_amount`);
+  const nextMinor = available - requested;
+  await prisma.$transaction([
+    prisma.voucherRedemption.create({
+      data: {
+        voucherId: voucher.id,
+        amount: minorToEuros(requested),
+        actor: user.email,
+        note,
+      },
+    }),
+    prisma.voucher.update({
+      where: { id: voucher.id },
+      data: {
+        remainingValue: minorToEuros(nextMinor),
+        status: nextMinor === 0 ? "REDEEMED" : "PARTIALLY_REDEEMED",
+        redeemedAt: nextMinor === 0 ? new Date() : null,
+      },
+    }),
+  ]);
+  await audit({
+    actor: user.email,
+    action: "voucher_redeemed",
+    entity: "Voucher",
+    entityId: voucher.id,
+    metadata: {
+      amount: minorToEuros(requested),
+      remaining: minorToEuros(nextMinor),
+    },
+  });
   revalidatePath(returnTo);
   redirect(`${returnTo}?saved=1`);
 }

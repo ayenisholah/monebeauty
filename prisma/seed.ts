@@ -131,6 +131,58 @@ async function main() {
     },
   });
 
+  for (const [index, amount] of [50, 100, 350, 650, 1000].entries()) {
+    const product = await prisma.product.upsert({
+      where: { slug: `gift-card-${amount}` },
+      update: {},
+      create: {
+        slug: `gift-card-${amount}`,
+        category: "GIFT_CARD",
+        kind: "GIFT_CARD",
+        voucherValidityDays: 365,
+        price: amount,
+        currency: "EUR",
+        order: 1000 + index,
+        images: ["/media/images/photo/5.jpg"],
+        published: true,
+      },
+    });
+    for (const content of [
+      {
+        locale: "fi" as const,
+        name: `Lahjakortti ${amount} €`,
+        description:
+          "Lahjakortti Mone Beauty Clinicin valikoimaan. Koodi toimitetaan sähköpostitse maksun jälkeen.",
+      },
+      {
+        locale: "en" as const,
+        name: `Gift card €${amount}`,
+        description:
+          "A gift card for the Mone Beauty Clinic selection. The code is delivered by email after payment.",
+      },
+      {
+        locale: "ru" as const,
+        name: `Подарочная карта ${amount} €`,
+        description:
+          "Подарочная карта на услуги Mone Beauty Clinic. Код отправляется по электронной почте после оплаты.",
+      },
+    ]) {
+      await prisma.productContent.upsert({
+        where: {
+          productId_locale: { productId: product.id, locale: content.locale },
+        },
+        update: {},
+        create: {
+          productId: product.id,
+          locale: content.locale,
+          name: content.name,
+          description: content.description,
+          status: "PUBLISHED",
+        },
+      });
+    }
+  }
+
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   for (let i = 0; i <= BUSINESS_HOURS.daysAhead; i++) {
@@ -182,7 +234,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded default practitioner + ${SERVICES.length} services + ${BUSINESS_HOURS.daysAhead} days of availability.`,
+    `Seeded default practitioner + ${SERVICES.length} services + gift cards + ${BUSINESS_HOURS.daysAhead} days of availability.`,
   );
 }
 

@@ -97,8 +97,6 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
     dashboard: {
       title: t("dashboard.title"),
       subtitle: t("dashboard.subtitle"),
-      warnings: t("dashboard.warnings"),
-      noWarnings: t("dashboard.noWarnings"),
       recent: t("dashboard.recent"),
       emptyActivity: t("dashboard.emptyActivity"),
       activityCategory: (category: BusinessActivityCategory) =>
@@ -415,9 +413,6 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     products,
     articles,
     handoffs,
-    serviceRows,
-    technologyRows,
-    productRows,
     recentActivity,
   ] = await Promise.all([
     prisma.client.count({ where: { archivedAt: null } }),
@@ -433,27 +428,6 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     prisma.article.count({ where: { archivedAt: null } }),
     prisma.chatSession.count({
       where: { handoffRequested: true, status: "OPEN", archivedAt: null },
-    }),
-    prisma.service.findMany({
-      where: { archivedAt: null },
-      select: {
-        slug: true,
-        contents: { select: { locale: true, status: true } },
-      },
-    }),
-    prisma.technology.findMany({
-      where: { archivedAt: null },
-      select: {
-        slug: true,
-        contents: { select: { locale: true, status: true } },
-      },
-    }),
-    prisma.product.findMany({
-      where: { archivedAt: null },
-      select: {
-        slug: true,
-        contents: { select: { locale: true, status: true } },
-      },
     }),
     getRecentBusinessActivity(locale),
   ]);
@@ -484,11 +458,6 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
     { key: "products", module: "products" },
     { key: "articles", module: "blog" },
     { key: "handoffs", module: "chat" },
-  ];
-  const warnings = [
-    ...publicationWarnings("Service", serviceRows),
-    ...publicationWarnings("Technology", technologyRows),
-    ...publicationWarnings("Product", productRows),
   ];
   return (
     <div>
@@ -521,26 +490,7 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
           </Link>
         ))}
       </div>
-      <div className="mt-[24px] grid gap-[20px] xl:grid-cols-2">
-        <section className={panelCls}>
-          <h2 className={sectionTitle}>{copy.dashboard.warnings}</h2>
-          {warnings.length ? (
-            <ul className="mt-[14px] grid gap-[8px] font-sans text-[14px] text-body">
-              {warnings.map((warning) => (
-                <li
-                  key={warning}
-                  className="rounded-[4px] bg-btn-fill px-[12px] py-[9px]"
-                >
-                  {warning}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-[12px] font-sans text-[14px] text-muted">
-              {copy.dashboard.noWarnings}
-            </p>
-          )}
-        </section>
+      <div className="mt-[24px]">
         <section className={panelCls}>
           <h2 className={sectionTitle}>{copy.dashboard.quick}</h2>
           <div className="mt-[14px] flex flex-wrap gap-[8px]">
@@ -622,26 +572,6 @@ async function Dashboard({ locale, copy }: { locale: Locale; copy: Copy }) {
       </section>
     </div>
   );
-}
-
-function publicationWarnings(
-  entity: string,
-  rows: Array<{
-    slug: string;
-    contents: Array<{ locale: DbLocale; status: string }>;
-  }>,
-) {
-  return rows.flatMap((row) => {
-    const published = new Set(
-      row.contents
-        .filter((content) => content.status === "PUBLISHED")
-        .map((content) => content.locale),
-    );
-    const missing = locales.filter((locale) => !published.has(locale));
-    return missing.length
-      ? [`${entity} · ${row.slug}: ${missing.join(", ")}`]
-      : [];
-  });
 }
 
 async function Clients({
@@ -1358,6 +1288,11 @@ async function Products({
 }) {
   const base = adminHref(locale, "products");
   if (id) {
+    const services = await prisma.service.findMany({
+      where: { archivedAt: null },
+      select: { id: true, slug: true },
+      orderBy: { slug: "asc" },
+    });
     const row =
       id === "uusi"
         ? null
@@ -1375,7 +1310,7 @@ async function Products({
         id={row?.id}
         copy={copy}
       >
-        <ProductEditor row={row} copy={copy} />
+        <ProductEditor row={row} services={services} copy={copy} />
       </EntityForm>
     );
   }
@@ -1399,7 +1334,15 @@ async function Products({
   );
 }
 
-function ProductEditor({ row, copy }: { row: ProductRow | null; copy: Copy }) {
+function ProductEditor({
+  row,
+  services,
+  copy,
+}: {
+  row: ProductRow | null;
+  services: Array<{ id: string; slug: string }>;
+  copy: Copy;
+}) {
   const byLocale = new Map(row?.contents.map((item) => [item.locale, item]));
   return (
     <>
@@ -1420,7 +1363,44 @@ function ProductEditor({ row, copy }: { row: ProductRow | null; copy: Copy }) {
               options={[
                 { value: "AROSHA_BODY", label: "AROSHA_BODY" },
                 { value: "DIXIDOX_TRICHO", label: "DIXIDOX_TRICHO" },
+                { value: "GIFT_CARD", label: "GIFT_CARD" },
+                { value: "TREATMENT", label: "TREATMENT" },
+                { value: "OTHER", label: "OTHER" },
               ]}
+            />
+          </Field>
+          <Field label="Product kind">
+            <ThemedSelect
+              name="kind"
+              defaultValue={row?.kind ?? "PHYSICAL"}
+              options={[
+                { value: "PHYSICAL", label: "PHYSICAL" },
+                { value: "GIFT_CARD", label: "GIFT_CARD" },
+                { value: "TREATMENT_VOUCHER", label: "TREATMENT_VOUCHER" },
+              ]}
+            />
+          </Field>
+          <Field label="Linked treatment">
+            <ThemedSelect
+              name="serviceId"
+              defaultValue={row?.serviceId ?? ""}
+              options={[
+                { value: "", label: "—" },
+                ...services.map((service) => ({
+                  value: service.id,
+                  label: service.slug,
+                })),
+              ]}
+            />
+          </Field>
+          <Field label="Voucher validity (days)">
+            <input
+              name="voucherValidityDays"
+              type="number"
+              min="1"
+              max="3650"
+              defaultValue={row?.voucherValidityDays ?? 365}
+              className={inputCls}
             />
           </Field>
           <Field label={copy.common.price}>

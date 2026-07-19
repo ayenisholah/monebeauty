@@ -36,8 +36,53 @@ export type OrderEmailData = {
   total: unknown;
   currency: string;
   client?: { fullName: string; email?: string; phone?: string } | null;
-  items: Array<{ name: string; qty: number; unitPrice: unknown }>;
+  fulfillmentMethod?: string | null;
+  items: Array<{
+    name: string;
+    qty: number;
+    unitPrice: unknown;
+    vouchers?: Array<{ code: string; expiresAt: Date }>;
+  }>;
 };
+
+const PAID_ORDER_COPY = {
+  fi: {
+    subject: "maksuvahvistus",
+    preheader: "Maksusi on vastaanotettu.",
+    heading: "Kiitos tilauksestasi",
+    intro: "Maksusi on vastaanotettu ja tilauksesi on vahvistettu.",
+    notice:
+      "Ajanvaraukset maksetaan edelleen klinikalla. Tämä vahvistus koskee vain verkkokaupan tilausta.",
+    voucher: "Lahjakortti- tai hoitokoodi",
+    pickup: "Nouto Mone Beauty Cliniciltä",
+    shipping: "Toimitus Suomeen",
+    digital: "Digitaalinen toimitus",
+  },
+  en: {
+    subject: "payment confirmation",
+    preheader: "Your payment has been received.",
+    heading: "Thank you for your order",
+    intro: "Your payment has been received and your order is confirmed.",
+    notice:
+      "Appointments are still paid at the clinic. This confirmation applies only to your online-store purchase.",
+    voucher: "Gift card or treatment code",
+    pickup: "Pickup from Mone Beauty Clinic",
+    shipping: "Finland delivery",
+    digital: "Digital delivery",
+  },
+  ru: {
+    subject: "подтверждение оплаты",
+    preheader: "Ваш платёж получен.",
+    heading: "Спасибо за заказ",
+    intro: "Ваш платёж получен, заказ подтверждён.",
+    notice:
+      "Записи на процедуры по-прежнему оплачиваются в клинике. Это подтверждение относится только к покупке в интернет-магазине.",
+    voucher: "Код подарочной карты или процедуры",
+    pickup: "Получение в Mone Beauty Clinic",
+    shipping: "Доставка по Финляндии",
+    digital: "Цифровая доставка",
+  },
+} satisfies Record<Locale, Record<string, string>>;
 
 type Copy = {
   greeting: (name: string) => string;
@@ -344,6 +389,7 @@ export function renderCustomerOrderEmail(
   locale: Locale,
 ): EmailMessage {
   const copy = EMAIL_COPY[locale];
+  const paidCopy = PAID_ORDER_COPY[locale];
   const reference = emailReference(order.id);
   const items = orderItems(order, locale);
   const total = formatEmailMoney(order.total, order.currency, locale);
@@ -351,10 +397,20 @@ export function renderCustomerOrderEmail(
   const greeting = order.client?.fullName
     ? paragraph(copy.greeting(order.client.fullName))
     : "";
+  const fulfillment =
+    order.fulfillmentMethod === "PICKUP"
+      ? paidCopy.pickup
+      : order.fulfillmentMethod === "SHIPPING"
+        ? paidCopy.shipping
+        : paidCopy.digital;
+  const vouchers = order.items.flatMap((item) => item.vouchers ?? []);
   const body = [
     greeting,
-    paragraph(copy.order.intro, true),
-    renderDetailsTable([{ label: copy.labels.reference, value: reference }]),
+    paragraph(paidCopy.intro, true),
+    renderDetailsTable([
+      { label: copy.labels.reference, value: reference },
+      { label: "", value: fulfillment },
+    ]),
     '<div style="height:22px;line-height:22px;">&nbsp;</div>',
     renderOrderItemsTable({
       items,
@@ -365,7 +421,10 @@ export function renderCustomerOrderEmail(
       },
     }),
     `<p style="margin:18px 0 0;color:#3A322B;font-size:17px;font-weight:600;line-height:1.4;text-align:right;">${escapeHtml(copy.labels.total)}: ${escapeHtml(total)}</p>`,
-    renderNotice(copy.order.notice),
+    ...vouchers.map((voucher) =>
+      renderNotice(`${paidCopy.voucher}: ${voucher.code}`),
+    ),
+    renderNotice(paidCopy.notice),
     renderCta(copy.viewOrder, orderPage),
     paragraph(`${copy.questions} ${CONTACT.email} · ${CONTACT.phone}`, true),
   ].join("");
@@ -375,13 +434,15 @@ export function renderCustomerOrderEmail(
   );
   const text = [
     ...(order.client?.fullName ? [copy.greeting(order.client.fullName)] : []),
-    copy.order.intro,
+    paidCopy.intro,
     `${copy.labels.reference}: ${reference}`,
+    fulfillment,
     "",
     ...itemLines,
     `${copy.labels.total}: ${total}`,
     "",
-    copy.order.notice,
+    ...vouchers.map((voucher) => `${paidCopy.voucher}: ${voucher.code}`),
+    paidCopy.notice,
     `${copy.viewOrder}: ${orderPage}`,
     `${copy.questions} ${CONTACT.email} / ${CONTACT.phone}`,
     "",
@@ -389,12 +450,12 @@ export function renderCustomerOrderEmail(
   ].join("\n");
 
   return {
-    subject: `${BRAND.name}: ${copy.order.subject} ${reference}`,
+    subject: `${BRAND.name}: ${paidCopy.subject} ${reference}`,
     text,
     html: renderEmailShell({
       locale,
-      preheader: copy.order.preheader,
-      heading: copy.order.heading,
+      preheader: paidCopy.preheader,
+      heading: paidCopy.heading,
       body,
     }),
   };
@@ -402,9 +463,9 @@ export function renderCustomerOrderEmail(
 
 const STAFF_COPY = {
   newBooking: "Uusi ajanvaraus",
-  newOrder: "Uusi tilauspyyntö",
+  newOrder: "Uusi maksettu verkkotilaus",
   bookingIntro: "Uusi ajanvarauspyyntö on vastaanotettu verkkosivustolta.",
-  orderIntro: "Uusi tilauspyyntö on vastaanotettu verkkosivustolta.",
+  orderIntro: "Uusi maksettu tilaus on vastaanotettu verkkosivustolta.",
   customer: "Asiakas",
   phone: "Puhelin",
   email: "Sähköposti",

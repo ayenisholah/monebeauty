@@ -1,11 +1,14 @@
 import type { Locale } from "@/i18n/routing";
 import productsData from "./generated/products.json";
 
-export type ProductCategory = "AROSHA_BODY" | "DIXIDOX_TRICHO";
+export type ProductCategory =
+  "AROSHA_BODY" | "DIXIDOX_TRICHO" | "GIFT_CARD" | "TREATMENT" | "OTHER";
+export type ProductKind = "PHYSICAL" | "GIFT_CARD" | "TREATMENT_VOUCHER";
 
 export interface Product {
   slug: string;
   category: ProductCategory;
+  kind?: ProductKind;
   image: string | null;
   price: number | null;
   size: string | null;

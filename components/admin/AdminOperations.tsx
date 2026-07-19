@@ -7,6 +7,8 @@ import { prisma } from "@/lib/db";
 import { adminHref } from "@/lib/admin-routing";
 import { openSlots } from "@/lib/booking";
 import {
+  redeemVoucherAction,
+  refundOrderAction,
   retryCommunicationAction,
   updateAppointmentAction,
   updateOrderAction,
@@ -25,7 +27,8 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const orderStatuses: OrderStatus[] = [
   "PENDING",
   "CONFIRMED",
-  "PAID",
+  "READY_FOR_PICKUP",
+  "SHIPPED",
   "FULFILLED",
   "CANCELLED",
 ];
@@ -185,7 +188,9 @@ export async function OrdersAdmin({
       where: { id },
       include: {
         client: true,
-        items: true,
+        items: { include: { vouchers: true } },
+        payments: { orderBy: { createdAt: "desc" } },
+        refunds: { orderBy: { createdAt: "desc" } },
         messages: {
           include: { attempts: { orderBy: { attemptedAt: "desc" } } },
           orderBy: { createdAt: "desc" },
@@ -227,6 +232,14 @@ export async function OrdersAdmin({
                 label={t("total")}
                 value={money(order.total, order.currency, locale)}
               />
+              <Detail
+                label={t("payment")}
+                value={t(`paymentStatusLabels.${order.paymentStatus}`)}
+              />
+              <Detail
+                label={t("fulfillment")}
+                value={order.fulfillmentMethod ?? "—"}
+              />
               {order.notes ? (
                 <Detail label={t("notes")} value={order.notes} wide />
               ) : null}
@@ -245,6 +258,19 @@ export async function OrdersAdmin({
                     <tr key={item.id} className="border-t border-line-hair">
                       <td className="py-[12px] pr-[14px]">
                         {item.qty} × {item.name}
+                        {item.vouchers.map((voucher) => (
+                          <span
+                            key={voucher.id}
+                            className="mt-[4px] block font-mono text-[12px] text-muted"
+                          >
+                            {voucher.code} · {voucher.status} ·{" "}
+                            {money(
+                              voucher.remainingValue,
+                              voucher.currency,
+                              locale,
+                            )}
+                          </span>
+                        ))}
                       </td>
                       <td className="py-[12px] text-right">
                         {money(
@@ -273,7 +299,27 @@ export async function OrdersAdmin({
                   label={t("confirm")}
                 />
               ) : null}
-              {order.status === "CONFIRMED" || order.status === "PAID" ? (
+              {order.status === "CONFIRMED" &&
+              order.fulfillmentMethod === "PICKUP" ? (
+                <ActionForm
+                  action={updateOrderAction}
+                  id={order.id}
+                  returnTo={`${base}/${order.id}`}
+                  intent="ready"
+                  label={t("ready")}
+                />
+              ) : null}
+              {order.status === "CONFIRMED" &&
+              order.fulfillmentMethod === "SHIPPING" ? (
+                <ActionForm
+                  action={updateOrderAction}
+                  id={order.id}
+                  returnTo={`${base}/${order.id}`}
+                  intent="ship"
+                  label={t("ship")}
+                />
+              ) : null}
+              {["READY_FOR_PICKUP", "SHIPPED"].includes(order.status) ? (
                 <ActionForm
                   action={updateOrderAction}
                   id={order.id}
@@ -283,7 +329,7 @@ export async function OrdersAdmin({
                 />
               ) : null}
             </div>
-            {["PENDING", "CONFIRMED", "PAID"].includes(order.status) ? (
+            {order.status === "PENDING" && order.paymentStatus === "UNPAID" ? (
               <form
                 action={updateOrderAction}
                 className="mt-[18px] grid gap-[9px] border-t border-line-hair pt-[16px]"
@@ -307,6 +353,74 @@ export async function OrdersAdmin({
                   />
                 </label>
                 <button className={danger}>{t("cancel")}</button>
+              </form>
+            ) : null}
+            {["PAID", "PARTIALLY_REFUNDED"].includes(order.paymentStatus) ? (
+              <form
+                action={refundOrderAction}
+                className="mt-[18px] grid gap-[9px] border-t border-line-hair pt-[16px]"
+              >
+                <input type="hidden" name="id" value={order.id} />
+                <input
+                  type="hidden"
+                  name="returnTo"
+                  value={`${base}/${order.id}`}
+                />
+                <input type="hidden" name="target" value="order" />
+                <label className="font-sans text-[13px] text-muted">
+                  {t("refundAmount")}
+                  <input
+                    required
+                    name="amount"
+                    inputMode="decimal"
+                    className={`${input} mt-[6px] w-full`}
+                  />
+                </label>
+                <label className="font-sans text-[13px] text-muted">
+                  {t("refundReason")}
+                  <textarea
+                    required
+                    minLength={3}
+                    maxLength={500}
+                    name="reason"
+                    rows={3}
+                    className={`${input} mt-[6px] w-full py-[9px]`}
+                  />
+                </label>
+                <button className={danger}>{t("refund")}</button>
+              </form>
+            ) : null}
+            {order.items.some((item) => item.vouchers.length) ? (
+              <form
+                action={redeemVoucherAction}
+                className="mt-[18px] grid gap-[9px] border-t border-line-hair pt-[16px]"
+              >
+                <input
+                  type="hidden"
+                  name="returnTo"
+                  value={`${base}/${order.id}`}
+                />
+                <label className="font-sans text-[13px] text-muted">
+                  {t("voucherCode")}
+                  <input
+                    required
+                    name="code"
+                    className={`${input} mt-[6px] w-full font-mono`}
+                  />
+                </label>
+                <label className="font-sans text-[13px] text-muted">
+                  {t("redemptionAmount")}
+                  <input
+                    name="amount"
+                    inputMode="decimal"
+                    className={`${input} mt-[6px] w-full`}
+                  />
+                </label>
+                <label className="font-sans text-[13px] text-muted">
+                  {t("notes")}
+                  <input name="note" className={`${input} mt-[6px] w-full`} />
+                </label>
+                <button className={secondary}>{t("redeem")}</button>
               </form>
             ) : null}
           </section>
@@ -348,7 +462,11 @@ export async function OrdersAdmin({
     ...(status
       ? { status }
       : rawStatus === "ACTIVE"
-        ? { status: { in: ["PENDING", "CONFIRMED", "PAID"] } }
+        ? {
+            status: {
+              in: ["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "SHIPPED"],
+            },
+          }
         : {}),
     ...(createdAt ? { createdAt } : {}),
     ...(q

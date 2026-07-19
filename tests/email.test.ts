@@ -57,19 +57,19 @@ const localeExpectations: Record<
     booking: "ajanvarauspyyntö",
     reminder24: "muistutus huomisesta ajasta",
     reminder2: "ajanvarausmuistutus",
-    order: "tilauspyyntö",
+    order: "maksuvahvistus",
   },
   en: {
     booking: "appointment request",
     reminder24: "appointment reminder for tomorrow",
     reminder2: "appointment reminder",
-    order: "order request",
+    order: "payment confirmation",
   },
   ru: {
     booking: "запрос на запись",
     reminder24: "напоминание о завтрашнем визите",
     reminder2: "напоминание о визите",
-    order: "запрос на заказ",
+    order: "подтверждение оплаты",
   },
 };
 
@@ -151,7 +151,7 @@ test("customer and database values are escaped in HTML without damaging plain te
   assert.match(orderMessage.text, /Body <Slim> & Care/);
 });
 
-test("order requests are localized with itemized line totals and localized links", () => {
+test("paid web orders are localized with itemized totals and localized links", () => {
   const expectedPaths: Record<Locale, string> = {
     fi: "/tilaus/order-12345678",
     en: "/en/tilaus/order-12345678",
@@ -172,7 +172,7 @@ test("order requests are localized with itemized line totals and localized links
     );
     assert.match(
       message.html,
-      /no payment has been captured|maksua ole veloitettu|оплата не списана/i,
+      /appointments are still paid at the clinic|ajanvaraukset maksetaan edelleen klinikalla|записи на процедуры по-прежнему оплачиваются в клинике/i,
     );
   }
 });
@@ -188,7 +188,7 @@ test("staff booking and order alerts stay Finnish and include contact details", 
   assert.match(booking.text, /Sähköposti: ada@example\.com/);
   assert.doesNotMatch(booking.subject, /appointment request/i);
 
-  assert.match(staffOrder.subject, /Uusi tilauspyyntö/);
+  assert.match(staffOrder.subject, /Uusi maksettu verkkotilaus/);
   assert.match(staffOrder.text, /Asiakas: Ada <Admin>/);
   assert.match(staffOrder.text, /Kokonaissumma/);
   assert.doesNotMatch(staffOrder.subject, /order request/i);

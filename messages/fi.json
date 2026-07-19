@@ -371,6 +371,9 @@
     }
   },
   "Catalog": {
+    "categoryGiftCards": "Lahjakortit",
+    "categoryTreatments": "Ennakkoon maksettavat hoidot",
+    "categoryOther": "Muut tuotteet",
     "metaTitle": "Katalogi",
     "metaDescription": "Ammattilaisten AROSHA- ja DIXIDOX De Luxe -tuotteet Mone Beauty Clinicillä, Helsingissä.",
     "title": "Katalogi",
@@ -461,6 +464,11 @@
     "openBasket": "Avaa ostoskori, {count} tuotetta"
   },
   "Checkout": {
+    "fulfillment": {
+      "heading": "Toimitustapa",
+      "pickup": "Maksuton nouto klinikalta",
+      "shipping": "Toimitus Suomeen"
+    },
     "metaTitle": "Kassa",
     "eyebrow": "Kassa",
     "heading": "Vahvista tilaus",
@@ -476,6 +484,10 @@
     "submit": "Lähetä tilaus",
     "submitting": "Lähetetään...",
     "errors": {
+      "product_unavailable": "Yksi tai useampi tuote ei ole enää saatavilla verkossa.",
+      "currency_unavailable": "Tätä ostoskoria ei voida veloittaa euroina.",
+      "fulfillment_required": "Valitse nouto klinikalta tai toimitus Suomeen.",
+      "payment_unavailable": "Turvallinen maksu ei ole juuri nyt käytettävissä. Yritä pian uudelleen.",
       "invalid_json": "Tilausta ei voitu lukea. Yritä uudelleen.",
       "name_required": "Kirjoita koko nimesi.",
       "phone_required": "Kirjoita puhelinnumerosi.",
@@ -487,6 +499,17 @@
     }
   },
   "Order": {
+    "paymentStatus": "Maksu",
+    "voucher": "Lahjakortti- tai hoitokoodi",
+    "paymentStates": {
+      "UNPAID": "Maksamatta",
+      "PROCESSING": "Käsitellään",
+      "PAID": "Maksettu",
+      "PARTIALLY_REFUNDED": "Osittain hyvitetty",
+      "REFUNDED": "Hyvitetty",
+      "FAILED": "Maksu epäonnistui",
+      "EXPIRED": "Maksuaika päättyi"
+    },
     "metaTitle": "Tilaus vastaanotettu",
     "heading": "Tilaus vastaanotettu",
     "intro": "Kiitos. Olemme vastaanottaneet tilauspyyntösi ja otamme yhteyttä vahvistaaksemme tiedot.",
@@ -495,6 +518,8 @@
     "status": "Tila",
     "cancellationReason": "Peruutuksen syy",
     "states": {
+      "READY_FOR_PICKUP": "Valmis noudettavaksi",
+      "SHIPPED": "Tilaus lähetetty",
       "PENDING": "Pyyntö vastaanotettu",
       "CONFIRMED": "Tilaus vahvistettu",
       "PAID": "Tilaus vahvistettu",
@@ -502,6 +527,8 @@
       "CANCELLED": "Tilaus peruttu"
     },
     "stateDescriptions": {
+      "READY_FOR_PICKUP": "Tilauksesi on valmis noudettavaksi klinikalta.",
+      "SHIPPED": "Tilauksesi on lähetetty.",
       "PENDING": "Klinikka tarkistaa tilauspyyntöäsi.",
       "CONFIRMED": "Klinikka on vahvistanut tilauksesi.",
       "PAID": "Klinikka on vahvistanut tilauksesi.",
@@ -557,6 +584,7 @@
     "cookiesTitle": "Evästekäytäntö",
     "lastUpdated": "Päivitetty viimeksi",
     "privacyBody": [
+      "Verkkokaupan maksut käsittelee Stripe. Mone Beauty Clinic tallentaa tilauksen, maksun tilan, toimitustavan ja tarvittaessa toimitusosoitteen, mutta ei koskaan täydellisiä korttitietoja.",
       "Mone Beauty Clinic käsittelee henkilötietoja ajanvarausten, tuotetilausten, asiakastuen, CRM-seurannan ja lakisääteisen hallinnon toteuttamiseksi. Tietoja voivat olla nimi, puhelin, sähköposti, varaus- ja tilaustiedot, suostumukset sekä viestit, jotka päätät lähettää.",
       "Terveyteen liittyvät muistiinpanot, vasta-aiheet ja hoitokommentit käsitellään erityisinä henkilötietoina. Pääsy tietoihin on roolirajattu ja arkaluonteisten tietojen käyttö auditoidaan admin-järjestelmässä.",
       "Tietoja käsitellään ajanvarauksen tai tilauksen toteuttamiseksi, lakisääteisten velvoitteiden, suostumuksen sekä klinikan turvallisen toiminnan oikeutetun edun perusteella. Markkinointiviestejä lähetetään vain suostumuksella.",
@@ -566,7 +594,7 @@
     "termsBody": [
       "Sivusto tarjoaa tietoa, ajanvarauksen, tuotetilauspyyntöjä ja yhteydenottokanavia Mone Beauty Clinicille. Sisältö on informatiivista eikä korvaa henkilökohtaista konsultaatiota pätevän ammattilaisen kanssa.",
       "Ajanvaraukset riippuvat klinikan vahvistuksesta ja saatavuudesta. Myöhästyminen, myöhäinen peruutus tai saapumatta jättäminen voi johtaa klinikan peruutusehtojen soveltamiseen.",
-      "Verkkosivuston kautta lähetetyt tuotetilaukset ovat tilauspyyntöjä, kunnes klinikka vahvistaa saatavuuden, maksun ja luovutuksen yksityiskohdat.",
+      "Verkkokaupan ostokset maksetaan turvallisesti Stripen kautta. Fyysiset tuotteet noudetaan klinikalta tai toimitetaan Suomeen, ja digitaaliset koodit lähetetään sähköpostitse vahvistetun maksun jälkeen. Ajanvaraukset maksetaan klinikalla eikä niitä veloiteta Stripen kautta.",
       "Sivustoa ei saa väärinkäyttää, luvattomaan pääsyyn ei saa pyrkiä eikä vääriä tietoja saa lähettää. Admin- ja henkilökunnan alueet on rajattu valtuutetuille käyttäjille.",
       "Klinikka voi päivittää näitä ehtoja palveluiden, lainsäädännön tai verkkosivuston ominaisuuksien muuttuessa."
     ],
@@ -619,8 +647,6 @@
     "dashboard": {
       "title": "Toiminnan yhteenveto",
       "subtitle": "Julkaisujen, asiakkaiden, varausten, kaupan ja tuen tilanne.",
-      "warnings": "Julkaisuvaroitukset",
-      "noWarnings": "Kaikilla aktiivisilla tietueilla on julkaistu sisältö jokaisella kielellä.",
       "recent": "Viimeaikainen liiketoiminta",
       "emptyActivity": "Ei viimeaikaista liiketoimintaa.",
       "quick": "Luo nopeasti",
@@ -719,6 +745,25 @@
     }
   },
   "AdminOperations": {
+    "payment": "Maksu",
+    "fulfillment": "Toimitus",
+    "ready": "Merkitse valmiiksi noutoon",
+    "ship": "Merkitse lähetetyksi",
+    "refund": "Hyvitä Stripen kautta",
+    "refundAmount": "Hyvityssumma (EUR)",
+    "refundReason": "Hyvityksen syy",
+    "voucherCode": "Lahjakortti- tai hoitokoodi",
+    "redemptionAmount": "Käytettävä summa (lahjakortti)",
+    "redeem": "Käytä koodi",
+    "paymentStatusLabels": {
+      "UNPAID": "Maksamatta",
+      "PROCESSING": "Käsitellään",
+      "PAID": "Maksettu",
+      "PARTIALLY_REFUNDED": "Osittain hyvitetty",
+      "REFUNDED": "Hyvitetty",
+      "FAILED": "Epäonnistui",
+      "EXPIRED": "Vanhentui"
+    },
     "orders": "Tilaukset",
     "appointments": "Ajanvaraukset",
     "orderDescription": "Tarkista tilauspyynnöt, vahvista saatavuus ja hoida asiakasviestintä.",
@@ -770,6 +815,8 @@
     "segments": "Merkit / koodaus / osat",
     "transactional": "Käytä tätä vain tähän tietueeseen suoraan liittyvään viestintään.",
     "statusLabels": {
+      "READY_FOR_PICKUP": "Valmis noutoon",
+      "SHIPPED": "Lähetetty",
       "PENDING": "Odottaa",
       "PAID": "Maksettu (vanha)",
       "FULFILLED": "Toimitettu",

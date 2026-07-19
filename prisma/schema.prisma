@@ -83,6 +83,7 @@ model Service {
   rooms                 Room[]             @relation("RoomToService")
   devices               Device[]           @relation("DeviceToService")
   technologies          Technology[]       @relation("TechnologyBookingService")
+  voucherProducts       Product[]          @relation("ProductVoucherService")
 
   @@index([archivedAt, order])
   @@index([primaryPractitionerId])
@@ -189,23 +190,29 @@ model ContentPage {
 }
 
 model Product {
-  id         String           @id @default(cuid())
-  slug       String           @unique
-  category   ProductCategory
-  size       String?
-  price      Decimal
-  currency   String           @default("EUR")
-  order      Int              @default(0)
-  published  Boolean          @default(true)
-  images     String[]
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  archivedAt DateTime?
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  contents   ProductContent[]
+  id                  String           @id @default(cuid())
+  slug                String           @unique
+  category            ProductCategory
+  kind                ProductKind      @default(PHYSICAL)
+  serviceId           String?
+  voucherValidityDays Int?
+  size                String?
+  price               Decimal
+  currency            String           @default("EUR")
+  order               Int              @default(0)
+  published           Boolean          @default(true)
+  images              String[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  archivedAt          DateTime?
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  contents            ProductContent[]
+  voucherService      Service?         @relation("ProductVoucherService", fields: [serviceId], references: [id], onDelete: SetNull)
 
   @@index([archivedAt, order])
+  @@index([kind, published, archivedAt])
+  @@index([serviceId])
 }
 
 model ProductContent {
@@ -246,37 +253,157 @@ model CartItem {
 }
 
 model Order {
-  id                 String            @id @default(cuid())
+  id                 String             @id @default(cuid())
   clientId           String?
-  locale             Locale            @default(fi)
-  status             OrderStatus       @default(PENDING)
+  locale             Locale             @default(fi)
+  status             OrderStatus        @default(PENDING)
+  source             OrderSource        @default(LEGACY_REQUEST)
+  paymentStatus      PaymentStatus      @default(UNPAID)
+  fulfillmentMethod  FulfillmentMethod?
   subtotal           Decimal
   total              Decimal
-  currency           String            @default("EUR")
+  shippingAmount     Decimal            @default(0)
+  shippingAddress    Json?
+  currency           String             @default("EUR")
   email              String
   phone              String?
   notes              String?
-  consentGdpr        Boolean           @default(false)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @default(now()) @updatedAt
+  consentGdpr        Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @default(now()) @updatedAt
   confirmedAt        DateTime?
   fulfilledAt        DateTime?
+  readyAt            DateTime?
+  shippedAt          DateTime?
   cancelledAt        DateTime?
   cancellationReason String?
-  client             Client?           @relation(fields: [clientId], references: [id])
+  client             Client?            @relation(fields: [clientId], references: [id])
   items              OrderItem[]
   messages           OutboundMessage[]
+  payments           PaymentAttempt[]
+  refunds            Refund[]
+
+  @@index([source, paymentStatus, createdAt])
+  @@index([status, createdAt])
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  name      String
-  unitPrice Decimal
-  qty       Int     @default(1)
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  id                  String             @id @default(cuid())
+  orderId             String
+  productId           String
+  name                String
+  unitPrice           Decimal
+  kind                ProductKind        @default(PHYSICAL)
+  voucherValidityDays Int?
+  qty                 Int                @default(1)
+  order               Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product             Product            @relation(fields: [productId], references: [id])
+  vouchers            Voucher[]
+  refundAllocations   RefundAllocation[]
+}
+
+model PaymentAttempt {
+  id                      String        @id @default(cuid())
+  orderId                 String
+  provider                String        @default("stripe")
+  status                  PaymentStatus @default(UNPAID)
+  idempotencyKey          String        @unique
+  stripeCheckoutSessionId String?       @unique
+  stripePaymentIntentId   String?       @unique
+  amount                  Decimal
+  amountRefunded          Decimal       @default(0)
+  currency                String        @default("EUR")
+  expiresAt               DateTime?
+  paidAt                  DateTime?
+  failedAt                DateTime?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  order                   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds                 Refund[]
+
+  @@index([orderId, createdAt])
+  @@index([status, createdAt])
+}
+
+model StripeWebhookEvent {
+  id          String            @id
+  type        String
+  objectId    String?
+  status      StripeEventStatus @default(PROCESSING)
+  error       String?
+  createdAt   DateTime          @default(now())
+  processedAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([type, objectId])
+}
+
+model Refund {
+  id               String             @id @default(cuid())
+  orderId          String
+  paymentAttemptId String
+  stripeRefundId   String?            @unique
+  idempotencyKey   String             @unique
+  status           RefundStatus       @default(PENDING)
+  amount           Decimal
+  currency         String             @default("EUR")
+  reason           String
+  actor            String
+  failureReason    String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  completedAt      DateTime?
+  order            Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentAttempt   PaymentAttempt     @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+  allocations      RefundAllocation[]
+
+  @@index([orderId, createdAt])
+  @@index([paymentAttemptId, status])
+}
+
+model RefundAllocation {
+  id          String     @id @default(cuid())
+  refundId    String
+  orderItemId String?
+  amount      Decimal
+  shipping    Boolean    @default(false)
+  refund      Refund     @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+
+  @@index([refundId])
+  @@index([orderItemId])
+}
+
+model Voucher {
+  id             String              @id @default(cuid())
+  orderItemId    String
+  code           String              @unique
+  kind           VoucherKind
+  status         VoucherStatus       @default(ACTIVE)
+  initialValue   Decimal
+  remainingValue Decimal
+  currency       String              @default("EUR")
+  expiresAt      DateTime
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  redeemedAt     DateTime?
+  orderItem      OrderItem           @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  redemptions    VoucherRedemption[]
+
+  @@index([status, expiresAt])
+  @@index([orderItemId])
+}
+
+model VoucherRedemption {
+  id        String   @id @default(cuid())
+  voucherId String
+  amount    Decimal
+  actor     String
+  note      String?
+  createdAt DateTime @default(now())
+  voucher   Voucher  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@index([voucherId, createdAt])
 }
 
 model Practitioner {
@@ -642,6 +769,15 @@ enum ServiceCategory {
 enum ProductCategory {
   AROSHA_BODY
   DIXIDOX_TRICHO
+  GIFT_CARD
+  TREATMENT
+  OTHER
+}
+
+enum ProductKind {
+  PHYSICAL
+  GIFT_CARD
+  TREATMENT_VOUCHER
 }
 
 enum AppointmentStatus {
@@ -663,9 +799,58 @@ enum AppointmentEventKind {
 enum OrderStatus {
   PENDING
   CONFIRMED
-  PAID
+  READY_FOR_PICKUP
+  SHIPPED
   FULFILLED
   CANCELLED
+}
+
+enum OrderSource {
+  LEGACY_REQUEST
+  WEBSITE_STRIPE
+}
+
+enum PaymentStatus {
+  UNPAID
+  PROCESSING
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+  EXPIRED
+}
+
+enum FulfillmentMethod {
+  PICKUP
+  SHIPPING
+  DIGITAL
+}
+
+enum StripeEventStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum VoucherKind {
+  GIFT_BALANCE
+  TREATMENT_SINGLE_USE
+}
+
+enum VoucherStatus {
+  ACTIVE
+  PARTIALLY_REDEEMED
+  REDEEMED
+  REFUND_PENDING
+  VOID
+  EXPIRED
 }
 
 enum CommunicationChannel {
@@ -677,6 +862,12 @@ enum OutboundMessageKind {
   ORDER_RECEIPT
   ORDER_CONFIRMATION
   ORDER_CANCELLATION
+  ORDER_PAYMENT_FAILED
+  ORDER_READY_FOR_PICKUP
+  ORDER_SHIPPED
+  ORDER_FULFILLED
+  ORDER_REFUND
+  ORDER_REFUND_FAILED
   APPOINTMENT_RECEIPT
   APPOINTMENT_CONFIRMATION
   APPOINTMENT_RESCHEDULED

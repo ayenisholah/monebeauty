@@ -173,10 +173,11 @@ not deviate without updating them first:
   simplest possible flow (service picker → date/time → details + GDPR consent → on-screen
   confirmation, Prisma-persisted). Email/SMS, reminders, practitioner selection,
   reschedule/cancel are the full Phase 3 completion.
-- **Current completed milestone: Phase 2 e-commerce cart/checkout** — product add-to-cart,
-  `/basket`, `/checkout`, Prisma `Order`/`OrderItem` persistence, GDPR consent, and
-  `/order/[id]` confirmation are implemented. Payment capture and confirmation email remain
-  deferred.
+- **Current completed milestone: Stripe website payments** — Stripe-hosted Checkout and signed,
+  idempotent webhooks cover website purchases of physical products, gift cards, and prepaid
+  treatment vouchers with pickup/Finland shipping, refunds, database reconciliation, and
+  localized notifications. Appointment bookings remain paid at the clinic and never create
+  Stripe invoices or post-appointment charges.
 - **Current completed milestone: Phase 3 booking upgrade** — booking now supports
   Service → Specialist/no preference → Time → You, availability-backed slots, overlap
   rejection, Prisma appointment persistence, and lightweight cancel/reschedule endpoints.
@@ -196,7 +197,7 @@ not deviate without updating them first:
   send email/SMS through configured providers, checkout sends order confirmation email,
   staff alerts are sent for bookings/orders, delivery attempts are audited, and
   `npm run notifications:reminders` sends 24-hour and 2-hour appointment reminders for
-  PM2/cron scheduling. Payment capture remains deferred.
+  PM2/cron scheduling. Stripe extends these durable notifications for paid orders/refunds.
 - **Current completed milestone: Phase 7 AI chatbot** — the public ChatWidget now uses
   Anthropic Claude with approved-content retrieval, EN/FI/RU locale matching, GDPR consent,
   transcript persistence in `ChatSession`, booking deep-links, and human handoff. Admin

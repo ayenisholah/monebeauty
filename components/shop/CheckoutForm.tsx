@@ -7,9 +7,8 @@ import { Link } from "@/i18n/navigation";
 import { useCart } from "@/components/shop/CartProvider";
 import { ButtonAction } from "@/components/ui/Button";
 import { formatPrice } from "@/content/products";
-import { localizedPath } from "@/lib/seo";
 import { cn } from "@/lib/cn";
-import { PUBLIC_PATHS, orderPath } from "@/lib/public-routes";
+import { PUBLIC_PATHS } from "@/lib/public-routes";
 
 export function CheckoutForm() {
   const t = useTranslations("Checkout");
@@ -23,8 +22,14 @@ export function CheckoutForm() {
     notes: "",
   });
   const [consent, setConsent] = useState(false);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<
+    "PICKUP" | "SHIPPING"
+  >("PICKUP");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasPhysical = cart.lines.some(
+    (line) => (line.product.kind ?? "PHYSICAL") === "PHYSICAL",
+  );
 
   async function submit() {
     setSubmitting(true);
@@ -37,16 +42,23 @@ export function CheckoutForm() {
           ...form,
           locale,
           consentGdpr: consent,
+          fulfillmentMethod: hasPhysical ? fulfillmentMethod : "DIGITAL",
           items: cart.items,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(t(`errors.${data?.error ?? "generic"}`));
+        const key = String(data?.error ?? "generic");
+        setError(
+          t.has(`errors.${key}`) ? t(`errors.${key}`) : t("errors.generic"),
+        );
         return;
       }
-      cart.clear();
-      window.location.assign(localizedPath(orderPath(data.id), locale));
+      if (!data.checkoutUrl) {
+        setError(t("errors.generic"));
+        return;
+      }
+      window.location.assign(data.checkoutUrl);
     } catch {
       setError(t("errors.generic"));
     } finally {
@@ -125,6 +137,37 @@ export function CheckoutForm() {
             />
           </Field>
         </div>
+
+        {hasPhysical ? (
+          <fieldset className="mt-[20px]">
+            <legend className="font-sans text-label tracking-[.04em] text-muted uppercase">
+              {t("fulfillment.heading")}
+            </legend>
+            <div className="mt-[9px] grid gap-[10px] sm:grid-cols-2">
+              {(["PICKUP", "SHIPPING"] as const).map((method) => (
+                <label
+                  key={method}
+                  className={cn(
+                    "flex min-h-[54px] cursor-pointer items-center gap-[10px] rounded-[4px] border px-[14px] font-sans text-[14px]",
+                    fulfillmentMethod === method
+                      ? "border-accent bg-btn-fill text-ink"
+                      : "border-line-btn bg-page text-body",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="fulfillmentMethod"
+                    value={method}
+                    checked={fulfillmentMethod === method}
+                    onChange={() => setFulfillmentMethod(method)}
+                    className="h-[18px] w-[18px] accent-[var(--accent)]"
+                  />
+                  <span>{t(`fulfillment.${method.toLowerCase()}`)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
 
         <label className="mt-[18px] flex items-start gap-[10px] font-sans text-[14px] leading-[1.6] text-body">
           <input

@@ -1,5 +1,18 @@
 # Implementation Plan — Mone Beauty
 
+## Stripe website payments (owner-approved, 2026-07-19) ✅ implemented
+
+- Replace unpaid order requests with Stripe-hosted Checkout for website-originated physical
+  products, gift cards, and prepaid treatment vouchers; retain server-owned prices and GDPR
+  checkout consent.
+- Reconcile payments, delayed methods, expiry, and full/partial refunds through signed,
+  idempotent Stripe webhooks and durable Prisma payment/event records.
+- Add free clinic pickup or one Dashboard-managed Finland shipping rate, automatic balance
+  gift cards and single-use treatment vouchers, admin redemption/refunds, and localized
+  payment/fulfilment/refund notifications.
+- Keep appointment booking entirely outside Stripe: in-person appointments are paid at the
+  clinic and never receive Stripe invoices or follow-up charges.
+
 ## Account portals, staff RBAC, and audit (owner-approved, 2026-07-19) ✅ implemented
 
 - Add optional verified client accounts under `/oma-tili`, secure guest-appointment claims,
@@ -67,8 +80,9 @@ persisted total quantity.
 > receipts are distinct from clinic confirmation, and Resend/Sinch delivery attempts plus
 > custom transactional messages are retained per record.
 >
-> **Current completed milestone: Phase 8 SEO + GDPR finalize.** Phase 6 notifications/reminders
-> are now implemented at provider-integration scope; payment capture remains deferred.
+> **Current completed milestone: Stripe website payments.** Hosted Checkout, webhook payment
+> reconciliation, vouchers, pickup/shipping, refunds, and notifications are implemented;
+> live Stripe Dashboard configuration remains a deployment task.
 
 ## Phase 9 — localized admin and database-owned content (in progress)
 
@@ -207,8 +221,9 @@ Canonical Finnish shop routes are used: `/verkkokauppa`, `/verkkokauppa/[slug]`,
 `scraped_content` via the generated
 registry. Cart state is client-side (`localStorage`), checkout captures GDPR consent,
 server-side totals are recalculated from the product registry, and Prisma persists `Client`,
-`Product`, `Order`, `OrderItem`, and `Consent`. Payment capture and confirmation email are
-deferred. **Verify:** browse → add to cart → checkout → order persists + confirmation page;
+`Product`, `Order`, `OrderItem`, and `Consent`. Stripe payment capture, refunds, vouchers,
+shipping/pickup, and paid-order notifications are completed in the Stripe milestone above.
+**Verify:** browse → add to cart → checkout → order persists + confirmation page;
 mobile layout at 390px.
 
 ## Lean Booking (one-click) ✅ implemented at reduced scope
@@ -291,7 +306,8 @@ Email (Resend/Postmark) + SMS (Twilio/FI gateway). Booking confirmations (email 
 SMS preferred) + reminders at 24h and 2h via a scheduled job; staff new-booking alerts;
 order confirmations. Implemented with `lib/notifications.ts`, provider env configuration,
 non-blocking booking/checkout notification sends, `AuditLog` delivery records, and
-`npm run notifications:reminders` for cron/PM2 scheduling. Payment capture remains deferred.
+`npm run notifications:reminders` for cron/PM2 scheduling. Paid-order and refund messages
+are extended by the Stripe website-payment milestone.
 **Verify:** confirmation + scheduled reminder fire; consent respected.
 
 Admin confirmation sends localized email and SMS for orders and appointments. Resend requests

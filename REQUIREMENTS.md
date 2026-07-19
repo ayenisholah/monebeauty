@@ -1,5 +1,20 @@
 # Requirements — Mone Beauty
 
+## Owner-approved Stripe website payments (2026-07-19)
+
+Website-originated purchases use Stripe-hosted Checkout with signature-verified,
+idempotent webhooks as the authority for payment and refund state. Published physical
+products, fixed-value balance gift cards, and explicitly configured single-use treatment
+vouchers may be purchased online. Physical orders offer free clinic pickup or one
+Dashboard-managed Finland shipping rate; digital-only orders require neither. Paid-order,
+fulfilment, voucher, refund, and localized customer/staff notifications are durable and
+audited. Stripe events that are not tied to a known Mone Beauty website order are ignored.
+
+Appointment booking remains Service -> Time -> You and never takes online payment. Clients
+pay for in-person appointments at the clinic by credit card, and no Stripe invoice or
+post-appointment charge is created. Listed EUR prices are charged as gross totals; Stripe
+Tax remains disabled until accountant-approved registrations and per-item tax rules exist.
+
 ## Owner-approved accounts, staff RBAC, and audit trail (2026-07-19)
 
 Clients may self-register at `/oma-tili` using email verification. Accounts are optional for
@@ -116,7 +131,8 @@ structure), **`SCOPE.md` wins**. The user's explicit technical direction (Prisma
 - **Brand: Mone Beauty Clinic** — real `public/logo.svg` + `app/favicon.ico`.
 - **E-commerce is IN scope** — AROSHA/DIXIDOX catalog (`/verkkokauppa`,
   `/verkkokauppa/[slug]`, `/ostoskori`);
-  Phase 2 cart/checkout persists order requests through Prisma. Payment capture is deferred.
+  Prisma-backed hosted Stripe Checkout captures website purchases and webhooks reconcile
+  payment/refund state without affecting clinic-paid appointments.
 - **Custom admin on Prisma — no Payload CMS.**
 - **Stack is locked** (§2).
 
@@ -231,9 +247,10 @@ Each: `content/generated/pages.json` (from `scripts/gen-content.mjs`) keyed by s
 - **Categories:** AROSHA body line and DIXIDOX / De Luxe trichology line.
 - **Product detail:** images, name, size (ml / pack), price (band ≈ €39–€85), description,
   related products, add-to-cart.
-- **Cart + checkout:** GDPR-compliant checkout (consent capture), order creation,
-  order confirmation page. Email confirmation, payment capture, and order visibility in
-  `/account` and `/admin` are deferred.
+- **Cart + checkout:** GDPR-compliant checkout (consent capture), Stripe-hosted payment,
+  webhook-authoritative order/refund state, pickup or Finland shipping for physical goods,
+  automatic gift/treatment vouchers, localized notifications, and order confirmation in
+  the public order page and `/admin`.
 - Built with the **same design system**; mobile-first.
 
 ## 8. Online booking

@@ -101,7 +101,7 @@ test("operation lists default to all statuses and keep active explicit", () => {
   );
   assert.match(
     operations,
-    /rawStatus === "ACTIVE"[\s\S]*?\["PENDING", "CONFIRMED", "PAID"\]/,
+    /rawStatus === "ACTIVE"[\s\S]*?\["PENDING", "CONFIRMED", "READY_FOR_PICKUP", "SHIPPED"\]/,
   );
   assert.match(
     operations,
@@ -122,9 +122,10 @@ test("operation lifecycle data and delivery attempts are durable", () => {
   assert.match(actions, /reason\.length < 3/);
 });
 
-test("checkout retains notes and client rescheduling requires admin approval", () => {
+test("checkout retains notes, starts Stripe, and client rescheduling requires admin approval", () => {
   assert.match(checkout, /phone,\s*notes,\s*consentGdpr/);
-  assert.match(checkout, /notifyOrderReceipt/);
+  assert.match(checkout, /stripeClient\(\)\.checkout\.sessions\.create/);
+  assert.match(checkout, /source: "WEBSITE_STRIPE"/);
   assert.match(reschedule, /appointmentChangeRequest\.create/);
   assert.match(reschedule, /status: change\.status/);
   assert.doesNotMatch(reschedule, /appointment\.update/);

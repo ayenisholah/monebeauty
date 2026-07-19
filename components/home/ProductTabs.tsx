@@ -13,7 +13,10 @@ export function ProductTabs({
 }: {
   products: Product[];
   locale: Locale;
-  labels: Record<ProductCategory, string>;
+  labels: Pick<
+    Record<ProductCategory, string>,
+    "AROSHA_BODY" | "DIXIDOX_TRICHO"
+  >;
   intoBasket: string;
 }) {
   const [active, setActive] = useState<ProductCategory>("AROSHA_BODY");
@@ -28,7 +31,7 @@ export function ProductTabs({
         role="tablist"
         aria-label="Product lines"
       >
-        {(Object.keys(labels) as ProductCategory[]).map((category) => (
+        {(Object.keys(labels) as Array<keyof typeof labels>).map((category) => (
           <button
             key={category}
             type="button"

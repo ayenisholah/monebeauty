@@ -1,11 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import type { Product } from "@/content/products";
-import { getLiveProduct } from "@/lib/live-content";
 import { normalizeQty } from "@/lib/cart";
 import { routing, type Locale } from "@/i18n/routing";
-import { notifyOrderReceipt } from "@/lib/notifications";
 import { normalizeInternationalPhone } from "@/lib/phone";
+import { localizedPath, siteUrl } from "@/lib/seo";
+import { orderPath, PUBLIC_PATHS } from "@/lib/public-routes";
+import {
+  eurosToMinor,
+  minorToEuros,
+  stripeClient,
+  stripeShippingRateId,
+} from "@/lib/stripe";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,24 +18,11 @@ function bad(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
 }
 
-async function ensureProduct(product: Product): Promise<string> {
-  const existing = await prisma.product.findUnique({
-    where: { slug: product.slug },
-    select: { id: true },
-  });
-  if (existing) return existing.id;
-  const created = await prisma.product.create({
-    data: {
-      slug: product.slug,
-      category: product.category,
-      size: product.size,
-      price: product.price ?? 0,
-      images: product.image ? [product.image] : [],
-      published: true,
-    },
-    select: { id: true },
-  });
-  return created.id;
+function absoluteImage(path: string) {
+  if (/^https:\/\//i.test(path)) return path;
+  const origin = siteUrl();
+  if (!origin.startsWith("https://")) return undefined;
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -41,15 +33,22 @@ export async function POST(req: NextRequest) {
     return bad("invalid_json");
   }
 
-  const fullName = String(payload.fullName ?? "").trim();
+  const fullName = String(payload.fullName ?? "")
+    .trim()
+    .slice(0, 180);
   const phone = normalizeInternationalPhone(String(payload.phone ?? ""));
-  const email = String(payload.email ?? "").trim();
+  const email = String(payload.email ?? "")
+    .trim()
+    .toLowerCase();
   const notes = payload.notes ? String(payload.notes).slice(0, 2000) : null;
   const locale = routing.locales.includes(payload.locale as Locale)
     ? (payload.locale as Locale)
     : routing.defaultLocale;
   const consentGdpr = payload.consentGdpr === true;
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
+  const requestedFulfillment = String(
+    payload.fulfillmentMethod ?? "",
+  ).toUpperCase();
 
   if (!fullName) return bad("name_required");
   if (!phone) return bad("phone_invalid");
@@ -62,25 +61,65 @@ export async function POST(req: NextRequest) {
     const slug = String((item as { slug?: unknown }).slug ?? "");
     if (!slug) continue;
     const qty = normalizeQty(Number((item as { qty?: unknown }).qty));
-    qtyBySlug.set(slug, (qtyBySlug.get(slug) ?? 0) + qty);
+    qtyBySlug.set(slug, normalizeQty((qtyBySlug.get(slug) ?? 0) + qty));
+  }
+  if (!qtyBySlug.size) return bad("empty_cart");
+
+  const products = await prisma.product.findMany({
+    where: {
+      slug: { in: [...qtyBySlug.keys()] },
+      published: true,
+      archivedAt: null,
+    },
+    include: {
+      contents: { where: { locale, status: "PUBLISHED" }, take: 1 },
+    },
+  });
+  if (products.length !== qtyBySlug.size) return bad("product_unavailable");
+  if (products.some((product) => product.currency.toUpperCase() !== "EUR")) {
+    return bad("currency_unavailable");
+  }
+  if (products.some((product) => !product.contents[0])) {
+    return bad("product_unavailable");
   }
 
-  const lines: { product: Product; qty: number; lineTotal: number }[] = [];
-  for (const [slug, qty] of qtyBySlug.entries()) {
-    const product = await getLiveProduct(slug, locale);
-    if (!product || product.price == null) continue;
-    const normalizedQty = normalizeQty(qty);
-    lines.push({
-      product,
-      qty: normalizedQty,
-      lineTotal: product.price * normalizedQty,
-    });
-  }
+  const hasPhysical = products.some((product) => product.kind === "PHYSICAL");
+  const fulfillmentMethod = hasPhysical
+    ? requestedFulfillment === "SHIPPING"
+      ? "SHIPPING"
+      : requestedFulfillment === "PICKUP"
+        ? "PICKUP"
+        : null
+    : "DIGITAL";
+  if (!fulfillmentMethod) return bad("fulfillment_required");
 
-  if (lines.length === 0) return bad("empty_cart");
+  const lineItems = products.map((product) => ({
+    quantity: qtyBySlug.get(product.slug)!,
+    price_data: {
+      currency: "eur",
+      unit_amount: eurosToMinor(product.price),
+      product_data: {
+        name: product.contents[0].name,
+        ...(product.contents[0].shortDescription
+          ? { description: product.contents[0].shortDescription.slice(0, 500) }
+          : {}),
+        ...(() => {
+          const image = product.images[0] && absoluteImage(product.images[0]);
+          return image ? { images: [image] } : {};
+        })(),
+        metadata: { productId: product.id, productKind: product.kind },
+      },
+    },
+  }));
+  const subtotalMinor = lineItems.reduce(
+    (sum, item) =>
+      sum +
+      Number(item.price_data?.unit_amount ?? 0) * Number(item.quantity ?? 1),
+    0,
+  );
 
+  let orderId: string | undefined;
   try {
-    const total = lines.reduce((sum, line) => sum + line.lineTotal, 0);
     const existing = await prisma.client.findFirst({ where: { email } });
     const client = existing
       ? await prisma.client.update({
@@ -91,72 +130,112 @@ export async function POST(req: NextRequest) {
           data: { fullName, phone, email, consentGdpr: true },
         });
 
-    const orderItems = [];
-    for (const line of lines) {
-      const productId = await ensureProduct(line.product);
-      const name = line.product.i18n[locale]?.name ?? line.product.slug;
-      orderItems.push({
-        productId,
-        name,
-        unitPrice: line.product.price ?? 0,
-        qty: line.qty,
-      });
-    }
-
     const order = await prisma.order.create({
       data: {
         clientId: client.id,
         locale,
-        status: "PENDING",
-        subtotal: total,
-        total,
+        source: "WEBSITE_STRIPE",
+        paymentStatus: "UNPAID",
+        fulfillmentMethod,
+        subtotal: minorToEuros(subtotalMinor),
+        total: minorToEuros(subtotalMinor),
         currency: "EUR",
         email,
         phone,
         notes,
         consentGdpr: true,
-        items: { create: orderItems },
-      },
-      include: {
-        items: true,
-        client: { select: { fullName: true, email: true, phone: true } },
-      },
-    });
-
-    await prisma.consent.create({
-      data: {
-        clientId: client.id,
-        type: "gdpr_checkout",
-        granted: true,
-      },
-    });
-
-    if (notes) {
-      await prisma.auditLog.create({
-        data: {
-          actor: email,
-          action: "checkout_note_received",
-          entity: "Order",
-          entityId: order.id,
+        items: {
+          create: products.map((product) => ({
+            productId: product.id,
+            name: product.contents[0].name,
+            unitPrice: product.price,
+            qty: qtyBySlug.get(product.slug)!,
+            kind: product.kind,
+            voucherValidityDays: product.voucherValidityDays,
+          })),
         },
-      });
-    }
-
-    try {
-      await notifyOrderReceipt(order, locale);
-    } catch {
-      await prisma.auditLog.create({
-        data: {
-          actor: "system",
-          action: "order_confirmation_unhandled_error",
-          entity: "Order",
-          entityId: order.id,
+        payments: {
+          create: {
+            idempotencyKey: `checkout:${crypto.randomUUID()}`,
+            amount: minorToEuros(subtotalMinor),
+            currency: "EUR",
+          },
         },
-      });
+      },
+      include: { payments: true },
+    });
+    orderId = order.id;
+    const attempt = order.payments[0];
+    const successUrl = `${siteUrl()}${localizedPath(orderPath(order.id), locale)}?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${siteUrl()}${localizedPath(PUBLIC_PATHS.checkout, locale)}?payment=cancelled`;
+    const metadata = {
+      source: "website",
+      orderId: order.id,
+      locale,
+      fulfillmentMethod,
+    };
+    const session = await stripeClient().checkout.sessions.create(
+      {
+        mode: "payment",
+        locale,
+        client_reference_id: order.id,
+        customer_email: email,
+        line_items: lineItems,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata,
+        payment_intent_data: { metadata },
+        ...(fulfillmentMethod === "SHIPPING"
+          ? {
+              shipping_address_collection: { allowed_countries: ["FI"] },
+              shipping_options: [{ shipping_rate: stripeShippingRateId() }],
+            }
+          : {}),
+      },
+      { idempotencyKey: attempt.idempotencyKey },
+    );
+    if (!session.url || session.amount_total == null) {
+      throw new Error("stripe_session_incomplete");
     }
-
-    return NextResponse.json({ id: order.id });
+    await prisma.$transaction([
+      prisma.paymentAttempt.update({
+        where: { id: attempt.id },
+        data: {
+          status: "PROCESSING",
+          stripeCheckoutSessionId: session.id,
+          amount: minorToEuros(session.amount_total),
+          expiresAt: new Date(session.expires_at * 1000),
+        },
+      }),
+      prisma.order.update({
+        where: { id: order.id },
+        data: {
+          paymentStatus: "PROCESSING",
+          total: minorToEuros(session.amount_total),
+          shippingAmount: minorToEuros(
+            session.total_details?.amount_shipping ?? 0,
+          ),
+        },
+      }),
+      prisma.consent.create({
+        data: { clientId: client.id, type: "gdpr_checkout", granted: true },
+      }),
+    ]);
+    return NextResponse.json({ orderId: order.id, checkoutUrl: session.url });
   } catch {
-    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    if (orderId) {
+      await prisma.order
+        .update({
+          where: { id: orderId },
+          data: {
+            paymentStatus: "FAILED",
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+            cancellationReason: "stripe_session_creation_failed",
+          },
+        })
+        .catch(() => undefined);
+    }
+    return NextResponse.json({ error: "payment_unavailable" }, { status: 503 });
   }
 }

@@ -7,6 +7,8 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/content/products";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { reconcileCheckoutSession } from "@/lib/stripe-payments";
+import { ClearPaidCart } from "@/components/shop/ClearPaidCart";
 
 export async function generateMetadata({
   params,
@@ -20,21 +22,31 @@ export async function generateMetadata({
 
 export default async function OrderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ session_id?: string }>;
 }) {
   const { locale, id } = await params;
+  const { session_id: sessionId } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Order");
+  if (sessionId) {
+    await reconcileCheckoutSession(sessionId).catch(() => undefined);
+  }
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { items: true },
+    include: { items: { include: { vouchers: true } } },
   });
   if (!order) notFound();
+  const paid = ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
+    order.paymentStatus,
+  );
 
   return (
     <section className="bg-page py-[clamp(60px,8vw,120px)]">
       <Container className="max-w-[760px]">
+        <ClearPaidCart paid={paid} />
         <div className="rounded-[var(--radius)] border border-line-card bg-card p-[clamp(24px,4vw,48px)] text-center">
           <CheckCircle
             size={52}
@@ -61,6 +73,12 @@ export default async function OrderPage({
                   {t(`states.${order.status}`)}
                 </dd>
               </div>
+              <div className="flex justify-between gap-[16px] border-b border-line-hair pb-[12px]">
+                <dt className="text-muted">{t("paymentStatus")}</dt>
+                <dd className="font-medium text-ink">
+                  {t(`paymentStates.${order.paymentStatus}`)}
+                </dd>
+              </div>
               {order.items.map((item) => (
                 <div
                   key={item.id}
@@ -74,6 +92,19 @@ export default async function OrderPage({
                   </dd>
                 </div>
               ))}
+              {order.items.flatMap((item) =>
+                item.vouchers.map((voucher) => (
+                  <div
+                    key={voucher.id}
+                    className="rounded-[4px] border border-line-card bg-page p-[12px]"
+                  >
+                    <dt className="text-muted">{t("voucher")}</dt>
+                    <dd className="mt-[4px] font-mono tracking-[.06em] text-ink">
+                      {voucher.code}
+                    </dd>
+                  </div>
+                )),
+              )}
               <div className="flex justify-between gap-[16px] pt-[4px] font-medium text-ink">
                 <dt>{t("total")}</dt>
                 <dd>{formatPrice(Number(order.total))}</dd>

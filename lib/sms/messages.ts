@@ -158,6 +158,6 @@ export function staffAppointmentSms(
 
 export function staffOrderSms(order: OrderSmsData, customer: string) {
   return normalizeSmsText(
-    `${BRAND.shortName}: Uusi tilauspyyntö. ${customer}, ${formatEmailMoney(order.total, order.currency, "fi")}, ${emailReference(order.id)}.`,
+    `${BRAND.shortName}: Uusi maksettu verkkotilaus. ${customer}, ${formatEmailMoney(order.total, order.currency, "fi")}, ${emailReference(order.id)}.`,
   );
 }

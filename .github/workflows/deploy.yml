@@ -56,6 +56,10 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_FINLAND_SHIPPING_RATE_ID: ${{ secrets.STRIPE_FINLAND_SHIPPING_RATE_ID }}
         run: |
           umask 077
           env_file="$(mktemp .env.XXXXXX)"
@@ -79,6 +83,10 @@ jobs:
             printf 'CLOUDINARY_CLOUD_NAME=%s\n' "$CLOUDINARY_CLOUD_NAME"
             printf 'CLOUDINARY_API_KEY=%s\n' "$CLOUDINARY_API_KEY"
             printf 'CLOUDINARY_API_SECRET=%s\n' "$CLOUDINARY_API_SECRET"
+            printf 'STRIPE_SECRET_KEY=%s\n' "$STRIPE_SECRET_KEY"
+            printf 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=%s\n' "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+            printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WEBHOOK_SECRET"
+            printf 'STRIPE_FINLAND_SHIPPING_RATE_ID=%s\n' "$STRIPE_FINLAND_SHIPPING_RATE_ID"
             printf 'PORT=%s\n' '5000'
           } > "$env_file"
           chmod 600 "$env_file"

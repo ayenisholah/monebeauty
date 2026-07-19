@@ -759,6 +759,115 @@ export async function notifyOrderCancellation(
   ]);
 }
 
+export async function notifyOrderPaymentUpdate(
+  order: OrderNotification,
+  locale: Locale,
+  kind:
+    | "payment_failed"
+    | "ready_for_pickup"
+    | "shipped"
+    | "fulfilled"
+    | "refund"
+    | "refund_failed",
+  detail?: string,
+  eventKey: string = kind,
+  actor = "system",
+) {
+  const copy = {
+    fi: {
+      payment_failed:
+        "Maksua ei voitu vahvistaa. Palaa kassalle ja yritä uudelleen.",
+      ready_for_pickup:
+        "Tilauksesi on valmis noudettavaksi Mone Beauty Cliniciltä.",
+      shipped: "Tilauksesi on lähetetty toimitukseen.",
+      fulfilled: "Tilauksesi on merkitty toimitetuksi.",
+      refund: "Stripen hyvitys on vahvistettu.",
+      refund_failed:
+        "Stripen hyvitys epäonnistui. Klinikka tarkistaa tilanteen.",
+    },
+    en: {
+      payment_failed:
+        "Your payment could not be confirmed. Return to checkout and try again.",
+      ready_for_pickup:
+        "Your order is ready to collect from Mone Beauty Clinic.",
+      shipped: "Your order has been dispatched.",
+      fulfilled: "Your order has been marked fulfilled.",
+      refund: "Your Stripe refund has been confirmed.",
+      refund_failed: "Your Stripe refund failed. The clinic will review it.",
+    },
+    ru: {
+      payment_failed:
+        "Не удалось подтвердить оплату. Вернитесь к оформлению и попробуйте снова.",
+      ready_for_pickup: "Ваш заказ готов к получению в Mone Beauty Clinic.",
+      shipped: "Ваш заказ отправлен.",
+      fulfilled: "Ваш заказ отмечен как выполненный.",
+      refund: "Возврат через Stripe подтверждён.",
+      refund_failed:
+        "Возврат через Stripe не выполнен. Клиника проверит ситуацию.",
+    },
+  }[locale][kind];
+  const reference = order.id.slice(-8).toUpperCase();
+  const body = `${copy}${detail ? ` ${detail}` : ""}\n\n${BRAND.name} · ${CONTACT.phone} · ${CONTACT.email}`;
+  const messageKind =
+    kind === "payment_failed"
+      ? "ORDER_PAYMENT_FAILED"
+      : kind === "ready_for_pickup"
+        ? "ORDER_READY_FOR_PICKUP"
+        : kind === "shipped"
+          ? "ORDER_SHIPPED"
+          : kind === "fulfilled"
+            ? "ORDER_FULFILLED"
+            : kind === "refund"
+              ? "ORDER_REFUND"
+              : "ORDER_REFUND_FAILED";
+  return Promise.all([
+    persistDelivery({
+      parent: { orderId: order.id },
+      kind: messageKind,
+      channel: "EMAIL",
+      locale,
+      recipient: order.email,
+      message: {
+        subject: `${BRAND.name}: ${copy} ${reference}`,
+        text: body,
+      },
+      actor,
+      dedupeKey: `order:${order.id}:${eventKey}:customer:email`,
+    }),
+    ...(kind === "payment_failed"
+      ? []
+      : [
+          persistDelivery({
+            parent: { orderId: order.id },
+            kind: messageKind,
+            channel: "SMS",
+            locale,
+            recipient: order.phone ?? "",
+            message: { text: `${BRAND.shortName}: ${copy} ${reference}.` },
+            actor,
+            dedupeKey: `order:${order.id}:${eventKey}:customer:sms`,
+          }),
+        ]),
+    ...(["refund", "refund_failed"].includes(kind)
+      ? [
+          persistDelivery({
+            parent: { orderId: order.id },
+            kind: messageKind,
+            channel: "EMAIL",
+            locale: "fi",
+            recipient: staffEmails(),
+            message: {
+              subject: `${BRAND.name}: Stripe ${kind === "refund" ? "hyvitys" : "hyvitys epäonnistui"} ${reference}`,
+              text: body,
+            },
+            actor,
+            dedupeKey: `order:${order.id}:${eventKey}:staff:email`,
+          }),
+        ]
+      : []),
+  ]);
+}
+
 export async function sendCustomMessage({
   parent,
   channel,

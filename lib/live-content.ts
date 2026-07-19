@@ -50,6 +50,7 @@ export async function getLiveProducts(locale: Locale): Promise<Product[]> {
       {
         slug: row.slug,
         category: row.category as ProductCategory,
+        kind: row.kind,
         image: row.images[0] ?? null,
         price: Number(row.price),
         size: row.size,
@@ -79,6 +80,7 @@ export async function getLiveProduct(
   return {
     slug: row.slug,
     category: row.category as ProductCategory,
+    kind: row.kind,
     image: row.images[0] ?? null,
     price: Number(row.price),
     size: row.size,

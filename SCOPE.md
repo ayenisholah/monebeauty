@@ -1,4 +1,12 @@
 Project Overview
+Stripe website payments (owner-approved, 2026-07-19): product purchases use Stripe-hosted
+Checkout and webhook-authoritative payment state. The online catalog supports physical
+products, balance gift cards, and single-use prepaid treatment vouchers, with free clinic
+pickup or a Stripe-configured Finland shipping rate for physical goods. Payment success,
+refunds, voucher issuance/redemption, fulfilment, and localized customer/staff notifications
+are persisted and audited. Ordinary appointment bookings remain unpaid online and are paid
+at the clinic by credit card; the system never sends a Stripe invoice after an appointment.
+
 Account portals and read-only staff access (owner-approved, 2026-07-19): clients may create
 verified accounts without being required to sign in before booking. `/oma-tili` shows the
 authenticated client's past and upcoming procedures and submits cancellation/reschedule

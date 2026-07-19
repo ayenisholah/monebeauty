@@ -26,6 +26,9 @@ export async function generateMetadata({
 const GROUPS: { category: ProductCategory; labelKey: string }[] = [
   { category: "AROSHA_BODY", labelKey: "categoryBody" },
   { category: "DIXIDOX_TRICHO", labelKey: "categoryTricho" },
+  { category: "GIFT_CARD", labelKey: "categoryGiftCards" },
+  { category: "TREATMENT", labelKey: "categoryTreatments" },
+  { category: "OTHER", labelKey: "categoryOther" },
 ];
 
 export default async function CatalogPage({

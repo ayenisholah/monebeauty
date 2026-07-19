@@ -379,6 +379,9 @@
     }
   },
   "Catalog": {
+    "categoryGiftCards": "Gift cards",
+    "categoryTreatments": "Prepaid treatments",
+    "categoryOther": "More from Mone Beauty",
     "metaTitle": "Catalog",
     "metaDescription": "AROSHA and DIXIDOX De Luxe professional products at Mone Beauty Clinic, Helsinki.",
     "title": "Catalog",
@@ -472,8 +475,13 @@
     "metaTitle": "Checkout",
     "eyebrow": "Checkout",
     "heading": "Confirm your order",
-    "intro": "Leave your contact details and we will contact you to confirm availability and handover details.",
+    "intro": "Enter your details, choose pickup or Finland delivery, and continue to secure Stripe payment.",
     "summary": "Order summary",
+    "fulfillment": {
+      "heading": "Handover",
+      "pickup": "Free clinic pickup",
+      "shipping": "Finland delivery"
+    },
     "fields": {
       "name": "Full name",
       "phone": "Phone",
@@ -481,9 +489,13 @@
       "notes": "Notes (optional)",
       "consent": "I agree to Mone Beauty Clinic storing my details to process this order, in line with the Privacy Policy."
     },
-    "submit": "Submit order",
-    "submitting": "Submitting...",
+    "submit": "Continue to secure payment",
+    "submitting": "Opening payment...",
     "errors": {
+      "product_unavailable": "One or more products are no longer available online.",
+      "currency_unavailable": "This basket cannot be charged in EUR.",
+      "fulfillment_required": "Choose clinic pickup or Finland delivery.",
+      "payment_unavailable": "Secure payment is temporarily unavailable. Please try again shortly.",
       "invalid_json": "The order could not be read. Please try again.",
       "name_required": "Please enter your full name.",
       "phone_required": "Please enter your phone number.",
@@ -495,6 +507,17 @@
     }
   },
   "Order": {
+    "paymentStatus": "Payment",
+    "voucher": "Voucher code",
+    "paymentStates": {
+      "UNPAID": "Not paid",
+      "PROCESSING": "Processing",
+      "PAID": "Paid",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "REFUNDED": "Refunded",
+      "FAILED": "Payment failed",
+      "EXPIRED": "Payment expired"
+    },
     "metaTitle": "Order received",
     "heading": "Order received",
     "intro": "Thank you. We have received your order request and will contact you to confirm the details.",
@@ -503,6 +526,8 @@
     "status": "Status",
     "cancellationReason": "Cancellation reason",
     "states": {
+      "READY_FOR_PICKUP": "Ready for pickup",
+      "SHIPPED": "Order shipped",
       "PENDING": "Request received",
       "CONFIRMED": "Order confirmed",
       "PAID": "Order confirmed",
@@ -510,6 +535,8 @@
       "CANCELLED": "Order cancelled"
     },
     "stateDescriptions": {
+      "READY_FOR_PICKUP": "Your order is ready to collect at the clinic.",
+      "SHIPPED": "Your order has been dispatched.",
       "PENDING": "The clinic is reviewing your order request.",
       "CONFIRMED": "The clinic has confirmed your order.",
       "PAID": "The clinic has confirmed your order.",
@@ -565,6 +592,7 @@
     "cookiesTitle": "Cookies Policy",
     "lastUpdated": "Last updated",
     "privacyBody": [
+      "Online-store payments are processed by Stripe. Mone Beauty Clinic stores the order, payment status, fulfilment choice, and delivery address where needed, but never stores complete card details.",
       "Mone Beauty Clinic processes personal data to provide appointments, product orders, customer support, CRM follow-up, and legally required administration. Typical data includes name, phone, email, booking/order details, consent records, and messages you choose to send.",
       "Health-related notes, contraindications, and treatment comments are treated as special-category data. Access is role-restricted and sensitive access is audited in the admin system.",
       "Data is processed on the basis of appointment/order performance, legal obligations, consent, and legitimate interest in safe clinic operations. Marketing communication is used only where consent is recorded.",
@@ -574,7 +602,7 @@
     "termsBody": [
       "The website provides information, booking, product order requests, and contact channels for Mone Beauty Clinic. Content is informational and does not replace personal consultation with a qualified professional.",
       "Appointments are subject to clinic confirmation and availability. If you arrive late, cancel late, or miss an appointment, the clinic's cancellation rules may apply.",
-      "Product orders submitted through the website are order requests until the clinic confirms availability, payment, and handover details.",
+      "Online-store purchases are charged securely through Stripe. Physical goods are collected from the clinic or delivered within Finland; digital voucher codes are delivered by email after confirmed payment. Appointment bookings are paid at the clinic and are never charged through Stripe.",
       "Do not misuse the website, attempt unauthorized access, or submit false information. Internal admin and staff areas are restricted to authorized users only.",
       "The clinic may update these terms as services, legal requirements, or website features change."
     ],
@@ -627,8 +655,6 @@
     "dashboard": {
       "title": "Operations dashboard",
       "subtitle": "Publication, client, booking, shop, and support overview.",
-      "warnings": "Publication warnings",
-      "noWarnings": "Every locale has published content for all active records.",
       "recent": "Recent business activity",
       "emptyActivity": "No recent business activity.",
       "quick": "Quick create",
@@ -727,6 +753,25 @@
     }
   },
   "AdminOperations": {
+    "payment": "Payment",
+    "fulfillment": "Fulfilment",
+    "ready": "Mark ready for pickup",
+    "ship": "Mark shipped",
+    "refund": "Refund through Stripe",
+    "refundAmount": "Refund amount (EUR)",
+    "refundReason": "Refund reason",
+    "voucherCode": "Voucher code",
+    "redemptionAmount": "Redemption amount (gift cards)",
+    "redeem": "Redeem voucher",
+    "paymentStatusLabels": {
+      "UNPAID": "Unpaid",
+      "PROCESSING": "Processing",
+      "PAID": "Paid",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "REFUNDED": "Refunded",
+      "FAILED": "Failed",
+      "EXPIRED": "Expired"
+    },
     "orders": "Orders",
     "appointments": "Appointments",
     "orderDescription": "Review requests, confirm availability, and manage customer communication.",
@@ -778,6 +823,8 @@
     "segments": "Characters / encoding / segments",
     "transactional": "Use this only for information directly related to this record.",
     "statusLabels": {
+      "READY_FOR_PICKUP": "Ready for pickup",
+      "SHIPPED": "Shipped",
       "PENDING": "Pending",
       "PAID": "Paid (legacy)",
       "FULFILLED": "Fulfilled",
