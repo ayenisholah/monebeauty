@@ -118,3 +118,19 @@ export function normalizeSlots(value: unknown): StaffSlot[] {
     })
     .filter((slot): slot is StaffSlot => Boolean(slot));
 }
+
+export function availabilityCovers(rawSlots: unknown, start: Date, end: Date) {
+  const intervals = normalizeSlots(rawSlots)
+    .filter((slot) => slot.status === "open")
+    .map((slot) => ({ start: new Date(slot.start), end: new Date(slot.end) }))
+    .filter((slot) => slot.end > slot.start)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  let cursor = start.getTime();
+  for (const slot of intervals) {
+    if (slot.end.getTime() <= cursor) continue;
+    if (slot.start.getTime() > cursor) return false;
+    cursor = Math.max(cursor, slot.end.getTime());
+    if (cursor >= end.getTime()) return true;
+  }
+  return false;
+}

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getServiceId, openPublicSlots } from "@/lib/booking";
 import { notifyAppointmentReceipt } from "@/lib/notifications";
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
+    }
     return bad("invalid_json");
   }
 
@@ -82,10 +86,16 @@ export async function POST(req: NextRequest) {
     // Double-book guard — any non-cancelled appointment overlapping this window.
     const clash = await prisma.appointment.findFirst({
       where: {
-        practitionerId,
         status: { not: "CANCELLED" },
         start: { lt: endDate },
         end: { gt: startDate },
+        OR: [
+          { practitionerId },
+          { roomId: matchingSlot.roomId },
+          ...(matchingSlot.deviceId
+            ? [{ deviceId: matchingSlot.deviceId }]
+            : []),
+        ],
       },
       select: { id: true },
     });
@@ -109,6 +119,8 @@ export async function POST(req: NextRequest) {
         clientId: client.id,
         practitionerId,
         serviceId,
+        roomId: matchingSlot.roomId,
+        deviceId: matchingSlot.deviceId,
         locale,
         start: startDate,
         end: endDate,

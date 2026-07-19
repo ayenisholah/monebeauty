@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { StaffSchedule } from "@/components/staff/StaffSchedule";
+import { SharedCalendar } from "@/components/calendar/SharedCalendar";
 import { requireUser } from "@/lib/auth";
 
 export async function generateMetadata({
@@ -36,7 +36,7 @@ export default async function StaffPage({
           {t("intro")}
         </p>
         <div className="mt-[clamp(28px,4vw,48px)]">
-          <StaffSchedule />
+          <SharedCalendar locale={locale as "en" | "fi" | "ru"} />
         </div>
       </Container>
     </section>

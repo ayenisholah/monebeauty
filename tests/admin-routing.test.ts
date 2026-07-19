@@ -14,6 +14,7 @@ test("admin paths use Finnish segments in every locale", () => {
   assert.equal(adminBase("ru"), "/ru/admin");
   assert.equal(adminHref("fi", "clients"), "/admin/asiakkaat");
   assert.equal(adminHref("fi", "appointments"), "/admin/ajanvaraukset");
+  assert.equal(adminHref("fi", "calendar"), "/admin/kalenteri");
   assert.equal(adminHref("en", "orders"), "/en/admin/tilaukset");
   assert.equal(
     adminHref("en", "technologies", "uusi"),
@@ -29,6 +30,7 @@ test("legacy English modules map to Finnish segments", () => {
   const expected = {
     login: ADMIN_SEGMENTS.login,
     clients: ADMIN_SEGMENTS.clients,
+    calendar: ADMIN_SEGMENTS.calendar,
     appointments: ADMIN_SEGMENTS.appointments,
     orders: ADMIN_SEGMENTS.orders,
     services: ADMIN_SEGMENTS.services,

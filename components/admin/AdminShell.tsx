@@ -7,6 +7,7 @@ import {
   AddressBook,
   Article,
   CalendarCheck,
+  CalendarBlank,
   ChatCircleDots,
   CurrencyEur,
   Flask,
@@ -39,6 +40,7 @@ const nav: Array<{
 }> = [
   { module: "dashboard", icon: House },
   { module: "clients", icon: AddressBook },
+  { module: "calendar", icon: CalendarBlank },
   { module: "appointments", icon: CalendarCheck },
   { module: "orders", icon: ShoppingBag },
   { module: "services", icon: SquaresFour },
@@ -55,11 +57,13 @@ export function AdminShell({
   locale,
   labels,
   user,
+  wide = false,
 }: {
   children: React.ReactNode;
   locale: Locale;
   labels: Labels;
   user: { email: string; name: string | null };
+  wide?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -221,7 +225,11 @@ export function AdminShell({
         />
       ) : null}
       <main className="min-w-0 px-[16px] py-[28px] sm:px-[24px] [@media(min-width:900px)]:ml-[292px] [@media(min-width:900px)]:px-[clamp(28px,4vw,60px)] [@media(min-width:900px)]:py-[42px]">
-        <div className="mx-auto max-w-[1280px]">{children}</div>
+        <div
+          className={wide ? "mx-auto max-w-[1800px]" : "mx-auto max-w-[1280px]"}
+        >
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -37,6 +37,8 @@ import {
 import { AdminShell } from "@/components/admin/AdminShell";
 import { MediaField } from "@/components/admin/MediaField";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { SharedCalendar } from "@/components/calendar/SharedCalendar";
+import { CalendarSetup } from "@/components/calendar/CalendarSetup";
 import {
   AppointmentsAdmin,
   OrdersAdmin,
@@ -108,6 +110,7 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
     nav: {
       dashboard: t("nav.dashboard"),
       clients: t("nav.clients"),
+      calendar: t("nav.calendar"),
       appointments: t("nav.appointments"),
       orders: t("nav.orders"),
       services: t("nav.services"),
@@ -120,6 +123,7 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
     },
     modules: {
       clients: t("modules.clients"),
+      calendar: t("modules.calendar"),
       appointments: t("modules.appointments"),
       orders: t("modules.orders"),
       services: t("modules.services"),
@@ -250,6 +254,7 @@ export async function AdminRouter({
           nav: copy.nav,
         }}
         user={user}
+        wide={adminModule === "calendar"}
       >
         {feedback ? (
           <p
@@ -347,6 +352,15 @@ async function renderModule({
         searchParams={searchParams}
       />
     );
+  if (adminModule === "calendar") {
+    const calendarHref = adminHref(locale, "calendar");
+    if (id === "asetukset")
+      return <CalendarSetup locale={locale} calendarHref={calendarHref} />;
+    if (id) notFound();
+    return (
+      <SharedCalendar locale={locale} setupHref={`${calendarHref}/asetukset`} />
+    );
+  }
   if (adminModule === "appointments")
     return (
       <AppointmentsAdmin locale={locale} id={id} searchParams={searchParams} />

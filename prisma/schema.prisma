@@ -34,28 +34,34 @@ model Session {
 }
 
 model Service {
-  id             String             @id @default(cuid())
-  slug           String             @unique
-  publicPath     String?
-  category       ServiceCategory
-  durationMin    Int                @default(60)
-  bookable       Boolean            @default(true)
-  priceFrom      Decimal?
-  images         String[]           @default([])
-  order          Int                @default(0)
-  published      Boolean            @default(true)
-  heroImageAlt   String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  archivedAt     DateTime?
-  appointments   Appointment[]
-  pricing        PricingItem[]
-  contents       TreatmentContent[]
-  procedureMedia ProcedureMedia[]
-  practitioners  Practitioner[]     @relation("PractitionerToService")
-  technologies   Technology[]       @relation("TechnologyBookingService")
+  id                    String             @id @default(cuid())
+  slug                  String             @unique
+  publicPath            String?
+  category              ServiceCategory
+  durationMin           Int                @default(60)
+  bookable              Boolean            @default(true)
+  priceFrom             Decimal?
+  images                String[]           @default([])
+  order                 Int                @default(0)
+  published             Boolean            @default(true)
+  heroImageAlt          String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  archivedAt            DateTime?
+  primaryPractitionerId String?
+  requiresDevice        Boolean            @default(false)
+  appointments          Appointment[]
+  pricing               PricingItem[]
+  contents              TreatmentContent[]
+  procedureMedia        ProcedureMedia[]
+  practitioners         Practitioner[]     @relation("PractitionerToService")
+  primaryPractitioner   Practitioner?      @relation("PrimaryPractitioner", fields: [primaryPractitionerId], references: [id], onDelete: SetNull)
+  rooms                 Room[]             @relation("RoomToService")
+  devices               Device[]           @relation("DeviceToService")
+  technologies          Technology[]       @relation("TechnologyBookingService")
 
   @@index([archivedAt, order])
+  @@index([primaryPractitionerId])
 }
 
 model ProcedureMedia {
@@ -250,13 +256,37 @@ model OrderItem {
 }
 
 model Practitioner {
-  id             String         @id @default(cuid())
-  name           String
-  role           String
-  appointments   Appointment[]
-  availabilities Availability[]
-  staff          StaffUser?
-  services       Service[]      @relation("PractitionerToService")
+  id              String         @id @default(cuid())
+  name            String
+  role            String
+  active          Boolean        @default(true)
+  displayOrder    Int            @default(0)
+  calendarColor   String         @default("#B89B72")
+  workingHours    Json?
+  daysOff         DateTime[]
+  appointments    Appointment[]
+  availabilities  Availability[]
+  staff           StaffUser?
+  services        Service[]      @relation("PractitionerToService")
+  primaryServices Service[]      @relation("PrimaryPractitioner")
+}
+
+model Room {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  active       Boolean       @default(true)
+  displayOrder Int           @default(0)
+  appointments Appointment[]
+  services     Service[]     @relation("RoomToService")
+}
+
+model Device {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  active       Boolean       @default(true)
+  displayOrder Int           @default(0)
+  appointments Appointment[]
+  services     Service[]     @relation("DeviceToService")
 }
 
 model StaffUser {
@@ -284,6 +314,8 @@ model Appointment {
   clientId           String
   practitionerId     String
   serviceId          String
+  roomId             String?
+  deviceId           String?
   locale             Locale             @default(fi)
   start              DateTime
   end                DateTime
@@ -296,6 +328,7 @@ model Appointment {
   history            Json?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @default(now()) @updatedAt
+  version            Int                @default(1)
   confirmedAt        DateTime?
   completedAt        DateTime?
   cancelledAt        DateTime?
@@ -303,8 +336,14 @@ model Appointment {
   client             Client             @relation(fields: [clientId], references: [id])
   practitioner       Practitioner       @relation(fields: [practitionerId], references: [id])
   service            Service            @relation(fields: [serviceId], references: [id])
+  room               Room?              @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  device             Device?            @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   events             AppointmentEvent[]
   messages           OutboundMessage[]
+
+  @@index([practitionerId, start, end])
+  @@index([roomId, start, end])
+  @@index([deviceId, start, end])
 }
 
 model AppointmentEvent {
@@ -319,6 +358,7 @@ model AppointmentEvent {
   nextStart      DateTime?
   nextEnd        DateTime?
   reason         String?
+  changes        Json?
   at             DateTime             @default(now())
   appointment    Appointment          @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
@@ -527,6 +567,7 @@ enum AppointmentEventKind {
   RESCHEDULED
   COMPLETED
   CANCELLED
+  CALENDAR_UPDATED
 }
 
 enum OrderStatus {

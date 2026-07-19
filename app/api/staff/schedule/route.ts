@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { getDefaultPractitionerId } from "@/lib/booking";
+import type { AuthUser } from "@/lib/auth";
 import {
   dateFromYmd,
   generateStaffSlots,
@@ -19,6 +20,18 @@ function forbidden() {
   return NextResponse.json({ error: "forbidden" }, { status: 403 });
 }
 
+async function resolvePractitionerId(user: AuthUser, requested?: unknown) {
+  if (user.role === "ADMIN") {
+    const id = String(requested ?? "");
+    return id || getDefaultPractitionerId();
+  }
+  const staff = await prisma.staffUser.findUnique({
+    where: { userId: user.id },
+    select: { practitionerId: true },
+  });
+  return staff?.practitionerId ?? null;
+}
+
 export async function GET(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
@@ -27,7 +40,11 @@ export async function GET(req: NextRequest) {
   const date = dateFromYmd(requestedDate);
   if (!date) return bad("invalid_date");
 
-  const practitionerId = await getDefaultPractitionerId();
+  const practitionerId = await resolvePractitionerId(
+    user,
+    searchParams.get("practitionerId"),
+  );
+  if (!practitionerId) return forbidden();
 
   const availability = await prisma.availability.findUnique({
     where: { practitionerId_date: { practitionerId, date } },
@@ -81,7 +98,11 @@ export async function POST(req: NextRequest) {
   const dateStr = String(payload.date ?? "");
   const date = dateFromYmd(dateStr);
   if (!date) return bad("invalid_date");
-  const practitionerId = await getDefaultPractitionerId();
+  const practitionerId = await resolvePractitionerId(
+    user,
+    payload.practitionerId,
+  );
+  if (!practitionerId) return forbidden();
 
   const slots = normalizeSlots(payload.slots);
   const saved = await prisma.availability.upsert({
@@ -111,7 +132,11 @@ export async function PUT(req: NextRequest) {
   const daysAhead = Math.min(90, Math.max(1, Number(payload.daysAhead ?? 30)));
   const start = dateFromYmd(fromDate);
   if (!start) return bad("invalid_date");
-  const practitionerId = await getDefaultPractitionerId();
+  const practitionerId = await resolvePractitionerId(
+    user,
+    payload.practitionerId,
+  );
+  if (!practitionerId) return forbidden();
 
   const hours = normalizeWorkingHours({
     openDays: Array.isArray(payload.openDays)

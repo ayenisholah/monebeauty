@@ -585,6 +585,7 @@
     "nav": {
       "dashboard": "Yhteenveto",
       "clients": "Asiakkaat",
+      "calendar": "Kalenteri",
       "appointments": "Ajanvaraukset",
       "orders": "Tilaukset",
       "services": "Kliiniset palvelut",
@@ -700,6 +701,7 @@
     },
     "modules": {
       "clients": "Asiakkaat",
+      "calendar": "Kalenteri",
       "appointments": "Ajanvaraukset",
       "orders": "Tilaukset",
       "services": "Kliiniset palvelut",

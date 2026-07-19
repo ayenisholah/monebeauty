@@ -71,8 +71,10 @@ test("themed selects choose a viewport-safe opening direction", () => {
   );
 });
 
-test("staff schedule resolves the clinic resource on the server", () => {
-  assert.match(staff, /getDefaultPractitionerId\(\)/);
-  assert.doesNotMatch(staff, /payload\.practitionerId/);
-  assert.doesNotMatch(staff, /searchParams\.get\("practitionerId"\)/);
+test("staff schedule scopes employee selection by role", () => {
+  assert.match(staff, /user\.role === "ADMIN"/);
+  assert.match(staff, /payload\.practitionerId/);
+  assert.match(staff, /searchParams\.get\("practitionerId"\)/);
+  assert.match(staff, /where: \{ userId: user\.id \}/);
+  assert.match(staff, /staff\?\.practitionerId/);
 });

@@ -585,6 +585,7 @@
     "nav": {
       "dashboard": "Обзор",
       "clients": "Клиенты",
+      "calendar": "Календарь",
       "appointments": "Записи",
       "orders": "Заказы",
       "services": "Клинические услуги",
@@ -700,6 +701,7 @@
     },
     "modules": {
       "clients": "Клиенты",
+      "calendar": "Календарь",
       "appointments": "Записи",
       "orders": "Заказы",
       "services": "Клинические услуги",

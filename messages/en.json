@@ -593,6 +593,7 @@
     "nav": {
       "dashboard": "Dashboard",
       "clients": "Clients",
+      "calendar": "Calendar",
       "appointments": "Appointments",
       "orders": "Orders",
       "services": "Clinical services",
@@ -708,6 +709,7 @@
     },
     "modules": {
       "clients": "Clients",
+      "calendar": "Calendar",
       "appointments": "Appointments",
       "orders": "Orders",
       "services": "Clinical services",

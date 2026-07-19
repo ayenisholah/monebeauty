@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { DEFAULT_BOOKING_PRACTITIONER_NAME } from "../lib/booking-config";
 
 const wizard = readFileSync("components/booking/BookingWizard.tsx", "utf8");
 const bookingRoute = readFileSync("app/api/booking/route.ts", "utf8");
@@ -61,21 +60,19 @@ test("public booking APIs ignore forged practitioner values", () => {
   assert.match(bookingRoute, /practitionerId = matchingSlot\.practitionerId/);
 });
 
-test("the named clinic provider owns all new and rescheduled availability", () => {
-  assert.equal(DEFAULT_BOOKING_PRACTITIONER_NAME, "Mone Beauty Clinic");
+test("the service owner and exclusive resources control new and rescheduled availability", () => {
   assert.match(
     bookingLib,
-    /where: \{ name: DEFAULT_BOOKING_PRACTITIONER_NAME \}/,
+    /openSlots[\s\S]*?practitionerId = record\.svc\.primaryPractitionerId/,
   );
-  assert.match(bookingLib, /role: "Specialist"/);
-  assert.match(bookingLib, /services: \{ connect: \{ id: serviceId \} \}/);
-  assert.match(
-    bookingLib,
-    /openSlots[\s\S]*?practitionerId = await getDefaultPractitionerId\(record\.serviceId\)/,
-  );
+  assert.match(bookingLib, /record\.svc\.rooms\.length === 0/);
+  assert.match(bookingLib, /record\.svc\.requiresDevice/);
+  assert.match(bookingLib, /booking\.deviceId !== item\.id/);
   assert.match(rescheduleRoute, /practitionerId: matchingSlot\.practitionerId/);
+  assert.match(rescheduleRoute, /roomId: matchingSlot\.roomId/);
+  assert.match(rescheduleRoute, /deviceId: matchingSlot\.deviceId/);
   assert.match(
     bookingRoute,
-    /status: \{ not: "CANCELLED" \}[\s\S]*?start: \{ lt: endDate \}[\s\S]*?end: \{ gt: startDate \}/,
+    /OR: \[[\s\S]*?\{ practitionerId \}[\s\S]*?roomId: matchingSlot\.roomId/,
   );
 });

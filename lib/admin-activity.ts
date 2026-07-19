@@ -55,6 +55,7 @@ const appointmentActions = {
   RESCHEDULED: "appointmentRescheduled",
   COMPLETED: "appointmentCompleted",
   CANCELLED: "appointmentCancelled",
+  CALENDAR_UPDATED: "appointmentRescheduled",
 } as const;
 
 const auditActions: Record<

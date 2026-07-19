@@ -4,6 +4,7 @@ import {
   DEFAULT_BOOKING_PRACTITIONER_NAME,
 } from "@/lib/booking-config";
 import type { Locale } from "@/i18n/routing";
+import { availabilityCovers } from "@/lib/staff-schedule";
 
 /**
  * Lean booking slot logic. Times are treated as clinic wall-clock (Helsinki) and stored as
@@ -24,6 +25,10 @@ export interface SlotDto {
   label: string;
   /** Practitioner that will receive the booking. */
   practitionerId: string;
+  /** Internally allocated room; omitted from the public slots response. */
+  roomId: string;
+  /** Internally allocated physical device, when the service requires one. */
+  deviceId: string | null;
 }
 
 type AvailabilitySlot = {
@@ -73,7 +78,23 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
         ? { contents: { some: { locale, status: "PUBLISHED" } } }
         : {}),
     },
-    select: { id: true, slug: true, durationMin: true },
+    select: {
+      id: true,
+      slug: true,
+      durationMin: true,
+      primaryPractitionerId: true,
+      requiresDevice: true,
+      rooms: {
+        where: { active: true },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+        select: { id: true },
+      },
+      devices: {
+        where: { active: true },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+        select: { id: true },
+      },
+    },
   });
   return service ? { svc: service, serviceId: service.id } : null;
 }
@@ -98,16 +119,15 @@ async function candidateSlotsForPractitioner(
       .filter((slot) => (slot.status ?? "open") === "open")
       .map((slot) => {
         const start = new Date(slot.start);
-        const end = slot.end
-          ? new Date(slot.end)
-          : new Date(start.getTime() + durationMin * 60000);
+        const end = new Date(start.getTime() + durationMin * 60000);
         return { start, end };
       })
       .filter(
         (slot) =>
           !Number.isNaN(slot.start.getTime()) &&
           !Number.isNaN(slot.end.getTime()) &&
-          slot.end.getTime() > slot.start.getTime(),
+          slot.end.getTime() > slot.start.getTime() &&
+          availabilityCovers(availability.slots, slot.start, slot.end),
       );
   }
 
@@ -132,18 +152,38 @@ export async function openSlots({
   const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
   if (!isOpenDate(dateStr)) return [];
 
-  const practitionerId = await getDefaultPractitionerId(record.serviceId);
+  const practitionerId = record.svc.primaryPractitionerId;
+  if (!practitionerId || record.svc.rooms.length === 0) return [];
+  if (record.svc.requiresDevice && record.svc.devices.length === 0) return [];
 
   const [y, m, d] = dateStr.split("-").map(Number);
   const dayStart = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
   const dayEnd = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0));
   const booked = await prisma.appointment.findMany({
     where: {
-      practitionerId,
       start: { gte: dayStart, lt: dayEnd },
       status: { not: "CANCELLED" },
+      OR: [
+        { practitionerId },
+        { roomId: { in: record.svc.rooms.map((room) => room.id) } },
+        ...(record.svc.devices.length
+          ? [
+              {
+                deviceId: {
+                  in: record.svc.devices.map((device) => device.id),
+                },
+              },
+            ]
+          : []),
+      ],
     },
-    select: { practitionerId: true, start: true, end: true },
+    select: {
+      practitionerId: true,
+      roomId: true,
+      deviceId: true,
+      start: true,
+      end: true,
+    },
   });
 
   const now = Date.now();
@@ -155,15 +195,42 @@ export async function openSlots({
   );
   for (const candidate of candidates) {
     if (candidate.start.getTime() <= now) continue;
-    const clash = booked.some((booking) =>
-      overlaps(candidate.start, candidate.end, booking.start, booking.end),
+    const employeeClash = booked.some(
+      (booking) =>
+        booking.practitionerId === practitionerId &&
+        overlaps(candidate.start, candidate.end, booking.start, booking.end),
     );
-    if (clash) continue;
+    if (employeeClash) continue;
+    const room = record.svc.rooms.find((item) =>
+      booked.every(
+        (booking) =>
+          booking.roomId !== item.id ||
+          !overlaps(candidate.start, candidate.end, booking.start, booking.end),
+      ),
+    );
+    if (!room) continue;
+    const device = record.svc.requiresDevice
+      ? record.svc.devices.find((item) =>
+          booked.every(
+            (booking) =>
+              booking.deviceId !== item.id ||
+              !overlaps(
+                candidate.start,
+                candidate.end,
+                booking.start,
+                booking.end,
+              ),
+          ),
+        )
+      : null;
+    if (record.svc.requiresDevice && !device) continue;
     out.push({
       start: candidate.start.toISOString(),
       end: candidate.end.toISOString(),
       label: dateLabel(candidate.start),
       practitionerId,
+      roomId: room.id,
+      deviceId: device?.id ?? null,
     });
   }
   return out.sort((a, b) => a.start.localeCompare(b.start));

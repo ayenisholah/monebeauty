@@ -1,6 +1,21 @@
 # Requirements — Mone Beauty
 
-## Owner-approved public booking assignment (2026-07-17)
+## Owner-approved shared calendar and employee assignment (2026-07-19)
+
+The admin sidebar exposes `/admin/kalenteri` in every interface locale. The calendar follows
+the supplied Timma Pro reference: day/week/month navigation, all active employees visible in
+separate columns, availability at a glance, and appointment cards showing client, procedure,
+room, and time. Admins may move active appointments in time, change rooms, or reassign them
+to qualified employees after confirmation; staff see every column but edit only their own.
+
+Public booking remains **Service -> Time -> You**. Every bookable service has one fixed
+primary employee, so service selection directly determines the employee schedule without a
+customer-facing employee picker. Optional qualified backups are available only for internal
+reassignment. Rooms and physical devices are separate resources and every active appointment
+must be rejected if it overlaps its employee, room, or required device. This section
+supersedes the 2026-07-17 single-clinic-resource decision below.
+
+## Superseded public booking assignment (2026-07-17)
 
 The public booking wizard is **Service -> Time -> You**. Contextual booking links and valid
 homepage handoffs open directly at Time. Customers do not choose or see an individual

@@ -1,6 +1,17 @@
 # Implementation Plan — Mone Beauty
 
-## Public specialist selection removal (owner-approved, 2026-07-17)
+## Shared employee calendar (owner-approved, 2026-07-19) ✅ implemented
+
+- Add localized `/admin/kalenteri` navigation and reuse the shared calendar at `/henkilosto`.
+- Replace the synthetic default-provider assignment with a fixed primary employee per
+  service plus qualified internal backups; preserve historical relations.
+- Add admin setup for employees, working hours, rooms, physical devices, and service/resource
+  mappings.
+- Render Timma-inspired day/week/month views with all employees visible, availability
+  backgrounds, client/procedure/room/time cards, and confirmed drag-to-move behavior.
+- Enforce employee, room, and device overlap protection in shared booking logic and PostgreSQL.
+
+## Superseded public specialist selection removal (owner-approved, 2026-07-17)
 
 The public wizard is **Service -> Time -> You**. Contextual links and valid homepage
 handoffs open directly at Time; service changes retain the chosen date, clear the slot, and

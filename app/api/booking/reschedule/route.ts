@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { appointmentByReference, openSlots } from "@/lib/booking";
 import { notifyAppointmentChange } from "@/lib/notifications";
@@ -55,38 +56,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "slot_taken" }, { status: 409 });
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    const row = await tx.appointment.update({
-      where: { id: appointment.id },
-      data: {
-        start: new Date(matchingSlot.start),
-        end: new Date(matchingSlot.end),
-        practitionerId: matchingSlot.practitionerId,
-        status: "BOOKED",
-        confirmedAt: null,
-        history: {
-          rescheduledAt: new Date().toISOString(),
-          previousStart: appointment.start.toISOString(),
-          previousEnd: appointment.end.toISOString(),
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.appointment.update({
+        where: { id: appointment.id },
+        data: {
+          start: new Date(matchingSlot.start),
+          end: new Date(matchingSlot.end),
+          practitionerId: matchingSlot.practitionerId,
+          roomId: matchingSlot.roomId,
+          deviceId: matchingSlot.deviceId,
+          version: { increment: 1 },
+          status: "BOOKED",
+          confirmedAt: null,
+          history: {
+            rescheduledAt: new Date().toISOString(),
+            previousStart: appointment.start.toISOString(),
+            previousEnd: appointment.end.toISOString(),
+          },
         },
-      },
-      include: { client: true, service: true },
+        include: { client: true, service: true },
+      });
+      await tx.appointmentEvent.create({
+        data: {
+          appointmentId: appointment.id,
+          kind: "RESCHEDULED",
+          actor: appointment.client.email,
+          previousStatus: appointment.status,
+          nextStatus: "BOOKED",
+          previousStart: appointment.start,
+          previousEnd: appointment.end,
+          nextStart: row.start,
+          nextEnd: row.end,
+        },
+      });
+      return row;
     });
-    await tx.appointmentEvent.create({
-      data: {
-        appointmentId: appointment.id,
-        kind: "RESCHEDULED",
-        actor: appointment.client.email,
-        previousStatus: appointment.status,
-        nextStatus: "BOOKED",
-        previousStart: appointment.start,
-        previousEnd: appointment.end,
-        nextStart: row.start,
-        nextEnd: row.end,
-      },
-    });
-    return row;
-  });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
+    }
+    throw error;
+  }
   await notifyAppointmentChange(
     updated,
     "rescheduled",

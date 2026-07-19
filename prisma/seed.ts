@@ -75,16 +75,51 @@ async function main() {
       data: {
         name: DEFAULT_BOOKING_PRACTITIONER_NAME,
         role: "Specialist",
+        calendarColor: "#B89B72",
       },
     });
   }
 
   const serviceIds: string[] = [];
+  const treatmentRoom = await prisma.room.upsert({
+    where: { name: "Treatment room 1" },
+    update: { active: true },
+    create: { name: "Treatment room 1", active: true, displayOrder: 1 },
+  });
+  const deviceByService = new Map<string, string>();
+  for (const [slug, name] of [
+    ["endospheres", "Endospheres"],
+    ["laser", "Laser"],
+    ["rf", "MicroRF"],
+  ] as const) {
+    const device = await prisma.device.upsert({
+      where: { name },
+      update: { active: true },
+      create: { name, active: true },
+    });
+    deviceByService.set(slug, device.id);
+  }
   for (const s of SERVICES) {
+    const deviceId = deviceByService.get(s.slug);
     const service = await prisma.service.upsert({
       where: { slug: s.slug },
-      update: { category: s.category, published: s.bookable },
-      create: { slug: s.slug, category: s.category, published: s.bookable },
+      update: {
+        category: s.category,
+        published: s.bookable,
+        primaryPractitionerId: s.bookable ? practitioner.id : null,
+        requiresDevice: Boolean(deviceId),
+        rooms: s.bookable ? { connect: { id: treatmentRoom.id } } : undefined,
+        devices: deviceId ? { connect: { id: deviceId } } : undefined,
+      },
+      create: {
+        slug: s.slug,
+        category: s.category,
+        published: s.bookable,
+        primaryPractitionerId: s.bookable ? practitioner.id : null,
+        requiresDevice: Boolean(deviceId),
+        rooms: s.bookable ? { connect: { id: treatmentRoom.id } } : undefined,
+        devices: deviceId ? { connect: { id: deviceId } } : undefined,
+      },
     });
     if (s.bookable) serviceIds.push(service.id);
   }

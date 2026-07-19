@@ -1,4 +1,14 @@
 Project Overview
+Shared calendar and employee-owned booking (owner-approved, 2026-07-19): the admin exposes
+`/admin/kalenteri` as a Timma-inspired shared day/week/month calendar. All active employees
+are visible in separate time-based columns; appointment cards show client, procedure, room,
+and time. Services have one fixed public owner plus optional qualified backup employees.
+Public booking remains Service -> Time -> You, but the selected service now writes directly
+to its configured employee schedule. Admins may confirm and drag appointments between
+qualified employees or rooms; staff see the shared calendar and edit only their own column.
+Rooms and physical treatment devices are separate exclusive resources, so employee, room,
+and device overlaps are rejected server-side and at the database boundary.
+
 Admin operations (owner-approved, 2026-07-18): the multilingual custom admin includes
 dedicated Orders (`tilaukset`) and Appointments (`ajanvaraukset`) modules. Submitted order
 contents remain immutable; staff confirm, fulfil, or cancel requests and can send audited
@@ -6,11 +16,10 @@ transactional email/SMS. Appointment administration supports confirmation, avail
 validated rescheduling, completion, cancellation, reminders, and audited custom messages.
 Customer-facing automatic messages use the record locale through Resend and Sinch.
 
-Public booking assignment (owner-approved, 2026-07-17): the customer flow is simplified to
-Service -> Time -> You. Customers do not select or see an individual provider. Every new or actively
-rescheduled booking is assigned server-side to the exact "Mone Beauty Clinic" scheduling
-resource. The provider relation remains internal for availability and overlap protection;
-historical appointment relations are preserved.
+Public booking assignment (superseded 2026-07-19): the customer flow remains Service ->
+Time -> You and customers do not choose between employees. Each bookable service has one
+fixed public owner; choosing the service deterministically selects that employee and exposes
+only their resource-safe availability. Historical appointment relations are preserved.
 
 Themed controls (owner-approved, 2026-07-18): all dropdowns, calendars, and time pickers use
 custom Mone Beauty controls. Compact fields use popovers and the booking calendar remains
