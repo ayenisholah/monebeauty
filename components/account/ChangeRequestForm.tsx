@@ -4,9 +4,16 @@ import { useEffect, useState } from "react";
 import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { createAppointmentChangeRequestAction } from "@/lib/change-request-actions";
 import type { Locale } from "@/i18n/routing";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 type Slot = { start: string; end: string; label: string };
 function ymd(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
@@ -24,6 +31,7 @@ export function ChangeRequestForm({
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[] | undefined>();
 
   useEffect(() => {
     if (mode !== "reschedule" || !date) return;
@@ -49,6 +57,24 @@ export function ChangeRequestForm({
     setSelected("");
     setSlots([]);
     setLoading(true);
+    const from = clinicTodayYmd();
+    const to = addDays(from, BUSINESS_HOURS.daysAhead);
+    fetch(
+      `/api/booking/availability?from=${from}&to=${to}&service=${encodeURIComponent(serviceSlug)}&locale=${locale}`,
+    )
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        const dates =
+          ok && !data.degraded && Array.isArray(data.dates)
+            ? (data.dates as string[])
+            : undefined;
+        setAvailableDates(dates);
+        if (dates?.length && !dates.includes(date)) {
+          setDate(dates[0]);
+          setLoading(true);
+        }
+      })
+      .catch(() => setAvailableDates(undefined));
   }
   function pickDate(next: string) {
     setDate(next);
@@ -120,7 +146,12 @@ export function ChangeRequestForm({
       <input type="hidden" name="requestedStart" value={selected} />
       {mode === "reschedule" ? (
         <>
-          <BookingCalendar locale={locale} value={date} onSelect={pickDate} />
+          <BookingCalendar
+            locale={locale}
+            value={date}
+            onSelect={pickDate}
+            availableDates={availableDates}
+          />
           <div className="mt-[12px] flex flex-wrap gap-[7px]">
             {loading ? (
               <span className="text-sm text-muted">{label.loading}</span>

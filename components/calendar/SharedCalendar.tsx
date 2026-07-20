@@ -22,6 +22,12 @@ import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { cn } from "@/lib/cn";
 import {
+  availabilityCovers,
+  openSlotRange,
+  parseWorkingHours,
+  workingRangeForDate,
+} from "@/lib/staff-schedule";
+import {
   AppointmentForm,
   type AppointmentDetail as ManageAppointmentDetail,
 } from "@/components/calendar/AppointmentForm";
@@ -36,6 +42,7 @@ type Practitioner = {
   name: string;
   role: string;
   calendarColor: string;
+  workingHours: unknown;
 };
 type Resource = { id: string; name: string };
 type Appointment = {
@@ -89,10 +96,7 @@ type AppointmentDetail = {
   device: string | null;
 };
 
-const HOUR_START = 6;
-const HOUR_END = 22;
 const HOUR_HEIGHT = 56;
-const DAY_HEIGHT = (HOUR_END - HOUR_START) * HOUR_HEIGHT;
 
 const copy = {
   en: {
@@ -127,6 +131,8 @@ const copy = {
       "The appointment could not be moved. Refresh and try another time or resource.",
     saved: "Appointment updated.",
     create: "Create appointment",
+    noWorkingHours: "No working hours",
+    outsideHours: "Outside working hours",
   },
   fi: {
     title: "Yhteinen kalenteri",
@@ -160,6 +166,8 @@ const copy = {
       "Ajanvarausta ei voitu siirtää. Päivitä ja valitse toinen aika tai resurssi.",
     saved: "Ajanvaraus päivitetty.",
     create: "Luo ajanvaraus",
+    noWorkingHours: "Ei työaikaa",
+    outsideHours: "Työajan ulkopuolella",
   },
   ru: {
     title: "Общий календарь",
@@ -193,6 +201,8 @@ const copy = {
       "Не удалось перенести запись. Обновите календарь и выберите другое время или ресурс.",
     saved: "Запись обновлена.",
     create: "Создать запись",
+    noWorkingHours: "Нет рабочих часов",
+    outsideHours: "Вне рабочего времени",
   },
 } as const;
 
@@ -258,6 +268,7 @@ export function SharedCalendar({
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [pickerDates, setPickerDates] = useState<string[] | undefined>();
   const [editing, setEditing] = useState<{
     appointment: Appointment;
     start: string;
@@ -340,6 +351,31 @@ export function SharedCalendar({
   const visiblePractitioners =
     data?.practitioners.filter((item) => selected.includes(item.id)) ?? [];
 
+  const loadPickerDates = useCallback(
+    async (from: string, to: string) => {
+      const ids = selected.length
+        ? selected
+        : (data?.practitioners.map((item) => item.id) ?? []);
+      if (!ids.length) return;
+      try {
+        const params = new URLSearchParams({
+          from,
+          to,
+          practitionerIds: ids.join(","),
+        });
+        const response = await fetch(`/api/calendar/working-dates?${params}`);
+        if (!response.ok) throw new Error("working_dates");
+        const payload = (await response.json()) as { dates?: string[] };
+        setPickerDates(
+          Array.isArray(payload.dates) ? payload.dates : undefined,
+        );
+      } catch {
+        setPickerDates(undefined);
+      }
+    },
+    [data?.practitioners, selected],
+  );
+
   function navigate(direction: -1 | 1) {
     setDate(
       addDays(
@@ -392,7 +428,19 @@ export function SharedCalendar({
   }
 
   function openCreate(start?: string, practitionerId?: string) {
-    const fallback = new Date(`${date}T10:00:00.000Z`);
+    const resolvedPractitionerId =
+      practitionerId ??
+      data?.ownPractitionerId ??
+      selected[0] ??
+      data?.practitioners[0]?.id ??
+      "";
+    const firstOpen = data?.availabilities
+      .find(
+        (item) =>
+          item.date === date && item.practitionerId === resolvedPractitionerId,
+      )
+      ?.slots.find((slot) => slot.status === "open")?.start;
+    const fallback = new Date(firstOpen ?? `${date}T10:00:00.000Z`);
     if (fallback.getTime() <= Date.now()) {
       const now = new Date();
       const minutes = Math.ceil(now.getUTCMinutes() / 15) * 15;
@@ -400,12 +448,7 @@ export function SharedCalendar({
     }
     setManaging({
       start: start ?? fallback.toISOString(),
-      practitionerId:
-        practitionerId ??
-        data?.ownPractitionerId ??
-        selected[0] ??
-        data?.practitioners[0]?.id ??
-        "",
+      practitionerId: resolvedPractitionerId,
     });
   }
 
@@ -425,6 +468,18 @@ export function SharedCalendar({
       0,
       0,
     );
+    const targetEnd = new Date(
+      target.getTime() +
+        (new Date(appointment.end).getTime() - original.getTime()),
+    );
+    const targetAvailability = data?.availabilities.find(
+      (item) =>
+        item.date === targetDate && item.practitionerId === practitionerId,
+    );
+    if (!availabilityCovers(targetAvailability?.slots, target, targetEnd)) {
+      setMessage(t.conflict);
+      return;
+    }
     openEditor(appointment, target.toISOString(), practitionerId);
   }
 
@@ -589,6 +644,8 @@ export function SharedCalendar({
             onValueChange={setDate}
             ariaLabel={t.today}
             className="w-[170px]"
+            availableDates={pickerDates}
+            onMonthChange={loadPickerDates}
           />
           <button
             type="button"
@@ -623,7 +680,15 @@ export function SharedCalendar({
                   const practitionerId = data.canEditAllAvailability
                     ? (selected[0] ?? data.practitioners[0]?.id ?? "")
                     : (data.ownPractitionerId ?? "");
-                  setHours((current) => ({ ...current, practitionerId }));
+                  const practitioner = data.practitioners.find(
+                    (item) => item.id === practitionerId,
+                  );
+                  const saved = parseWorkingHours(practitioner?.workingHours);
+                  setHours((current) => ({
+                    ...current,
+                    practitionerId,
+                    ...saved,
+                  }));
                   setHoursOpen(true);
                 }}
                 className={buttonCls}
@@ -709,6 +774,8 @@ export function SharedCalendar({
               fmtTime={fmtTime}
               onOpen={(appointment) => void openAppointment(appointment)}
               onCreate={openCreate}
+              noWorkingHours={t.noWorkingHours}
+              outsideHours={t.outsideHours}
             />
           )}
         </DndContext>
@@ -1001,10 +1068,7 @@ export function SharedCalendar({
                   onValueChange={(value) =>
                     setHours({ ...hours, startHour: Number(value) })
                   }
-                  options={Array.from(
-                    { length: 17 },
-                    (_, index) => index + 6,
-                  ).map((hour) => ({
+                  options={Array.from({ length: 24 }, (_, hour) => ({
                     value: String(hour),
                     label: `${pad(hour)}:00`,
                   }))}
@@ -1017,8 +1081,8 @@ export function SharedCalendar({
                     setHours({ ...hours, endHour: Number(value) })
                   }
                   options={Array.from(
-                    { length: 17 },
-                    (_, index) => index + 7,
+                    { length: 24 },
+                    (_, index) => index + 1,
                   ).map((hour) => ({
                     value: String(hour),
                     label: `${pad(hour)}:00`,
@@ -1083,6 +1147,8 @@ function TimeGrid({
   fmtTime,
   onOpen,
   onCreate,
+  noWorkingHours,
+  outsideHours,
 }: {
   range: { from: Date; to: Date };
   view: View;
@@ -1092,6 +1158,8 @@ function TimeGrid({
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
   onCreate: (start: string, practitionerId: string) => void;
+  noWorkingHours: string;
+  outsideHours: string;
 }) {
   const days = Array.from(
     { length: view === "day" ? 1 : 7 },
@@ -1100,63 +1168,150 @@ function TimeGrid({
   const columns = days.flatMap((day) =>
     practitioners.map((practitioner) => ({ day, practitioner })),
   );
+  const rangeBounds = calendarWorkingBounds(columns, data);
+  const visibleIds = new Set(practitioners.map((item) => item.id));
+  const visibleDays = new Set(days.map(ymd));
+  const outsideAppointments = data.appointments.filter((appointment) => {
+    if (
+      !visibleIds.has(appointment.practitionerId) ||
+      !visibleDays.has(appointment.start.slice(0, 10))
+    )
+      return false;
+    const start = new Date(appointment.start);
+    const end = new Date(appointment.end);
+    const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
+    const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+    const availability = data.availabilities.find(
+      (item) =>
+        item.date === appointment.start.slice(0, 10) &&
+        item.practitionerId === appointment.practitionerId,
+    );
+    return (
+      !rangeBounds ||
+      !availabilityCovers(availability?.slots, start, end) ||
+      startMinute < rangeBounds.startMinute ||
+      endMinute > rangeBounds.endMinute
+    );
+  });
   return (
-    <div className="mt-[16px] overflow-auto rounded-[8px] border border-line-card bg-card">
-      <div
-        className="grid min-w-max"
-        style={{
-          gridTemplateColumns: `64px repeat(${Math.max(1, columns.length)}, minmax(190px, 1fr))`,
-        }}
-      >
-        <div className="sticky top-0 left-0 z-20 border-r border-line-card bg-card" />
-        {columns.map(({ day, practitioner }) => (
-          <div
-            key={`${ymd(day)}:${practitioner.id}`}
-            className="sticky top-0 z-20 border-r border-line-card bg-card px-[8px] py-[9px] text-center"
-          >
-            <div className="font-sans text-[11px] text-muted">
-              {fmtDate.format(day)}
-            </div>
-            <div
-              className="mx-auto mt-[4px] max-w-[150px] truncate rounded-full px-[10px] py-[4px] font-sans text-[12px] font-medium"
-              style={{ background: `${practitioner.calendarColor}55` }}
-            >
-              {practitioner.name}
-            </div>
+    <div className="mt-[16px]">
+      {outsideAppointments.length ? (
+        <div className="mb-[10px] rounded-[7px] border border-[#c98383] bg-[#fff4f2] p-[10px]">
+          <p className="font-sans text-[11px] font-medium tracking-[.08em] text-[#8c3434] uppercase">
+            {outsideHours}
+          </p>
+          <div className="mt-[7px] flex flex-wrap gap-[7px]">
+            {outsideAppointments.map((appointment) => (
+              <button
+                key={appointment.id}
+                type="button"
+                onClick={() => onOpen(appointment)}
+                className="rounded-[4px] border border-[#c98383] bg-card px-[9px] py-[6px] text-left font-sans text-[11px]"
+              >
+                {fmtDate.format(new Date(appointment.start))} ·{" "}
+                {fmtTime.format(new Date(appointment.start))} ·{" "}
+                {appointment.clientName}
+              </button>
+            ))}
           </div>
-        ))}
-        <TimeAxis />
-        {columns.map(({ day, practitioner }) => (
-          <CalendarColumn
-            key={`${ymd(day)}:${practitioner.id}`}
-            day={ymd(day)}
-            practitioner={practitioner}
-            data={data}
-            fmtTime={fmtTime}
-            onOpen={onOpen}
-            onCreate={onCreate}
-          />
-        ))}
-      </div>
+        </div>
+      ) : null}
+      {!rangeBounds ? (
+        <p className="rounded-[8px] border border-line-card bg-card p-[24px] text-center font-sans text-[14px] text-muted">
+          {noWorkingHours}
+        </p>
+      ) : (
+        <div className="overflow-auto rounded-[8px] border border-line-card bg-card">
+          <div
+            className="grid min-w-max"
+            style={{
+              gridTemplateColumns: `64px repeat(${Math.max(1, columns.length)}, minmax(190px, 1fr))`,
+            }}
+          >
+            <div className="sticky top-0 left-0 z-20 border-r border-line-card bg-card" />
+            {columns.map(({ day, practitioner }) => (
+              <div
+                key={`${ymd(day)}:${practitioner.id}`}
+                className="sticky top-0 z-20 border-r border-line-card bg-card px-[8px] py-[9px] text-center"
+              >
+                <div className="font-sans text-[11px] text-muted">
+                  {fmtDate.format(day)}
+                </div>
+                <div
+                  className="mx-auto mt-[4px] max-w-[150px] truncate rounded-full px-[10px] py-[4px] font-sans text-[12px] font-medium"
+                  style={{ background: `${practitioner.calendarColor}55` }}
+                >
+                  {practitioner.name}
+                </div>
+              </div>
+            ))}
+            <TimeAxis range={rangeBounds} />
+            {columns.map(({ day, practitioner }) => (
+              <CalendarColumn
+                key={`${ymd(day)}:${practitioner.id}`}
+                day={ymd(day)}
+                practitioner={practitioner}
+                data={data}
+                fmtTime={fmtTime}
+                onOpen={onOpen}
+                onCreate={onCreate}
+                range={rangeBounds}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function TimeAxis() {
+function calendarWorkingBounds(
+  columns: Array<{ day: Date; practitioner: Practitioner }>,
+  data: Payload,
+) {
+  const ranges = columns.flatMap(({ day, practitioner }) => {
+    const date = ymd(day);
+    const availability = data.availabilities.find(
+      (item) => item.date === date && item.practitionerId === practitioner.id,
+    );
+    const explicit = openSlotRange(availability?.slots);
+    const fallback = workingRangeForDate(date, practitioner.workingHours);
+    const resolved = availability ? explicit : fallback;
+    return resolved ? [resolved] : [];
+  });
+  if (!ranges.length) return null;
+  return {
+    startMinute:
+      Math.floor(Math.min(...ranges.map((range) => range.startMinute)) / 60) *
+      60,
+    endMinute:
+      Math.ceil(Math.max(...ranges.map((range) => range.endMinute)) / 60) * 60,
+  };
+}
+
+function TimeAxis({
+  range,
+}: {
+  range: { startMinute: number; endMinute: number };
+}) {
+  const height = ((range.endMinute - range.startMinute) / 60) * HOUR_HEIGHT;
   return (
     <div
       className="sticky left-0 z-10 border-r border-line-card bg-card"
-      style={{ height: DAY_HEIGHT }}
+      style={{ height }}
     >
-      {Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, index) => (
-        <span
-          key={index}
-          className="absolute right-[8px] -translate-y-1/2 font-sans text-[11px] text-muted"
-          style={{ top: index * HOUR_HEIGHT }}
-        >
-          {pad(HOUR_START + index)}:00
-        </span>
-      ))}
+      {Array.from(
+        { length: (range.endMinute - range.startMinute) / 60 + 1 },
+        (_, index) => (
+          <span
+            key={index}
+            className="absolute right-[8px] -translate-y-1/2 font-sans text-[11px] text-muted"
+            style={{ top: index * HOUR_HEIGHT }}
+          >
+            {pad(range.startMinute / 60 + index)}:00
+          </span>
+        ),
+      )}
     </div>
   );
 }
@@ -1168,6 +1323,7 @@ function CalendarColumn({
   fmtTime,
   onOpen,
   onCreate,
+  range,
 }: {
   day: string;
   practitioner: Practitioner;
@@ -1175,6 +1331,7 @@ function CalendarColumn({
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
   onCreate: (start: string, practitionerId: string) => void;
+  range: { startMinute: number; endMinute: number };
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `col:${day}:${practitioner.id}`,
@@ -1188,8 +1345,9 @@ function CalendarColumn({
       item.start.slice(0, 10) === day,
   );
   const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes() - HOUR_START * 60;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes() - range.startMinute;
   const isToday = day === today();
+  const dayHeight = ((range.endMinute - range.startMinute) / 60) * HOUR_HEIGHT;
   return (
     <div
       ref={setNodeRef}
@@ -1198,7 +1356,7 @@ function CalendarColumn({
         isOver && "ring-2 ring-accent ring-inset",
       )}
       style={{
-        height: DAY_HEIGHT,
+        height: dayHeight,
         backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT / 2 - 1}px, rgba(89,71,50,.09) ${HOUR_HEIGHT / 2}px, transparent ${HOUR_HEIGHT / 2 + 1}px, transparent ${HOUR_HEIGHT - 1}px, rgba(89,71,50,.16) ${HOUR_HEIGHT}px)`,
       }}
     >
@@ -1210,7 +1368,7 @@ function CalendarColumn({
           const top =
             ((start.getUTCHours() * 60 +
               start.getUTCMinutes() -
-              HOUR_START * 60) /
+              range.startMinute) /
               60) *
             HOUR_HEIGHT;
           const height = Math.max(
@@ -1231,21 +1389,34 @@ function CalendarColumn({
         })}
       {isToday &&
       nowMinutes >= 0 &&
-      nowMinutes <= (HOUR_END - HOUR_START) * 60 ? (
+      nowMinutes <= range.endMinute - range.startMinute ? (
         <div
           className="pointer-events-none absolute inset-x-0 z-20 border-t border-[#d95f70]"
           style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
         />
       ) : null}
-      {appointments.map((appointment) => (
-        <AppointmentCard
-          key={appointment.id}
-          appointment={appointment}
-          color={practitioner.calendarColor}
-          fmtTime={fmtTime}
-          onOpen={onOpen}
-        />
-      ))}
+      {appointments
+        .filter((appointment) => {
+          const start = new Date(appointment.start);
+          const end = new Date(appointment.end);
+          const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
+          const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+          return (
+            startMinute >= range.startMinute &&
+            endMinute <= range.endMinute &&
+            availabilityCovers(availability?.slots, start, end)
+          );
+        })
+        .map((appointment) => (
+          <AppointmentCard
+            key={appointment.id}
+            appointment={appointment}
+            color={practitioner.calendarColor}
+            fmtTime={fmtTime}
+            onOpen={onOpen}
+            rangeStartMinute={range.startMinute}
+          />
+        ))}
     </div>
   );
 }
@@ -1255,18 +1426,20 @@ function AppointmentCard({
   color,
   fmtTime,
   onOpen,
+  rangeStartMinute,
 }: {
   appointment: Appointment;
   color: string;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
+  rangeStartMinute: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: appointment.id, disabled: !appointment.editable });
   const start = new Date(appointment.start);
   const end = new Date(appointment.end);
   const top =
-    ((start.getUTCHours() * 60 + start.getUTCMinutes() - HOUR_START * 60) /
+    ((start.getUTCHours() * 60 + start.getUTCMinutes() - rangeStartMinute) /
       60) *
     HOUR_HEIGHT;
   const height = Math.max(
@@ -1338,6 +1511,12 @@ function MonthView({
     <div className="mt-[16px] grid grid-cols-7 overflow-hidden rounded-[8px] border border-line-card bg-card">
       {days.map((day) => {
         const date = ymd(day);
+        const working = data.availabilities.some(
+          (item) =>
+            item.date === date &&
+            selected.includes(item.practitionerId) &&
+            item.slots.some((slot) => slot.status === "open"),
+        );
         const appointments = data.appointments.filter(
           (item) =>
             item.start.slice(0, 10) === date &&
@@ -1347,8 +1526,9 @@ function MonthView({
           <button
             type="button"
             key={date}
+            disabled={!working}
             onClick={() => onOpenDay(date)}
-            className="min-h-[120px] border-r border-b border-line-card p-[6px] text-left align-top hover:bg-page"
+            className="min-h-[120px] border-r border-b border-line-card p-[6px] text-left align-top hover:bg-page disabled:cursor-not-allowed disabled:bg-btn-fill/50 disabled:opacity-50"
           >
             <span className="font-sans text-[11px] text-muted">
               {fmtDate.format(day)}

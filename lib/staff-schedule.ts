@@ -15,6 +15,8 @@ export type WorkingHoursInput = {
   stepMin: number;
 };
 
+export type WorkingMinuteRange = { startMinute: number; endMinute: number };
+
 function validDateParts(dateStr: string) {
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
@@ -25,7 +27,14 @@ function validDateParts(dateStr: string) {
 export function dateFromYmd(dateStr: string): Date | null {
   const parts = validDateParts(dateStr);
   if (!parts) return null;
-  return new Date(Date.UTC(parts.y, parts.m - 1, parts.d, 0, 0, 0));
+  const date = new Date(Date.UTC(parts.y, parts.m - 1, parts.d, 0, 0, 0));
+  if (
+    date.getUTCFullYear() !== parts.y ||
+    date.getUTCMonth() !== parts.m - 1 ||
+    date.getUTCDate() !== parts.d
+  )
+    return null;
+  return date;
 }
 
 export function ymdFromDate(date: Date): string {
@@ -33,23 +42,59 @@ export function ymdFromDate(date: Date): string {
 }
 
 export function normalizeWorkingHours(
-  value: Partial<WorkingHoursInput>,
+  value: Partial<WorkingHoursInput> | null | undefined,
 ): WorkingHoursInput {
-  const openDays = Array.isArray(value.openDays)
-    ? value.openDays
+  const input = value ?? {};
+  const openDays = Array.isArray(input.openDays)
+    ? input.openDays
         .map(Number)
         .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
     : BUSINESS_HOURS.openDays;
-  const startHour = Number.isInteger(value.startHour)
-    ? Math.min(22, Math.max(0, Number(value.startHour)))
+  const startHour = Number.isInteger(input.startHour)
+    ? Math.min(22, Math.max(0, Number(input.startHour)))
     : BUSINESS_HOURS.startHour;
-  const endHour = Number.isInteger(value.endHour)
-    ? Math.min(24, Math.max(startHour + 1, Number(value.endHour)))
+  const endHour = Number.isInteger(input.endHour)
+    ? Math.min(24, Math.max(startHour + 1, Number(input.endHour)))
     : BUSINESS_HOURS.endHour;
-  const stepMin = [15, 30, 45, 60, 90, 120].includes(Number(value.stepMin))
-    ? Number(value.stepMin)
+  const stepMin = [15, 30, 45, 60, 90, 120].includes(Number(input.stepMin))
+    ? Number(input.stepMin)
     : BUSINESS_HOURS.stepMin;
   return { openDays: [...new Set(openDays)], startHour, endHour, stepMin };
+}
+
+export function parseWorkingHours(value: unknown): WorkingHoursInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return normalizeWorkingHours(undefined);
+  }
+  return normalizeWorkingHours(value as Partial<WorkingHoursInput>);
+}
+
+export function workingRangeForDate(
+  dateStr: string,
+  value: unknown,
+): WorkingMinuteRange | null {
+  const date = dateFromYmd(dateStr);
+  if (!date) return null;
+  const hours = parseWorkingHours(value);
+  if (!hours.openDays.includes(date.getUTCDay())) return null;
+  return { startMinute: hours.startHour * 60, endMinute: hours.endHour * 60 };
+}
+
+export function openSlotRange(value: unknown): WorkingMinuteRange | null {
+  const open = normalizeSlots(value).filter((slot) => slot.status === "open");
+  if (!open.length) return null;
+  return open.reduce<WorkingMinuteRange | null>((range, slot) => {
+    const start = new Date(slot.start);
+    const end = new Date(slot.end);
+    const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
+    const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+    return range
+      ? {
+          startMinute: Math.min(range.startMinute, startMinute),
+          endMinute: Math.max(range.endMinute, endMinute),
+        }
+      : { startMinute, endMinute };
+  }, null);
 }
 
 export function generateStaffSlots(

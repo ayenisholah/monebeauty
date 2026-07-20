@@ -63,6 +63,14 @@ Staff-created appointments search or create a CRM client, require recorded GDPR 
 start as confirmed, and send the localized durable email/SMS confirmation. Creation, detail
 changes, lifecycle actions, schedule moves, sensitive access, and denied mutations are audited.
 
+Working-time visibility (owner-approved, 2026-07-19): normalized
+`Practitioner.workingHours` is the canonical weekly schedule and explicit per-date
+`Availability.slots` override it. Day/week calendars crop to the visible employees' earliest-to-
+latest open-time union; closed gaps are not selectable. Date pickers keep unavailable dates in
+place but disable them, and scheduling time pickers contain only valid open starts. The authorized
+working-hours editor alone may select the full day so hours can be expanded. Existing appointments
+outside current availability remain visible in a separate out-of-hours exception row.
+
 The verified client account is a localized dashboard with overview, appointments, orders, saved
 addresses, and profile sections. Verified email is visible and read-only; name and phone are
 editable. Exact-email guest orders are linked after verification only when they are not owned by a

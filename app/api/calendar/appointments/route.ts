@@ -3,7 +3,11 @@ import { Prisma } from "@prisma/client";
 import { requireApiUser, createAccountToken, auditForUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { overlapsWhere, staffPractitionerId } from "@/lib/calendar-scheduling";
-import { availabilityCovers, generateStaffSlots } from "@/lib/staff-schedule";
+import {
+  availabilityCovers,
+  generateStaffSlots,
+  parseWorkingHours,
+} from "@/lib/staff-schedule";
 import { normalizeInternationalPhone } from "@/lib/phone";
 import { parseProcedures, resolveProcedure } from "@/lib/procedures";
 import { notifyAppointmentConfirmation, sendEmail } from "@/lib/notifications";
@@ -27,7 +31,8 @@ export async function GET(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return bad("forbidden", 403);
   const ownPractitionerId = await staffPractitionerId(user);
-  if (user.role === "STAFF" && !ownPractitionerId) return bad("staff_not_linked", 403);
+  if (user.role === "STAFF" && !ownPractitionerId)
+    return bad("staff_not_linked", 403);
   const locale = localeFrom(req.nextUrl.searchParams.get("locale"));
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim().slice(0, 120);
 
@@ -51,9 +56,12 @@ export async function GET(req: NextRequest) {
       },
     }),
     prisma.practitioner.findMany({
-      where: user.role === "STAFF" ? { active: true, id: ownPractitionerId! } : { active: true },
+      where:
+        user.role === "STAFF"
+          ? { active: true, id: ownPractitionerId! }
+          : { active: true },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true },
+      select: { id: true, name: true, workingHours: true },
     }),
     prisma.room.findMany({
       where: { active: true },
@@ -107,7 +115,10 @@ export async function GET(req: NextRequest) {
         }),
       ),
     })),
-    practitioners,
+    practitioners: practitioners.map((practitioner) => ({
+      ...practitioner,
+      workingHours: parseWorkingHours(practitioner.workingHours),
+    })),
     rooms,
     devices,
     clients,
@@ -118,7 +129,8 @@ export async function POST(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return bad("forbidden", 403);
   const ownPractitionerId = await staffPractitionerId(user);
-  if (user.role === "STAFF" && !ownPractitionerId) return bad("staff_not_linked", 403);
+  if (user.role === "STAFF" && !ownPractitionerId)
+    return bad("staff_not_linked", 403);
   const payload = (await req.json().catch(() => null)) as Record<
     string,
     unknown

@@ -43,6 +43,10 @@
   search/inline creation, confirmed staff bookings, lifecycle editing, auditing, and localized
   durable notifications.
 - Enforce employee, room, and device overlap protection in shared booking logic and PostgreSQL.
+- Persist canonical weekly hours on each employee, batch-resolve working dates, crop shared
+  day/week grids to the selected employees' open-time union, and disable unavailable picker dates.
+  Scheduling time controls expose open covered slots only; the hours editor retains a full-day
+  override and out-of-hours legacy appointments remain visible in an exception row.
 
 ## Client account and integration observability expansion (owner-approved, 2026-07-19)
 
@@ -303,7 +307,9 @@ cancel, and reschedule.
 
 Internal staff schedule area: themed date selector, daily schedule view, working-hours
 range editor, open/closed slot controls, and booked appointment details. Staff edits persist
-to the shared clinic `Availability.slots` and are reflected in the client booking wizard.
+to canonical `Practitioner.workingHours` plus generated `Availability.slots` and are reflected
+in the client booking wizard. Calendars and scheduling pickers suppress non-working choices;
+explicit per-date availability overrides weekly hours.
 Staff/admin auth and role gating are implemented in Phase 5; staff new-booking
 alerts are implemented in Phase 6.
 **Verify:** staff edits availability → reflected in client wizard.

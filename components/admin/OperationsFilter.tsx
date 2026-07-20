@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -37,6 +37,7 @@ export function OperationsFilter({
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState(initial);
   const [isPending, startTransition] = useTransition();
+  const [workingDates, setWorkingDates] = useState<string[] | undefined>();
   const searchReady = useRef(false);
   const normalizationDone = useRef(false);
 
@@ -83,6 +84,18 @@ export function OperationsFilter({
     replace(normalized);
   }
 
+  const loadWorkingDates = useCallback(async (from: string, to: string) => {
+    try {
+      const params = new URLSearchParams({ from, to });
+      const response = await fetch(`/api/calendar/working-dates?${params}`);
+      if (!response.ok) throw new Error("working_dates");
+      const payload = (await response.json()) as { dates?: string[] };
+      setWorkingDates(Array.isArray(payload.dates) ? payload.dates : undefined);
+    } catch {
+      setWorkingDates(undefined);
+    }
+  }, []);
+
   return (
     <div>
       <div className="mt-[20px] grid gap-[8px] md:grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_minmax(170px,1fr)_minmax(170px,1fr)] md:items-end">
@@ -113,6 +126,8 @@ export function OperationsFilter({
             ariaLabel={labels.from}
             placeholder={labels.from}
             className="mt-[6px]"
+            availableDates={workingDates}
+            onMonthChange={loadWorkingDates}
           />
         </label>
         <label className="font-sans text-[13px] text-muted">
@@ -126,6 +141,8 @@ export function OperationsFilter({
             ariaLabel={labels.until}
             placeholder={labels.until}
             className="mt-[6px]"
+            availableDates={workingDates}
+            onMonthChange={loadWorkingDates}
           />
         </label>
       </div>

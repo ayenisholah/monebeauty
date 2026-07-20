@@ -36,6 +36,12 @@ type SchedulePayload = {
   date: string;
   slots: Slot[];
   appointments: Appointment[];
+  workingHours?: {
+    startHour: number;
+    endHour: number;
+    stepMin: number;
+    openDays: number[];
+  };
 };
 
 function pad(n: number) {
@@ -56,6 +62,7 @@ export function StaffSchedule() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pickerDates, setPickerDates] = useState<string[] | undefined>();
   const [hours, setHours] = useState({
     startHour: 10,
     endHour: 19,
@@ -81,6 +88,8 @@ export function StaffSchedule() {
         setDate(data.date ?? nextDate);
         setSlots(data.slots ?? []);
         setAppointments(data.appointments ?? []);
+        if (data.workingHours)
+          setHours((current) => ({ ...current, ...data.workingHours }));
       } catch {
         setMessage(t("errors.load"));
       } finally {
@@ -89,6 +98,18 @@ export function StaffSchedule() {
     },
     [date, t],
   );
+
+  const loadWorkingDates = useCallback(async (from: string, to: string) => {
+    try {
+      const params = new URLSearchParams({ from, to });
+      const response = await fetch(`/api/staff/schedule?${params}`);
+      if (!response.ok) throw new Error("working_dates");
+      const payload = (await response.json()) as { dates?: string[] };
+      setPickerDates(Array.isArray(payload.dates) ? payload.dates : undefined);
+    } catch {
+      setPickerDates(undefined);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -163,6 +184,8 @@ export function StaffSchedule() {
               }}
               ariaLabel={t("date")}
               placeholder={t("date")}
+              availableDates={pickerDates}
+              onMonthChange={loadWorkingDates}
             />
           </Field>
         </div>

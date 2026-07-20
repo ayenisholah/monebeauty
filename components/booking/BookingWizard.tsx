@@ -25,6 +25,8 @@ import type {
   BookingServiceOption,
 } from "@/lib/booking-context";
 import { PUBLIC_PATHS } from "@/lib/public-routes";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 type Slot = {
   start: string;
@@ -38,6 +40,12 @@ type Fallback = {
 };
 
 type Step = 1 | 2 | 3;
+
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
 
 export function BookingWizard({
   services,
@@ -68,6 +76,7 @@ export function BookingWizard({
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsDegraded, setSlotsDegraded] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[] | undefined>();
 
   const [form, setForm] = useState({
     fullName: initialDetails?.fullName ?? "",
@@ -113,6 +122,46 @@ export function BookingWizard({
     [locale],
   );
 
+  const loadAvailableDates = useCallback(
+    async (svc: string) => {
+      const from = clinicTodayYmd();
+      const to = addDays(from, BUSINESS_HOURS.daysAhead);
+      try {
+        const response = await fetch(
+          `/api/booking/availability?from=${from}&to=${to}&service=${encodeURIComponent(svc)}&locale=${encodeURIComponent(locale)}`,
+        );
+        const payload = await response.json();
+        const dates =
+          response.ok && !payload.degraded && Array.isArray(payload.dates)
+            ? (payload.dates as string[])
+            : undefined;
+        setAvailableDates(dates);
+        if (dates) {
+          setDate((current) =>
+            current && !dates.includes(current) ? null : current,
+          );
+          setSlot((current) =>
+            current && !dates.includes(current.start.slice(0, 10))
+              ? null
+              : current,
+          );
+        }
+      } catch {
+        setAvailableDates(undefined);
+      }
+    },
+    [locale],
+  );
+
+  useEffect(() => {
+    if (!initialService) return;
+    const timer = window.setTimeout(
+      () => void loadAvailableDates(initialService),
+      0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [initialService, loadAvailableDates]);
+
   useEffect(() => {
     let raw: string | null = null;
     try {
@@ -131,7 +180,7 @@ export function BookingWizard({
         fullName: text(handoff.fullName) || initialDetails?.fullName || "",
         phone: text(handoff.phone) || initialDetails?.phone || "",
         email: verifiedEmail
-          ? initialDetails?.email ?? ""
+          ? (initialDetails?.email ?? "")
           : text(handoff.email) || initialDetails?.email || "",
         notes: text(handoff.notes),
       });
@@ -153,20 +202,31 @@ export function BookingWizard({
           pathname: PUBLIC_PATHS.booking,
           query: { service: handoffService },
         });
+        void loadAvailableDates(handoffService);
       }
       if (preferredDate && resolvedService) {
         void loadSlots(preferredDate, resolvedService);
       }
     });
-  }, [initialDetails, initialService, loadSlots, router, services, verifiedEmail]);
+  }, [
+    initialDetails,
+    initialService,
+    loadAvailableDates,
+    loadSlots,
+    router,
+    services,
+    verifiedEmail,
+  ]);
 
   function pickService(key: string) {
     setService(key);
     setProcedure(null);
     setSlot(null);
     setSlots([]);
+    setAvailableDates(undefined);
     setStep(2);
     router.replace({ pathname: PUBLIC_PATHS.booking, query: { service: key } });
+    void loadAvailableDates(key);
     if (date) void loadSlots(date, key);
   }
 
@@ -393,7 +453,12 @@ export function BookingWizard({
             <p className="mb-[12px] font-sans text-[13px] font-medium tracking-[.04em] text-muted uppercase">
               {t("pickDate")}
             </p>
-            <BookingCalendar locale={locale} value={date} onSelect={pickDate} />
+            <BookingCalendar
+              locale={locale}
+              value={date}
+              onSelect={pickDate}
+              availableDates={availableDates}
+            />
           </div>
 
           <div className="flex-1">

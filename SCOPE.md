@@ -69,6 +69,13 @@ Themed controls (owner-approved, 2026-07-18): all dropdowns, calendars, and time
 custom Mone Beauty controls. Compact fields use popovers and the booking calendar remains
 inline; no native form select/date/time UI is exposed.
 
+Working-time-only calendars and pickers (owner-approved, 2026-07-19): weekly employee working
+hours are persisted as the canonical schedule, with per-date availability as the override. Shared
+day/week calendars show only the selected employees' open-time union. Unavailable dates remain
+visible but disabled in date pickers, and appointment time controls omit non-working starts. The
+working-hours configuration control retains full-day choices, and legacy appointments outside
+current availability are surfaced separately rather than hidden.
+
 Public URL architecture (owner-approved, 2026-07-17): every user-facing route uses the same
 Finnish path segments in FI, EN, and RU; only the locale prefix changes. Finnish remains
 unprefixed, while English and Russian use `/en` and `/ru`. Canonical shop paths are

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { availabilityCovers, type StaffSlot } from "@/lib/staff-schedule";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 type Locale = "en" | "fi" | "ru";
-type Named = { id: string; name: string };
+type Named = { id: string; name: string; workingHours?: unknown };
 type Client = { id: string; fullName: string; phone: string; email: string };
 type Service = {
   id: string;
@@ -147,6 +150,12 @@ function hm(value: string) {
   return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
 }
 
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 export function AppointmentForm({
   locale,
   initialStart,
@@ -187,6 +196,9 @@ export function AppointmentForm({
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [openedAt] = useState(() => Date.now());
+  const [availableDates, setAvailableDates] = useState<string[] | undefined>();
+  const [scheduleSlots, setScheduleSlots] = useState<StaffSlot[]>([]);
 
   async function load(q = "", nextLocale = notificationLocale) {
     const params = new URLSearchParams({ locale: nextLocale });
@@ -206,6 +218,48 @@ export function AppointmentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!practitionerId) return;
+    const from = clinicTodayYmd();
+    const to = addDays(from, BUSINESS_HOURS.daysAhead);
+    let live = true;
+    fetch(
+      `/api/staff/schedule?from=${from}&to=${to}&practitionerId=${encodeURIComponent(practitionerId)}`,
+    )
+      .then((response) => response.json())
+      .then((payload) => {
+        if (live)
+          setAvailableDates(
+            Array.isArray(payload.dates) ? payload.dates : undefined,
+          );
+      })
+      .catch(() => {
+        if (live) setAvailableDates(undefined);
+      });
+    return () => {
+      live = false;
+    };
+  }, [practitionerId]);
+
+  useEffect(() => {
+    if (!practitionerId || !date) return;
+    let live = true;
+    const params = new URLSearchParams({ date, practitionerId });
+    if (detail?.id) params.set("excludeId", detail.id);
+    fetch(`/api/staff/schedule?${params}`)
+      .then((response) => response.json())
+      .then((payload) => {
+        if (live)
+          setScheduleSlots(Array.isArray(payload.slots) ? payload.slots : []);
+      })
+      .catch(() => {
+        if (live) setScheduleSlots([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [date, detail?.id, practitionerId]);
+
   const selectedService = options?.services.find(
     (item) => item.id === serviceId,
   );
@@ -221,20 +275,31 @@ export function AppointmentForm({
     options?.devices.filter((item) =>
       selectedService?.deviceIds.includes(item.id),
     ) ?? [];
-  const timeOptions = useMemo(
-    () =>
-      Array.from({ length: 65 }, (_, index) => {
-        const minutes = 6 * 60 + index * 15;
-        const value = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  const selectedDuration = selectedService?.durationMin ?? 0;
+  const timeOptions = (() => {
+    const duration = selectedDuration;
+    if (!duration) return [];
+    return scheduleSlots
+      .filter((slot) => slot.status === "open")
+      .filter((slot) => {
+        const start = new Date(slot.start);
+        const end = new Date(start.getTime() + duration * 60000);
+        return (
+          start.getTime() > openedAt &&
+          availabilityCovers(scheduleSlots, start, end)
+        );
+      })
+      .map((slot) => {
+        const value = hm(slot.start);
         return { value, label: value };
-      }),
-    [],
-  );
+      });
+  })();
 
   function pickService(value: string) {
     const next = options?.services.find((item) => item.id === value);
     setServiceId(value);
     setProcedureIndex("");
+    setTime("");
     if (next && !next.qualifiedPractitionerIds.includes(practitionerId))
       setPractitionerId(next.qualifiedPractitionerIds[0] ?? "");
     if (next && !next.roomIds.includes(roomId))
@@ -248,6 +313,7 @@ export function AppointmentForm({
       !serviceId ||
       !practitionerId ||
       !roomId ||
+      !timeOptions.some((option) => option.value === time) ||
       (!clientId && !newClient) ||
       (!detail && !consent)
     ) {
@@ -450,7 +516,10 @@ export function AppointmentForm({
           <Field label={t.employee}>
             <ThemedSelect
               value={practitionerId}
-              onValueChange={setPractitionerId}
+              onValueChange={(value) => {
+                setPractitionerId(value);
+                setTime("");
+              }}
               options={employees.map((item) => ({
                 value: item.id,
                 label: item.name,
@@ -483,8 +552,14 @@ export function AppointmentForm({
             <DatePicker
               locale={locale}
               value={date}
-              onValueChange={setDate}
+              onValueChange={(value) => {
+                setDate(value);
+                setTime("");
+              }}
               ariaLabel={t.date}
+              min={clinicTodayYmd()}
+              max={addDays(clinicTodayYmd(), BUSINESS_HOURS.daysAhead)}
+              availableDates={availableDates}
             />
           </Field>
           <Field label={t.time}>
@@ -493,6 +568,9 @@ export function AppointmentForm({
               onValueChange={setTime}
               options={timeOptions}
               ariaLabel={t.time}
+              disabled={
+                !serviceId || !practitionerId || timeOptions.length === 0
+              }
             />
           </Field>
           <Field label={t.language}>

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { availabilityCovers } from "../lib/staff-schedule";
+import {
+  availabilityCovers,
+  generateStaffSlots,
+  openSlotRange,
+  workingRangeForDate,
+} from "../lib/staff-schedule";
 
 const calendar = readFileSync("components/calendar/SharedCalendar.tsx", "utf8");
 const calendarApi = readFileSync("app/api/calendar/route.ts", "utf8");
@@ -61,6 +66,36 @@ test("availability must cover the complete procedure without gaps", () => {
   );
 });
 
+test("working-hour helpers expose only configured dates and open slot bounds", () => {
+  const hours = { openDays: [1], startHour: 10, endHour: 18, stepMin: 30 };
+  assert.equal(generateStaffSlots("2026-07-20", hours).length, 16);
+  assert.equal(generateStaffSlots("2026-07-21", hours).length, 0);
+  assert.deepEqual(workingRangeForDate("2026-07-20", hours), {
+    startMinute: 600,
+    endMinute: 1080,
+  });
+  assert.deepEqual(
+    openSlotRange([
+      {
+        start: "2026-07-20T10:30:00.000Z",
+        end: "2026-07-20T11:00:00.000Z",
+        status: "open",
+      },
+      {
+        start: "2026-07-20T17:00:00.000Z",
+        end: "2026-07-20T17:30:00.000Z",
+        status: "open",
+      },
+      {
+        start: "2026-07-20T09:00:00.000Z",
+        end: "2026-07-20T09:30:00.000Z",
+        status: "closed",
+      },
+    ]),
+    { startMinute: 630, endMinute: 1050 },
+  );
+});
+
 test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /"day" \| "week" \| "month"/);
   assert.match(calendar, /data\.practitioners\.map/);
@@ -69,6 +104,9 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /appointment\.clientName/);
   assert.match(calendar, /appointment\.procedure/);
   assert.match(calendar, /appointment\.room\?\.name/);
+  assert.match(calendar, /calendarWorkingBounds/);
+  assert.match(calendar, /outsideAppointments/);
+  assert.doesNotMatch(calendar, /const HOUR_START = 6/);
 });
 
 test("calendar view persists independently for admin and staff", () => {

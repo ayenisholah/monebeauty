@@ -5,6 +5,10 @@ import test from "node:test";
 const wizard = readFileSync("components/booking/BookingWizard.tsx", "utf8");
 const bookingRoute = readFileSync("app/api/booking/route.ts", "utf8");
 const slotsRoute = readFileSync("app/api/booking/slots/route.ts", "utf8");
+const availabilityRoute = readFileSync(
+  "app/api/booking/availability/route.ts",
+  "utf8",
+);
 const bookingLib = readFileSync("lib/booking.ts", "utf8");
 const rescheduleRoute = readFileSync(
   "app/api/booking/reschedule/route.ts",
@@ -78,4 +82,13 @@ test("the service owner and exclusive resources control new and rescheduled avai
     bookingRoute,
     /OR: \[[\s\S]*?\{ practitionerId \}[\s\S]*?roomId: matchingSlot\.roomId/,
   );
+});
+
+test("public date pickers receive batched resource-safe working dates", () => {
+  assert.match(bookingLib, /openPublicDates/);
+  assert.match(bookingLib, /availability\.findMany/);
+  assert.match(bookingLib, /appointment\.findMany/);
+  assert.match(availabilityRoute, /62 \* 86400000/);
+  assert.match(wizard, /api\/booking\/availability/);
+  assert.match(wizard, /availableDates=\{availableDates\}/);
 });

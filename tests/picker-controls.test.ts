@@ -39,6 +39,9 @@ test("themed controls expose accessible custom interaction semantics", () => {
   assert.doesNotMatch(calendar, /useLocale/);
   assert.match(calendar, /locale: string/);
   assert.match(time, /role="listbox"/);
+  assert.match(calendar, /availableDates/);
+  assert.match(calendar, /disabled[\s\S]*available/);
+  assert.match(time, /filter\(\(option\) => !option\.disabled\)/);
 });
 
 test("themed selects choose a viewport-safe opening direction", () => {

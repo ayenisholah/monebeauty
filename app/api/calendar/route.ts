@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { normalizeSlots } from "@/lib/staff-schedule";
+import {
+  generateStaffSlots,
+  normalizeSlots,
+  parseWorkingHours,
+} from "@/lib/staff-schedule";
 import { staffPractitionerId } from "@/lib/calendar-scheduling";
 
 export async function GET(req: NextRequest) {
@@ -23,9 +27,10 @@ export async function GET(req: NextRequest) {
   const ownPractitionerId = await staffPractitionerId(user);
   if (user.role === "STAFF" && !ownPractitionerId)
     return NextResponse.json({ error: "staff_not_linked" }, { status: 403 });
-  const practitionerWhere = user.role === "STAFF"
-    ? { active: true, id: ownPractitionerId! }
-    : { active: true };
+  const practitionerWhere =
+    user.role === "STAFF"
+      ? { active: true, id: ownPractitionerId! }
+      : { active: true };
   const [practitioners, rooms, devices, availabilities, appointments] =
     await Promise.all([
       prisma.practitioner.findMany({
@@ -36,6 +41,7 @@ export async function GET(req: NextRequest) {
           name: true,
           role: true,
           calendarColor: true,
+          workingHours: true,
         },
       }),
       prisma.room.findMany({
@@ -81,19 +87,42 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+  const normalizedPractitioners = practitioners.map((practitioner) => ({
+    ...practitioner,
+    workingHours: parseWorkingHours(practitioner.workingHours),
+  }));
+  const availabilityByKey = new Map(
+    availabilities.map((row) => [
+      `${row.practitionerId}:${row.date.toISOString().slice(0, 10)}`,
+      normalizeSlots(row.slots),
+    ]),
+  );
+  const calendarDays: string[] = [];
+  for (
+    let cursor = new Date(from);
+    cursor < to;
+    cursor = new Date(cursor.getTime() + 24 * 60 * 60 * 1000)
+  ) {
+    calendarDays.push(cursor.toISOString().slice(0, 10));
+  }
+
   return NextResponse.json({
-    practitioners,
+    practitioners: normalizedPractitioners,
     rooms,
     devices,
     ownPractitionerId,
     canManageAppointments: true,
     canEditAllAvailability: user.role === "ADMIN",
     canEditOwnAvailability: Boolean(ownPractitionerId),
-    availabilities: availabilities.map((row) => ({
-      practitionerId: row.practitionerId,
-      date: row.date.toISOString().slice(0, 10),
-      slots: normalizeSlots(row.slots),
-    })),
+    availabilities: normalizedPractitioners.flatMap((practitioner) =>
+      calendarDays.map((date) => ({
+        practitionerId: practitioner.id,
+        date,
+        slots:
+          availabilityByKey.get(`${practitioner.id}:${date}`) ??
+          generateStaffSlots(date, practitioner.workingHours),
+      })),
+    ),
     appointments: appointments.map((appointment) => ({
       id: appointment.id,
       version: appointment.version,

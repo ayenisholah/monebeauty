@@ -27,7 +27,9 @@ export function CalendarGrid({
   onSelect,
   min,
   max,
-  disableClosedDays = false,
+  disableClosedDays = true,
+  availableDates,
+  onMonthChange,
 }: {
   locale: string;
   value?: string;
@@ -35,6 +37,8 @@ export function CalendarGrid({
   min?: string;
   max?: string;
   disableClosedDays?: boolean;
+  availableDates?: readonly string[];
+  onMonthChange?: (from: string, to: string) => void;
 }) {
   const selected = value ? parseYmd(value) : null;
   const minimum = min ? parseYmd(min) : null;
@@ -70,6 +74,14 @@ export function CalendarGrid({
   const nextMonth = new Date(year, month + 1, 1);
   const canPrevious = !minimum || previousMonth >= monthStart(minimum);
   const canNext = !maximum || nextMonth <= monthStart(maximum);
+  const available = availableDates ? new Set(availableDates) : null;
+
+  useEffect(() => {
+    if (!onMonthChange) return;
+    const from = ymd(new Date(year, month, 1));
+    const to = ymd(new Date(year, month + 1, 0));
+    onMonthChange(from, to);
+  }, [month, onMonthChange, year]);
 
   return (
     <div className="w-[min(340px,calc(100vw-32px))] rounded-[var(--radius)] border border-line-card bg-card p-[16px]">
@@ -113,7 +125,9 @@ export function CalendarGrid({
             Boolean(minimum && date < minimum) ||
             Boolean(maximum && date > maximum) ||
             (disableClosedDays &&
-              !BUSINESS_HOURS.openDays.includes(date.getDay()));
+              !available &&
+              !BUSINESS_HOURS.openDays.includes(date.getDay())) ||
+            Boolean(available && !available.has(dateValue));
           const active = dateValue === value;
           return (
             <button
@@ -153,7 +167,9 @@ export function DatePicker({
   placeholder = "Select date",
   min,
   max,
-  disableClosedDays = false,
+  disableClosedDays = true,
+  availableDates,
+  onMonthChange,
   clearable = false,
   className,
 }: {
@@ -168,6 +184,8 @@ export function DatePicker({
   min?: string;
   max?: string;
   disableClosedDays?: boolean;
+  availableDates?: readonly string[];
+  onMonthChange?: (from: string, to: string) => void;
   clearable?: boolean;
   className?: string;
 }) {
@@ -243,6 +261,8 @@ export function DatePicker({
             min={min}
             max={max}
             disableClosedDays={disableClosedDays}
+            availableDates={availableDates}
+            onMonthChange={onMonthChange}
           />
         </div>
       ) : null}

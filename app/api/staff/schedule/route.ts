@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auditForUser, requireApiUser } from "@/lib/auth";
 import { getDefaultPractitionerId } from "@/lib/booking";
@@ -8,6 +9,7 @@ import {
   generateStaffSlots,
   normalizeSlots,
   normalizeWorkingHours,
+  parseWorkingHours,
   slotsWithBookedStatus,
   ymdFromDate,
 } from "@/lib/staff-schedule";
@@ -36,23 +38,74 @@ export async function GET(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
   if (!user) return forbidden();
   const { searchParams } = new URL(req.url);
-  const requestedDate = searchParams.get("date") ?? ymdFromDate(new Date());
-  const date = dateFromYmd(requestedDate);
-  if (!date) return bad("invalid_date");
-
   const practitionerId = await resolvePractitionerId(
     user,
     searchParams.get("practitionerId"),
   );
   if (!practitionerId) return forbidden();
+  const rangeFrom = searchParams.get("from");
+  const rangeTo = searchParams.get("to");
+  if (rangeFrom && rangeTo) {
+    const from = dateFromYmd(rangeFrom);
+    const to = dateFromYmd(rangeTo);
+    if (
+      !from ||
+      !to ||
+      to < from ||
+      to.getTime() - from.getTime() > 62 * 86400000
+    )
+      return bad("invalid_range");
+    const through = new Date(to.getTime() + 86400000);
+    const [practitioner, rows] = await Promise.all([
+      prisma.practitioner.findUnique({
+        where: { id: practitionerId },
+        select: { workingHours: true },
+      }),
+      prisma.availability.findMany({
+        where: { practitionerId, date: { gte: from, lt: through } },
+        select: { date: true, slots: true },
+      }),
+    ]);
+    const workingHours = parseWorkingHours(practitioner?.workingHours);
+    const byDate = new Map(
+      rows.map((row) => [
+        row.date.toISOString().slice(0, 10),
+        normalizeSlots(row.slots),
+      ]),
+    );
+    const dates: string[] = [];
+    for (
+      let cursor = new Date(from);
+      cursor < through;
+      cursor = new Date(cursor.getTime() + 86400000)
+    ) {
+      const date = ymdFromDate(cursor);
+      const slots = byDate.get(date) ?? generateStaffSlots(date, workingHours);
+      if (slots.some((slot) => slot.status === "open")) dates.push(date);
+    }
+    return NextResponse.json({ dates, workingHours });
+  }
+  const requestedDate = searchParams.get("date") ?? ymdFromDate(new Date());
+  const date = dateFromYmd(requestedDate);
+  if (!date) return bad("invalid_date");
 
-  const availability = await prisma.availability.findUnique({
-    where: { practitionerId_date: { practitionerId, date } },
-    select: { slots: true },
-  });
+  const [availability, practitioner] = await Promise.all([
+    prisma.availability.findUnique({
+      where: { practitionerId_date: { practitionerId, date } },
+      select: { slots: true },
+    }),
+    prisma.practitioner.findUnique({
+      where: { id: practitionerId },
+      select: { workingHours: true },
+    }),
+  ]);
   const appointments = await prisma.appointment.findMany({
     where: {
+      ...(searchParams.get("excludeId")
+        ? { id: { not: searchParams.get("excludeId")! } }
+        : {}),
       practitionerId,
+      status: { not: "CANCELLED" },
       start: { gte: date, lt: new Date(date.getTime() + 24 * 60 * 60000) },
     },
     orderBy: { start: "asc" },
@@ -64,10 +117,14 @@ export async function GET(req: NextRequest) {
 
   const baseSlots = availability
     ? normalizeSlots(availability.slots)
-    : generateStaffSlots(requestedDate);
+    : generateStaffSlots(
+        requestedDate,
+        parseWorkingHours(practitioner?.workingHours),
+      );
 
   return NextResponse.json({
     date: requestedDate,
+    workingHours: parseWorkingHours(practitioner?.workingHours),
     slots: slotsWithBookedStatus(baseSlots, appointments),
     appointments: appointments.map((appt) => ({
       id: appt.id,
@@ -177,19 +234,27 @@ export async function PUT(req: NextRequest) {
     stepMin: Number(payload.stepMin),
   });
 
-  let changed = 0;
+  const writes: Prisma.PrismaPromise<unknown>[] = [
+    prisma.practitioner.update({
+      where: { id: practitionerId },
+      data: { workingHours: hours },
+    }),
+  ];
   for (let i = 0; i <= daysAhead; i++) {
     const date = new Date(start);
     date.setUTCDate(start.getUTCDate() + i);
     const dateStr = ymdFromDate(date);
     const slots = generateStaffSlots(dateStr, hours);
-    await prisma.availability.upsert({
-      where: { practitionerId_date: { practitionerId, date } },
-      update: { slots },
-      create: { practitionerId, date, slots },
-    });
-    changed += 1;
+    writes.push(
+      prisma.availability.upsert({
+        where: { practitionerId_date: { practitionerId, date } },
+        update: { slots },
+        create: { practitionerId, date, slots },
+      }),
+    );
   }
 
-  return NextResponse.json({ changed, workingHours: hours });
+  await prisma.$transaction(writes);
+
+  return NextResponse.json({ changed: daysAhead + 1, workingHours: hours });
 }

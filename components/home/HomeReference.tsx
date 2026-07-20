@@ -31,6 +31,13 @@ import { PUBLIC_PATHS, productPath } from "@/lib/public-routes";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { clinicTodayYmd } from "@/lib/clinic-date";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
+
+function addBookingDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
 
 const productOrder = {
   AROSHA_BODY: [
@@ -157,6 +164,7 @@ export function HomeReference({
     "AROSHA_BODY",
   );
   const [selected, setSelected] = useState("");
+  const [availableDates, setAvailableDates] = useState<string[] | undefined>();
   const products = productOrder[tab]
     .map((slug) => productCatalog.find((product) => product.slug === slug))
     .filter((product): product is Product => Boolean(product));
@@ -182,6 +190,32 @@ export function HomeReference({
     elements.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, [tab]);
+  useEffect(() => {
+    const service = selected || "facial";
+    const from = clinicTodayYmd();
+    const to = addBookingDays(from, BUSINESS_HOURS.daysAhead);
+    let live = true;
+    fetch(
+      `/api/booking/availability?from=${from}&to=${to}&service=${encodeURIComponent(service)}&locale=${locale}`,
+    )
+      .then((response) =>
+        response.json().then((data) => ({ ok: response.ok, data })),
+      )
+      .then(({ ok, data }) => {
+        if (live)
+          setAvailableDates(
+            ok && !data.degraded && Array.isArray(data.dates)
+              ? data.dates
+              : undefined,
+          );
+      })
+      .catch(() => {
+        if (live) setAvailableDates(undefined);
+      });
+    return () => {
+      live = false;
+    };
+  }, [locale, selected]);
   const nav = [
     ["treatments", t("nav.treatments")],
     ["technologies", t("nav.technologies")],
@@ -542,6 +576,7 @@ export function HomeReference({
                     name="date"
                     min={clinicTodayYmd()}
                     disableClosedDays
+                    availableDates={availableDates}
                     placeholder={t("booking.fields.date")}
                     ariaLabel={t("booking.fields.date")}
                   />

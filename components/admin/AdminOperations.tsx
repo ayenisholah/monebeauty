@@ -5,7 +5,8 @@ import type { AppointmentStatus, OrderStatus, Prisma } from "@prisma/client";
 import type { Locale } from "@/i18n/routing";
 import { prisma } from "@/lib/db";
 import { adminHref } from "@/lib/admin-routing";
-import { openSlots } from "@/lib/booking";
+import { openPublicDates, openSlots } from "@/lib/booking";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
 import {
   redeemVoucherAction,
   refundOrderAction,
@@ -54,6 +55,12 @@ const danger =
 function scalar(params: SearchParams, key: string) {
   const raw = params[key];
   return typeof raw === "string" ? raw.trim() : "";
+}
+
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 function pageNumber(params: SearchParams) {
@@ -208,7 +215,12 @@ export async function OrdersAdmin({
         payments: { orderBy: { createdAt: "desc" } },
         refunds: { orderBy: { createdAt: "desc" } },
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" }, include: { externalApiAttempt: true } } },
+          include: {
+            attempts: {
+              orderBy: { attemptedAt: "desc" },
+              include: { externalApiAttempt: true },
+            },
+          },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -516,7 +528,13 @@ export async function OrdersAdmin({
         client: true,
         items: true,
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" }, take: 1, include: { externalApiAttempt: true } } },
+          include: {
+            attempts: {
+              orderBy: { attemptedAt: "desc" },
+              take: 1,
+              include: { externalApiAttempt: true },
+            },
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -626,7 +644,12 @@ export async function AppointmentsAdmin({
         },
         events: { orderBy: { at: "desc" } },
         messages: {
-          include: { attempts: { orderBy: { attemptedAt: "desc" }, include: { externalApiAttempt: true } } },
+          include: {
+            attempts: {
+              orderBy: { attemptedAt: "desc" },
+              include: { externalApiAttempt: true },
+            },
+          },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -643,6 +666,13 @@ export async function AppointmentsAdmin({
           serviceKey: appointment.service.slug,
         })
       : [];
+    const bookingStart = clinicTodayYmd();
+    const availableDates = await openPublicDates({
+      fromDate: bookingStart,
+      toDate: addDays(bookingStart, BUSINESS_HOURS.daysAhead),
+      serviceKey: appointment.service.slug,
+      locale,
+    });
     const service =
       appointment.procedureTitle ??
       appointment.service.contents[0]?.h1 ??
@@ -754,6 +784,7 @@ export async function AppointmentsAdmin({
                       defaultValue={selectedDate}
                       min={clinicTodayYmd()}
                       disableClosedDays
+                      availableDates={availableDates}
                       ariaLabel={t("chooseDate")}
                       placeholder={t("chooseDate")}
                       className="mt-[6px] w-full"
@@ -1133,12 +1164,21 @@ function CommunicationHistory({
                     </form>
                   ) : null}
                 </div>
-                {latest && (latest.errorDetail || latest.externalApiAttempt?.errorMessage) ? (
+                {latest &&
+                (latest.errorDetail ||
+                  latest.externalApiAttempt?.errorMessage) ? (
                   <p className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 font-sans text-xs text-red-800">
-                    {latest.externalApiAttempt?.httpStatus ? `HTTP ${latest.externalApiAttempt.httpStatus} · ` : ""}
-                    {latest.externalApiAttempt?.errorMessage ?? latest.errorDetail}
-                    {latest.externalApiAttempt?.providerRequestId ? ` · request ${latest.externalApiAttempt.providerRequestId}` : ""}
-                    {latest.externalApiAttempt?.durationMs != null ? ` · ${latest.externalApiAttempt.durationMs} ms` : ""}
+                    {latest.externalApiAttempt?.httpStatus
+                      ? `HTTP ${latest.externalApiAttempt.httpStatus} · `
+                      : ""}
+                    {latest.externalApiAttempt?.errorMessage ??
+                      latest.errorDetail}
+                    {latest.externalApiAttempt?.providerRequestId
+                      ? ` · request ${latest.externalApiAttempt.providerRequestId}`
+                      : ""}
+                    {latest.externalApiAttempt?.durationMs != null
+                      ? ` · ${latest.externalApiAttempt.durationMs} ms`
+                      : ""}
                   </p>
                 ) : null}
               </article>

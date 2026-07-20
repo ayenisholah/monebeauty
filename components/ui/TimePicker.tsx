@@ -56,25 +56,27 @@ export function TimePicker({
       aria-label={ariaLabel}
       className="grid max-h-[280px] grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-[7px] overflow-y-auto p-[8px]"
     >
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="option"
-          aria-selected={option.value === selectedValue}
-          disabled={option.disabled}
-          onClick={() => choose(option.value)}
-          className={cn(
-            "min-h-[44px] rounded-[4px] border px-[11px] font-sans text-[14px] tracking-normal normal-case transition-colors",
-            option.value === selectedValue
-              ? "border-accent bg-btn-fill text-ink"
-              : "border-line-btn bg-card text-body hover:border-line-btn-hover hover:text-ink",
-            option.disabled && "cursor-not-allowed opacity-40",
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
+      {options
+        .filter((option) => !option.disabled)
+        .map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="option"
+            aria-selected={option.value === selectedValue}
+            disabled={option.disabled}
+            onClick={() => choose(option.value)}
+            className={cn(
+              "min-h-[44px] rounded-[4px] border px-[11px] font-sans text-[14px] tracking-normal normal-case transition-colors",
+              option.value === selectedValue
+                ? "border-accent bg-btn-fill text-ink"
+                : "border-line-btn bg-card text-body hover:border-line-btn-hover hover:text-ink",
+              option.disabled && "cursor-not-allowed opacity-40",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
     </div>
   );
 

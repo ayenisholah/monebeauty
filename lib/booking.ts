@@ -4,7 +4,11 @@ import {
   DEFAULT_BOOKING_PRACTITIONER_NAME,
 } from "@/lib/booking-config";
 import type { Locale } from "@/i18n/routing";
-import { availabilityCovers } from "@/lib/staff-schedule";
+import {
+  availabilityCovers,
+  parseWorkingHours,
+  type WorkingHoursInput,
+} from "@/lib/staff-schedule";
 
 /**
  * Lean booking slot logic. Times are treated as clinic wall-clock (Helsinki) and stored as
@@ -41,20 +45,28 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function isOpenDate(dateStr: string): boolean {
+function isOpenDate(
+  dateStr: string,
+  hours: WorkingHoursInput = parseWorkingHours(undefined),
+): boolean {
   const [y, m, d] = dateStr.split("-").map(Number);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return BUSINESS_HOURS.openDays.includes(weekday);
+  return hours.openDays.includes(weekday);
 }
 
 /** Candidate slot start instants for a YYYY-MM-DD and a service duration. */
-export function generateSlots(dateStr: string, durationMin: number): Date[] {
-  if (!isOpenDate(dateStr)) return [];
+export function generateSlots(
+  dateStr: string,
+  durationMin: number,
+  input: Partial<WorkingHoursInput> = {},
+): Date[] {
+  const hours = parseWorkingHours(input);
+  if (!isOpenDate(dateStr, hours)) return [];
   const [y, m, d] = dateStr.split("-").map(Number);
   const out: Date[] = [];
-  const start = BUSINESS_HOURS.startHour * 60;
-  const end = BUSINESS_HOURS.endHour * 60;
-  for (let t = start; t + durationMin <= end; t += BUSINESS_HOURS.stepMin) {
+  const start = hours.startHour * 60;
+  const end = hours.endHour * 60;
+  for (let t = start; t + durationMin <= end; t += hours.stepMin) {
     out.push(new Date(Date.UTC(y, m - 1, d, Math.floor(t / 60), t % 60)));
   }
   return out;
@@ -83,6 +95,7 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
       slug: true,
       durationMin: true,
       primaryPractitionerId: true,
+      primaryPractitioner: { select: { workingHours: true } },
       requiresDevice: true,
       rooms: {
         where: { active: true },
@@ -103,6 +116,7 @@ async function candidateSlotsForPractitioner(
   dateStr: string,
   durationMin: number,
   practitionerId: string,
+  workingHours: WorkingHoursInput,
 ): Promise<Array<{ start: Date; end: Date }>> {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
@@ -131,7 +145,7 @@ async function candidateSlotsForPractitioner(
       );
   }
 
-  return generateSlots(dateStr, durationMin).map((start) => ({
+  return generateSlots(dateStr, durationMin, workingHours).map((start) => ({
     start,
     end: new Date(start.getTime() + durationMin * 60000),
   }));
@@ -150,7 +164,9 @@ export async function openSlots({
   const record = await serviceRecord(serviceKey, locale);
   if (!record) return [];
   const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
-  if (!isOpenDate(dateStr)) return [];
+  const workingHours = parseWorkingHours(
+    record.svc.primaryPractitioner?.workingHours,
+  );
 
   const practitionerId = record.svc.primaryPractitionerId;
   if (!practitionerId || record.svc.rooms.length === 0) return [];
@@ -192,6 +208,7 @@ export async function openSlots({
     dateStr,
     duration,
     practitionerId,
+    workingHours,
   );
   for (const candidate of candidates) {
     if (candidate.start.getTime() <= now) continue;
@@ -234,6 +251,127 @@ export async function openSlots({
     });
   }
   return out.sort((a, b) => a.start.localeCompare(b.start));
+}
+
+/** Dates with at least one currently bookable slot, resolved in one batched query. */
+export async function openPublicDates({
+  fromDate,
+  toDate,
+  serviceKey,
+  locale,
+}: {
+  fromDate: string;
+  toDate: string;
+  serviceKey: string;
+  locale?: Locale;
+}): Promise<string[]> {
+  const record = await serviceRecord(serviceKey, locale);
+  if (!record?.svc.primaryPractitionerId || record.svc.rooms.length === 0)
+    return [];
+  if (record.svc.requiresDevice && record.svc.devices.length === 0) return [];
+
+  const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
+  const practitionerId = record.svc.primaryPractitionerId;
+  const workingHours = parseWorkingHours(
+    record.svc.primaryPractitioner?.workingHours,
+  );
+  const from = new Date(`${fromDate}T00:00:00.000Z`);
+  const through = new Date(`${toDate}T00:00:00.000Z`);
+  const until = new Date(through.getTime() + 24 * 60 * 60 * 1000);
+  const [availabilityRows, booked] = await Promise.all([
+    prisma.availability.findMany({
+      where: { practitionerId, date: { gte: from, lt: until } },
+      select: { date: true, slots: true },
+    }),
+    prisma.appointment.findMany({
+      where: {
+        start: { lt: until },
+        end: { gt: from },
+        status: { not: "CANCELLED" },
+        OR: [
+          { practitionerId },
+          { roomId: { in: record.svc.rooms.map((room) => room.id) } },
+          ...(record.svc.devices.length
+            ? [
+                {
+                  deviceId: {
+                    in: record.svc.devices.map((device) => device.id),
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+      select: {
+        practitionerId: true,
+        roomId: true,
+        deviceId: true,
+        start: true,
+        end: true,
+      },
+    }),
+  ]);
+  const availability = new Map(
+    availabilityRows.map((row) => [
+      row.date.toISOString().slice(0, 10),
+      row.slots,
+    ]),
+  );
+  const now = Date.now();
+  const dates: string[] = [];
+
+  for (
+    let cursor = new Date(from);
+    cursor < until;
+    cursor = new Date(cursor.getTime() + 86400000)
+  ) {
+    const dateStr = cursor.toISOString().slice(0, 10);
+    const raw = availability.get(dateStr);
+    if (!raw && !isOpenDate(dateStr, workingHours)) continue;
+    const candidates = raw
+      ? (Array.isArray(raw) ? (raw as AvailabilitySlot[]) : [])
+          .filter((slot) => (slot.status ?? "open") === "open")
+          .map((slot) => {
+            const start = new Date(slot.start);
+            return { start, end: new Date(start.getTime() + duration * 60000) };
+          })
+          .filter((slot) => availabilityCovers(raw, slot.start, slot.end))
+      : generateSlots(dateStr, duration, workingHours).map((start) => ({
+          start,
+          end: new Date(start.getTime() + duration * 60000),
+        }));
+    const hasBookable = candidates.some((candidate) => {
+      if (candidate.start.getTime() <= now) return false;
+      if (
+        booked.some(
+          (item) =>
+            item.practitionerId === practitionerId &&
+            overlaps(candidate.start, candidate.end, item.start, item.end),
+        )
+      )
+        return false;
+      const roomAvailable = record.svc.rooms.some((room) =>
+        booked.every(
+          (item) =>
+            item.roomId !== room.id ||
+            !overlaps(candidate.start, candidate.end, item.start, item.end),
+        ),
+      );
+      if (!roomAvailable) return false;
+      return (
+        !record.svc.requiresDevice ||
+        record.svc.devices.some((device) =>
+          booked.every(
+            (item) =>
+              item.deviceId !== device.id ||
+              !overlaps(candidate.start, candidate.end, item.start, item.end),
+          ),
+        )
+      );
+    });
+    if (hasBookable) dates.push(dateStr);
+  }
+  return dates;
 }
 
 /** Public availability is always owned by the clinic's stable default practitioner. */

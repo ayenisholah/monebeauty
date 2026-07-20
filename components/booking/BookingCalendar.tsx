@@ -16,10 +16,12 @@ export function BookingCalendar({
   locale,
   value,
   onSelect,
+  availableDates,
 }: {
   locale: string;
   value: string | null;
   onSelect: (value: string) => void;
+  availableDates?: readonly string[];
 }) {
   const today = clinicTodayYmd();
   return (
@@ -30,6 +32,7 @@ export function BookingCalendar({
       min={today}
       max={addDays(today, BUSINESS_HOURS.daysAhead)}
       disableClosedDays
+      availableDates={availableDates}
     />
   );
 }
