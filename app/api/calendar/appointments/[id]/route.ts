@@ -16,6 +16,9 @@ import {
 import { resolveProcedure } from "@/lib/procedures";
 import { routing, type Locale } from "@/i18n/routing";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
+import { normalizeInternationalPhone } from "@/lib/phone";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function conflict(error: CalendarConflict | string, status = 409) {
   return NextResponse.json({ error }, { status });
@@ -55,7 +58,10 @@ export async function PATCH(
   });
   if (!appointment) return conflict("not_found", 404);
   const ownPractitionerId = await staffPractitionerId(user);
-  if (user.role === "STAFF" && (!ownPractitionerId || appointment.practitionerId !== ownPractitionerId))
+  if (
+    user.role === "STAFF" &&
+    (!ownPractitionerId || appointment.practitionerId !== ownPractitionerId)
+  )
     return conflict("forbidden_employee", 403);
   if (!Number.isSafeInteger(expectedVersion)) return conflict("stale");
 
@@ -149,13 +155,32 @@ export async function PATCH(
 
   const clientId =
     intent === "details"
-      ? String(payload.clientId ?? appointment.clientId)
+      ? String(payload.clientId || appointment.clientId)
       : appointment.clientId;
   const client = await prisma.client.findFirst({
     where: { id: clientId, archivedAt: null },
     select: { id: true },
   });
   if (!client) return conflict("client_not_found", 404);
+  const submittedContact = (payload.contact ?? {}) as Record<string, unknown>;
+  const contactName =
+    intent === "details"
+      ? String(submittedContact.fullName ?? "")
+          .trim()
+          .slice(0, 160)
+      : appointment.contactName;
+  const contactEmail =
+    intent === "details"
+      ? String(submittedContact.email ?? "")
+          .trim()
+          .toLowerCase()
+      : appointment.contactEmail;
+  const contactPhone =
+    intent === "details"
+      ? normalizeInternationalPhone(String(submittedContact.phone ?? ""))
+      : appointment.contactPhone;
+  if (!contactName || !EMAIL_RE.test(contactEmail) || !contactPhone)
+    return conflict("client_invalid", 400);
   const procedureRequested =
     intent === "details" &&
     payload.procedureIndex !== undefined &&
@@ -221,19 +246,40 @@ export async function PATCH(
       procedureIndex: appointment.procedureIndex,
       notes: appointment.notes,
       locale: appointment.locale,
+      contactChanged: false,
     },
-    next: { clientId, serviceId, procedureIndex, notes, locale },
+    next: {
+      clientId,
+      serviceId,
+      procedureIndex,
+      notes,
+      locale,
+      contactChanged:
+        appointment.contactName !== contactName ||
+        appointment.contactEmail !== contactEmail ||
+        appointment.contactPhone !== contactPhone,
+    },
   };
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
-      const reservationConflict = await lockAndFindReservationConflict(tx, { start, end, practitionerIds: [practitionerId], roomId, deviceId, excludeAppointmentId: id });
+      const reservationConflict = await lockAndFindReservationConflict(tx, {
+        start,
+        end,
+        practitionerIds: [practitionerId],
+        roomId,
+        deviceId,
+        excludeAppointmentId: id,
+      });
       if (reservationConflict) throw new Error("reservation_conflict");
       const changed = await tx.appointment.updateMany({
         where: { id, version: expectedVersion },
         data: {
           ...next,
           clientId,
+          contactName,
+          contactEmail,
+          contactPhone,
           serviceId,
           procedureIndex,
           procedureTitle,
@@ -284,7 +330,10 @@ export async function PATCH(
     const materialDetailsChanged =
       appointment.serviceId !== serviceId ||
       appointment.procedureIndex !== procedureIndex ||
-      appointment.clientId !== clientId;
+      appointment.clientId !== clientId ||
+      appointment.contactName !== contactName ||
+      appointment.contactEmail !== contactEmail ||
+      appointment.contactPhone !== contactPhone;
     if (scheduleChanged || materialDetailsChanged) {
       await notifyAppointmentChange(
         updated,

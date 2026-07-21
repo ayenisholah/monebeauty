@@ -110,7 +110,7 @@ export async function createAppointmentChangeRequestAction(formData: FormData) {
       sendEmail({
         to: CONTACT.email,
         subject: `Appointment ${type.toLowerCase()} request ${reference}`,
-        text: `${appointment.client.fullName} submitted a ${type.toLowerCase()} request. Review it in the admin appointment queue.`,
+        text: `${appointment.contactName} submitted a ${type.toLowerCase()} request. Review it in the admin appointment queue.`,
         idempotencyKey: `change-request-admin:${request.id}`,
       }),
     ]);
@@ -148,7 +148,14 @@ export async function reviewAppointmentChangeRequestAction(formData: FormData) {
     if (!matching)
       redirect(`${adminHref(locale, "appointments")}?error=slot_taken`);
     updatedAppointment = await prisma.$transaction(async (tx) => {
-      const reservationConflict = await lockAndFindReservationConflict(tx, { start: new Date(matching.start), end: new Date(matching.end), practitionerIds: [matching.practitionerId], roomId: matching.roomId, deviceId: matching.deviceId, excludeAppointmentId: request.appointmentId });
+      const reservationConflict = await lockAndFindReservationConflict(tx, {
+        start: new Date(matching.start),
+        end: new Date(matching.end),
+        practitionerIds: [matching.practitionerId],
+        roomId: matching.roomId,
+        deviceId: matching.deviceId,
+        excludeAppointmentId: request.appointmentId,
+      });
       if (reservationConflict) throw new Error("slot_taken");
       const changed = await tx.appointmentChangeRequest.updateMany({
         where: { id, status: "PENDING" },
@@ -249,7 +256,7 @@ export async function reviewAppointmentChangeRequestAction(formData: FormData) {
     });
     const customerMail = requestMail[request.appointment.locale as Locale];
     await sendEmail({
-      to: request.appointment.client.email,
+      to: request.appointment.contactEmail,
       subject: `Mone Beauty · ${customerMail.update}`,
       text: `${customerMail.rejected}${decisionReason ? ` ${customerMail.reason}: ${decisionReason}` : ""}`,
       idempotencyKey: `change-request-rejected:${id}`,

@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
       start: appointment.start.toISOString(),
       end: appointment.end.toISOString(),
       status: appointment.status,
-      clientName: appointment.client.fullName,
+      clientName: appointment.contactName,
       procedure: appointment.procedureTitle ?? appointment.service.slug,
       room: appointment.room,
       device: appointment.device,

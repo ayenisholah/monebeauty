@@ -193,12 +193,15 @@ export function AppointmentForm({
 }) {
   const t = copy[locale];
   const [options, setOptions] = useState<Options | null>(null);
-  const [newClient, setNewClient] = useState(!detail);
   const [clientId, setClientId] = useState(detail?.clientId ?? "");
   const [selectedClient, setSelectedClient] = useState<Client | null>(
     detail?.client ?? null,
   );
-  const [client, setClient] = useState({ fullName: "", phone: "", email: "" });
+  const [client, setClient] = useState({
+    fullName: detail?.client.fullName ?? "",
+    phone: detail?.client.phone ?? "",
+    email: detail?.client.email ?? "",
+  });
   const [serviceId, setServiceId] = useState(detail?.serviceId ?? "");
   const [procedureIndex, setProcedureIndex] = useState(
     detail?.procedureIndex ? String(detail.procedureIndex) : "",
@@ -331,13 +334,21 @@ export function AppointmentForm({
       setDeviceId(next.deviceIds[0] ?? "");
   }
 
+  function clearSelectedClient() {
+    setSelectedClient(null);
+    setClientId("");
+    setClient({ fullName: "", phone: "", email: "" });
+  }
+
   async function save() {
     if (
       !serviceId ||
       !practitionerId ||
       !roomId ||
       !timeOptions.some((option) => option.value === time) ||
-      (!clientId && !newClient) ||
+      !client.fullName.trim() ||
+      !client.phone.trim() ||
+      !client.email.trim() ||
       (!detail && !consent)
     ) {
       setMessage(t.required);
@@ -355,8 +366,8 @@ export function AppointmentForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...(detail ? { intent: "details", version: detail.version } : {}),
-          clientId: newClient ? undefined : clientId,
-          newClient: newClient ? client : undefined,
+          clientId: clientId || undefined,
+          contact: client,
           serviceId,
           procedureIndex: procedureIndex || null,
           practitionerId,
@@ -428,7 +439,8 @@ export function AppointmentForm({
               <ClientCombobox
                 locale={notificationLocale}
                 selected={selectedClient}
-                active={!newClient}
+                initialClients={options?.clients ?? []}
+                active={Boolean(selectedClient)}
                 labels={{
                   trigger: t.existingClient,
                   search: t.search,
@@ -440,55 +452,53 @@ export function AppointmentForm({
                 onSelect={(next) => {
                   setSelectedClient(next);
                   setClientId(next.id);
-                  setNewClient(false);
+                  setClient({
+                    fullName: next.fullName,
+                    phone: next.phone,
+                    email: next.email,
+                  });
                 }}
-                onOpen={() => {
-                  if (selectedClient) setNewClient(false);
-                }}
+                onClear={clearSelectedClient}
               />
               {!detail ? (
                 <button
                   type="button"
-                  className={newClient ? activeButton : button}
-                  onClick={() => setNewClient(true)}
+                  className={!selectedClient ? activeButton : button}
+                  onClick={clearSelectedClient}
                 >
                   {t.addClient}
                 </button>
               ) : null}
             </div>
           </div>
-          {newClient ? (
-            <>
-              <Field label={t.name}>
-                <input
-                  className={input}
-                  value={client.fullName}
-                  onChange={(event) =>
-                    setClient({ ...client, fullName: event.target.value })
-                  }
-                />
-              </Field>
-              <Field label={t.phone}>
-                <input
-                  className={input}
-                  value={client.phone}
-                  onChange={(event) =>
-                    setClient({ ...client, phone: event.target.value })
-                  }
-                />
-              </Field>
-              <Field label={t.email} wide>
-                <input
-                  className={input}
-                  type="email"
-                  value={client.email}
-                  onChange={(event) =>
-                    setClient({ ...client, email: event.target.value })
-                  }
-                />
-              </Field>
-            </>
-          ) : null}
+          <Field label={t.name}>
+            <input
+              className={input}
+              value={client.fullName}
+              onChange={(event) =>
+                setClient({ ...client, fullName: event.target.value })
+              }
+            />
+          </Field>
+          <Field label={t.phone}>
+            <input
+              className={input}
+              value={client.phone}
+              onChange={(event) =>
+                setClient({ ...client, phone: event.target.value })
+              }
+            />
+          </Field>
+          <Field label={t.email} wide>
+            <input
+              className={input}
+              type="email"
+              value={client.email}
+              onChange={(event) =>
+                setClient({ ...client, email: event.target.value })
+              }
+            />
+          </Field>
           <Field label={t.service}>
             <ThemedSelect
               value={serviceId}
@@ -691,13 +701,15 @@ export function AppointmentForm({
 function ClientCombobox({
   locale,
   selected,
+  initialClients,
   active,
   labels,
   onSelect,
-  onOpen,
+  onClear,
 }: {
   locale: Locale;
   selected: Client | null;
+  initialClients: Client[];
   active?: boolean;
   labels: {
     trigger: string;
@@ -708,7 +720,7 @@ function ClientCombobox({
     error: string;
   };
   onSelect: (client: Client) => void;
-  onOpen: () => void;
+  onClear: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -718,12 +730,21 @@ function ClientCombobox({
   );
   const rootRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const showingInitial = query.trim().length < 2;
+  const visibleResults = showingInitial ? initialClients : results;
+  const visibleStatus = showingInitial ? "ready" : status;
 
   function close() {
     setOpen(false);
     setQuery("");
     setResults([]);
     setStatus("idle");
+  }
+
+  function openList() {
+    setResults(initialClients);
+    setStatus("ready");
+    setOpen(true);
   }
 
   useEffect(() => {
@@ -792,7 +813,8 @@ function ClientCombobox({
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
-      const next = (index + direction + results.length) % results.length;
+      const next =
+        (index + direction + visibleResults.length) % visibleResults.length;
       optionRefs.current[next]?.focus();
     }
   }
@@ -806,16 +828,20 @@ function ClientCombobox({
         aria-expanded={open}
         onClick={() => {
           if (open) close();
-          else {
-            onOpen();
-            setOpen(true);
-          }
+          else openList();
         }}
         onKeyDown={(event) => {
+          if (
+            (event.key === "Backspace" || event.key === "Delete") &&
+            selected
+          ) {
+            event.preventDefault();
+            onClear();
+            return;
+          }
           if (["ArrowDown", "Enter", " "].includes(event.key)) {
             event.preventDefault();
-            onOpen();
-            setOpen(true);
+            openList();
           }
         }}
         className={`flex min-h-[44px] w-full items-center justify-between gap-3 rounded-[4px] border bg-page px-3 text-left font-sans text-sm outline-none focus:border-accent ${active ? "border-accent bg-btn-fill" : "border-line-btn"}`}
@@ -843,16 +869,21 @@ function ClientCombobox({
                 const next = event.target.value;
                 setQuery(next);
                 if (next.trim().length < 2) {
-                  setResults([]);
-                  setStatus("idle");
+                  setResults(initialClients);
+                  setStatus("ready");
                 }
               }}
               onKeyDown={(event) => {
+                if (event.key === "Backspace" && !query && selected) {
+                  event.preventDefault();
+                  onClear();
+                  setResults(initialClients);
+                }
                 if (event.key === "Escape") {
                   event.preventDefault();
                   close();
                 }
-                if (event.key === "ArrowDown" && results.length) {
+                if (event.key === "ArrowDown" && visibleResults.length) {
                   event.preventDefault();
                   optionRefs.current[0]?.focus();
                 }
@@ -865,7 +896,7 @@ function ClientCombobox({
             aria-label={labels.trigger}
             className="max-h-[280px] overflow-y-auto p-1.5"
           >
-            {status === "loading" ? (
+            {visibleStatus === "loading" ? (
               <p
                 role="status"
                 className="flex items-center gap-2 px-3 py-3 font-sans text-sm text-muted"
@@ -874,12 +905,12 @@ function ClientCombobox({
                 {labels.loading}
               </p>
             ) : null}
-            {status === "idle" ? (
+            {visibleStatus === "idle" ? (
               <p className="px-3 py-3 font-sans text-sm text-muted">
                 {labels.hint}
               </p>
             ) : null}
-            {status === "error" ? (
+            {visibleStatus === "error" ? (
               <p
                 role="alert"
                 className="px-3 py-3 font-sans text-sm text-[#8c3434]"
@@ -887,13 +918,13 @@ function ClientCombobox({
                 {labels.error}
               </p>
             ) : null}
-            {status === "ready" && !results.length ? (
+            {visibleStatus === "ready" && !visibleResults.length ? (
               <p className="px-3 py-3 font-sans text-sm text-muted">
                 {labels.empty}
               </p>
             ) : null}
-            {status === "ready"
-              ? results.map((client, index) => {
+            {visibleStatus === "ready"
+              ? visibleResults.map((client, index) => {
                   const isSelected = selected?.id === client.id;
                   return (
                     <button

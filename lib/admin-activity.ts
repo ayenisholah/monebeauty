@@ -203,7 +203,7 @@ export async function getRecentBusinessActivity(locale: Locale, limit = 10) {
       action: "appointmentBooked",
       at: appointment.createdAt,
       subject: appointment.procedureTitle ?? serviceTitle(appointment.service),
-      detail: appointment.client.fullName,
+      detail: appointment.contactName,
       status: appointment.status,
       href: adminHref(locale, "appointments", appointment.id),
     }),
@@ -217,7 +217,7 @@ export async function getRecentBusinessActivity(locale: Locale, limit = 10) {
       subject:
         event.appointment.procedureTitle ??
         serviceTitle(event.appointment.service),
-      detail: event.appointment.client.fullName,
+      detail: event.appointment.contactName,
       status: event.nextStatus ?? event.appointment.status,
       href: adminHref(locale, "appointments", event.appointmentId),
     }),

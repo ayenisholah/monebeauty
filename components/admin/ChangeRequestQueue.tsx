@@ -67,7 +67,7 @@ export async function ChangeRequestQueue({ locale }: { locale: Locale }) {
             <div className="flex flex-wrap justify-between gap-3">
               <div>
                 <strong className="font-sans text-[15px]">
-                  {request.appointment.client.fullName}
+                  {request.appointment.contactName}
                 </strong>
                 <p className="text-sm text-body">
                   {request.appointment.service.contents[0]?.h1 ??

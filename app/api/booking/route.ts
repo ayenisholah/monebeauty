@@ -124,6 +124,9 @@ export async function POST(req: NextRequest) {
         const created = await tx.appointment.create({
           data: {
             clientId: client.id,
+            contactName: fullName,
+            contactEmail: email,
+            contactPhone: phone,
             practitionerId: matchingSlot.practitionerId,
             serviceId,
             roomId: matchingSlot.roomId,

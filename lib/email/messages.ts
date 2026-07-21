@@ -23,6 +23,9 @@ export type AppointmentEmailData = {
   id: string;
   start: Date;
   end: Date;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   client: { fullName: string; email: string; phone: string };
   service: { slug: string; title?: string; staffTitle?: string; description?: string };
   practitioner?: { name: string } | null;

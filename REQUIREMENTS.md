@@ -63,7 +63,11 @@ Staff-created appointments search or create a CRM client, require recorded GDPR 
 start as confirmed, and send the localized durable email/SMS confirmation. Creation, detail
 changes, lifecycle actions, schedule moves, sensitive access, and denied mutations are audited.
 Existing-client selection uses an accessible dropdown with 300 ms debounced lookup by name,
-phone, or email; no separate search action is required.
+phone, or email; no separate search action is required. It initially lists the 20 most recently
+updated non-archived clients and supports clearing with Backspace/Delete. Name, phone, and email
+are always visible, are populated from a selected client, and remain editable. Appointment saves
+persist those values as an immutable-to-CRM booking contact snapshot used by calendar/detail views,
+email, SMS, reminders, and claim delivery; edits do not update the linked CRM client record.
 
 ### Timma-style internal calendar reservations (owner-approved, 2026-07-21)
 

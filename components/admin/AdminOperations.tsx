@@ -688,7 +688,7 @@ export async function AppointmentsAdmin({
         <div className="mt-[14px] flex flex-wrap items-end justify-between gap-[16px]">
           <PageTitle
             title={`${t("appointments")} ${reference(appointment.id)}`}
-            description={`${appointment.client.fullName} · ${formatDate(appointment.start, locale)}`}
+            description={`${appointment.contactName} · ${formatDate(appointment.start, locale)}`}
           />
           <StatusBadge
             status={appointment.status}
@@ -700,7 +700,7 @@ export async function AppointmentsAdmin({
             <dl className="grid gap-[14px] font-sans text-[14px] sm:grid-cols-2">
               <Detail
                 label={t("contact")}
-                value={`${appointment.client.email} · ${appointment.client.phone}`}
+                value={`${appointment.contactEmail} · ${appointment.contactPhone}`}
               />
               <Detail
                 label={t("locale")}
@@ -859,8 +859,8 @@ export async function AppointmentsAdmin({
             entity="Appointment"
             id={appointment.id}
             returnTo={`${base}/${appointment.id}`}
-            email={appointment.client.email}
-            phone={appointment.client.phone}
+            email={appointment.contactEmail}
+            phone={appointment.contactPhone}
             labels={composerLabels(t)}
           />
         </div>
@@ -954,9 +954,7 @@ export async function AppointmentsAdmin({
                   {formatDate(appointment.start, locale)}
                 </span>
                 <span className="min-w-0 font-sans text-[14px]">
-                  <strong className="block">
-                    {appointment.client.fullName}
-                  </strong>
+                  <strong className="block">{appointment.contactName}</strong>
                   <small className="block truncate text-[12px] text-muted">
                     {service}
                   </small>

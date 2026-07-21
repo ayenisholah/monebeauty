@@ -47,7 +47,12 @@ export async function GET(
     id: appointment.id,
     version: appointment.version,
     status: appointment.status,
-    client: appointment.client,
+    client: {
+      fullName: appointment.contactName,
+      email: appointment.contactEmail,
+      phone: appointment.contactPhone,
+      contraindications: appointment.client.contraindications,
+    },
     clientId: appointment.clientId,
     serviceId: appointment.serviceId,
     procedureIndex: appointment.procedureIndex,

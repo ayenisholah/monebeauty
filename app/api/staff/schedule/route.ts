@@ -135,9 +135,9 @@ export async function GET(req: NextRequest) {
       serviceSlug: appt.service.slug,
       procedureTitle: appt.procedureTitle,
       procedurePrice: appt.procedurePrice,
-      clientName: appt.client.fullName,
-      clientPhone: appt.client.phone,
-      clientEmail: appt.client.email,
+      clientName: appt.contactName,
+      clientPhone: appt.contactPhone,
+      clientEmail: appt.contactEmail,
       notes: appt.notes,
     })),
   });

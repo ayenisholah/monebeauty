@@ -1513,7 +1513,8 @@ export async function sendAdminCommunicationAction(formData: FormData) {
       where: { id },
       select: {
         locale: true,
-        client: { select: { email: true, phone: true } },
+        contactEmail: true,
+        contactPhone: true,
       },
     });
     if (!row) redirect(`${returnTo}?error=not_found`);
@@ -1521,7 +1522,7 @@ export async function sendAdminCommunicationAction(formData: FormData) {
       parent: { appointmentId: id },
       channel,
       locale: row.locale as AppLocale,
-      recipient: channel === "EMAIL" ? row.client.email : row.client.phone,
+      recipient: channel === "EMAIL" ? row.contactEmail : row.contactPhone,
       subject,
       body,
       actor: user.email,

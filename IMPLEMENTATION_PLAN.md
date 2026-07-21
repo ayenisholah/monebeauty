@@ -43,7 +43,9 @@
 - Add a persistent Create appointment action and empty-time click creation with CRM client
   search/inline creation, confirmed staff bookings, lifecycle editing, auditing, and localized
   durable notifications. Existing-client lookup uses a searchable dropdown with 300 ms debounced
-  name, phone, or email queries and no manual search button.
+  name, phone, or email queries and no manual search button. Show the 20 most recently updated
+  active clients when opened, keep editable name/phone/email fields visible, support keyboard
+  clearing, and persist booking-only appointment contact snapshots without mutating CRM details.
 - Enforce employee, room, and device overlap protection in shared booking logic and PostgreSQL.
 - Persist canonical weekly hours on each employee, batch-resolve working dates, crop shared
   day/week grids to the selected employees' open-time union, and disable unavailable picker dates.

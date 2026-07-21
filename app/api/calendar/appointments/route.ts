@@ -74,15 +74,19 @@ export async function GET(req: NextRequest) {
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
-    q.length >= 2
+    q.length === 0 || q.length >= 2
       ? prisma.client.findMany({
           where: {
             archivedAt: null,
-            OR: [
-              { fullName: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-              { phone: { contains: q } },
-            ],
+            ...(q.length >= 2
+              ? {
+                  OR: [
+                    { fullName: { contains: q, mode: "insensitive" as const } },
+                    { email: { contains: q, mode: "insensitive" as const } },
+                    { phone: { contains: q } },
+                  ],
+                }
+              : {}),
           },
           orderBy: { updatedAt: "desc" },
           take: 20,
@@ -226,15 +230,18 @@ export async function POST(req: NextRequest) {
   if (clash) return bad("slot_taken", 409);
 
   const existingClientId = String(payload.clientId ?? "");
-  const newClient = (payload.newClient ?? {}) as Record<string, unknown>;
-  const fullName = String(newClient.fullName ?? "")
+  const contact = (payload.contact ?? payload.newClient ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const fullName = String(contact.fullName ?? "")
     .trim()
     .slice(0, 160);
-  const email = String(newClient.email ?? "")
+  const email = String(contact.email ?? "")
     .trim()
     .toLowerCase();
-  const phone = normalizeInternationalPhone(String(newClient.phone ?? ""));
-  if (!existingClientId && (!fullName || !EMAIL_RE.test(email) || !phone))
+  const phone = normalizeInternationalPhone(String(contact.phone ?? ""));
+  if (!fullName || !EMAIL_RE.test(email) || !phone)
     return bad("client_invalid");
   const notes =
     String(payload.notes ?? "")
@@ -285,6 +292,9 @@ export async function POST(req: NextRequest) {
       const created = await tx.appointment.create({
         data: {
           clientId: client.id,
+          contactName: fullName,
+          contactEmail: email,
+          contactPhone: phone,
           serviceId: service.id,
           practitionerId,
           roomId,
@@ -351,7 +361,7 @@ export async function POST(req: NextRequest) {
     if (!appointment.client.userId) {
       try {
         const token = await createAccountToken({
-          email: appointment.client.email,
+          email: appointment.contactEmail,
           purpose: "CLAIM_APPOINTMENT",
           appointmentId: appointment.id,
           ttlMs: 7 * 24 * 60 * 60 * 1000,
@@ -362,7 +372,7 @@ export async function POST(req: NextRequest) {
         );
         const url = `${absoluteLocalizedUrl(siteUrl(), path, locale)}?token=${encodeURIComponent(token)}`;
         await sendEmail({
-          to: appointment.client.email,
+          to: appointment.contactEmail,
           subject: "Mone Beauty · add appointment to your account",
           text: `Add this appointment to your secure client account:\n\n${url}`,
           idempotencyKey: `appointment-claim:${appointment.id}`,

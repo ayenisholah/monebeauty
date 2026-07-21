@@ -27,6 +27,11 @@ const migration = readFileSync(
   "prisma/migrations/20260719110000_shared_employee_calendar/migration.sql",
   "utf8",
 );
+const contactMigration = readFileSync(
+  "prisma/migrations/20260721143000_appointment_contact_snapshots/migration.sql",
+  "utf8",
+);
+const schema = readFileSync("prisma/schema.prisma", "utf8");
 
 test("availability must cover the complete procedure without gaps", () => {
   const slots = [
@@ -206,6 +211,10 @@ test("staff can create confirmed appointments from a button or selected range", 
   assert.match(appointmentForm, /function ClientCombobox/);
   assert.match(appointmentForm, /new AbortController\(\)/);
   assert.match(appointmentForm, /}, 300\)/);
+  assert.match(appointmentForm, /initialClients/);
+  assert.match(appointmentForm, /event\.key === "Backspace"/);
+  assert.match(appointmentForm, /contact: client/);
+  assert.doesNotMatch(appointmentForm, /\{newClient \? \(/);
   assert.doesNotMatch(appointmentForm, /searchAction/);
   assert.match(createApi, /fullName: \{ contains: q/);
   assert.match(createApi, /email: \{ contains: q/);
@@ -214,6 +223,17 @@ test("staff can create confirmed appointments from a button or selected range", 
   assert.match(createApi, /channel: "staff"/);
   assert.match(createApi, /notifyAppointmentConfirmation/);
   assert.match(createApi, /gdpr_booking_staff/);
+});
+
+test("appointments preserve editable booking contact snapshots", () => {
+  assert.match(schema, /contactName\s+String/);
+  assert.match(schema, /contactEmail\s+String/);
+  assert.match(schema, /contactPhone\s+String/);
+  assert.match(contactMigration, /UPDATE "Appointment" AS appointment/);
+  assert.match(contactMigration, /ALTER COLUMN "contactName" SET NOT NULL/);
+  assert.match(createApi, /contactName: fullName/);
+  assert.match(createApi, /q\.length === 0 \|\| q\.length >= 2/);
+  assert.match(moveApi, /contactChanged/);
 });
 
 test("day and week open appointments from one continuous vertical range", () => {

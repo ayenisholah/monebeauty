@@ -553,6 +553,9 @@ model Availability {
 model Appointment {
   id                  String                     @id @default(cuid())
   clientId            String
+  contactName         String
+  contactEmail        String
+  contactPhone        String
   practitionerId      String
   serviceId           String
   roomId              String?

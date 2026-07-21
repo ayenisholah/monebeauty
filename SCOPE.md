@@ -35,7 +35,10 @@ staff may create and move appointments only within their linked employee calenda
 rooms/devices. The calendar exposes a
 Create appointment action and empty available times can be clicked to prefill a new booking.
 The appointment editor selects existing CRM clients through an accessible dropdown with 300 ms
-debounced name, phone, or email lookup and no manual search button.
+debounced name, phone, or email lookup and no manual search button. Opening the dropdown shows
+the 20 most recently updated active clients. Name, phone, and email remain visible and editable
+after selection; clearing a selection clears those fields. The values saved on an appointment
+are booking-only contact snapshots and never overwrite the linked CRM client.
 Staff availability changes remain restricted to the employee linked to their own account.
 Rooms and physical treatment devices are separate exclusive resources, so employee, room,
 and device overlaps are rejected server-side and at the database boundary.
