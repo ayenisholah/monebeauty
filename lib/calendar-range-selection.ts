@@ -40,8 +40,8 @@ export function normalizeCalendarRange(
   )
     return null;
 
-  const startColumnIndex = Math.min(anchor.columnIndex, focus.columnIndex);
-  const endColumnIndex = Math.max(anchor.columnIndex, focus.columnIndex);
+  const startColumnIndex = anchor.columnIndex;
+  const endColumnIndex = anchor.columnIndex;
   const startMinute = Math.min(anchor.minute, focus.minute);
   const endMinute = Math.max(anchor.minute, focus.minute) + 15;
   return {
@@ -49,7 +49,7 @@ export function normalizeCalendarRange(
     endMinute,
     startColumnIndex,
     endColumnIndex,
-    targets: columns.slice(startColumnIndex, endColumnIndex + 1),
+    targets: [columns[anchor.columnIndex]],
   };
 }
 

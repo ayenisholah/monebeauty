@@ -35,7 +35,6 @@ import {
 import {
   CalendarBlockEditor,
   type CalendarBlock,
-  type CalendarBlockRangeTarget,
   type CalendarBlockTemplate,
 } from "@/components/calendar/CalendarBlockEditor";
 import { InternalServicePaletteEditor } from "@/components/calendar/InternalServicePaletteEditor";
@@ -48,7 +47,6 @@ import {
 import {
   calendarRangeContains,
   calendarRangeStart,
-  groupCalendarRangeTargets,
   normalizeCalendarRange,
   type CalendarRangeCell,
   type CalendarRangeSelection,
@@ -166,11 +164,6 @@ const copy = {
     working: "Working",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
-    chooseRangeAction: "Choose an action for this time range",
-    createBlock: "Block time",
-    markOpen: "Mark open",
-    markClosed: "Mark closed",
-    selectedRange: "Selected range",
   },
   fi: {
     title: "Yhteinen kalenteri",
@@ -211,11 +204,6 @@ const copy = {
     working: "Työssä",
     zoomIn: "Lähennä",
     zoomOut: "Loitonna",
-    chooseRangeAction: "Valitse toiminto tälle aikavälille",
-    createBlock: "Varaa sisäinen aika",
-    markOpen: "Merkitse avoimeksi",
-    markClosed: "Merkitse suljetuksi",
-    selectedRange: "Valittu aikaväli",
   },
   ru: {
     title: "Общий календарь",
@@ -256,11 +244,6 @@ const copy = {
     working: "Работают",
     zoomIn: "Увеличить",
     zoomOut: "Уменьшить",
-    chooseRangeAction: "Выберите действие для диапазона",
-    createBlock: "Заблокировать время",
-    markOpen: "Отметить открытым",
-    markClosed: "Отметить закрытым",
-    selectedRange: "Выбранный диапазон",
   },
 } as const;
 
@@ -349,7 +332,6 @@ export function SharedCalendar({
     practitionerId: string;
     block?: CalendarBlock | null;
     durationMin?: number;
-    rangeTargets?: CalendarBlockRangeTarget[];
   } | null>(null);
   const [zoom, setZoom] = useState<Zoom>("default");
   const [pickerDates, setPickerDates] = useState<string[] | undefined>();
@@ -374,10 +356,6 @@ export function SharedCalendar({
   } | null>(null);
   const [rangeSelection, setRangeSelection] =
     useState<CalendarRangeSelection | null>(null);
-  const [rangeMenu, setRangeMenu] = useState<{ x: number; y: number } | null>(
-    null,
-  );
-  const [rangeSaving, setRangeSaving] = useState(false);
   const [hours, setHours] = useState({
     practitionerId: "",
     startHour: 10,
@@ -728,74 +706,17 @@ export function SharedCalendar({
 
   function clearRangeSelection() {
     setRangeSelection(null);
-    setRangeMenu(null);
   }
 
-  function finishRangeSelection(point: { x: number; y: number }) {
-    const menuWidth = 270;
-    const menuHeight = 285;
-    setRangeMenu({
-      x: Math.max(12, Math.min(point.x, window.innerWidth - menuWidth - 12)),
-      y: Math.max(12, Math.min(point.y, window.innerHeight - menuHeight - 12)),
-    });
-  }
-
-  async function applyRangeAction(
-    action: "appointment" | "block" | "open" | "closed",
-  ) {
-    if (!rangeSelection?.targets.length || !data) return;
-    const first = rangeSelection.targets[0];
-    const start = calendarRangeStart(first.date, rangeSelection.startMinute);
+  function finishRangeSelection(selection: CalendarRangeSelection) {
+    const first = selection.targets[0];
+    const start = calendarRangeStart(first.date, selection.startMinute);
     if (!start) return;
-    const durationMin = rangeSelection.endMinute - rangeSelection.startMinute;
-
-    if (action === "appointment") {
-      if (rangeSelection.targets.length !== 1) return;
-      setRangeMenu(null);
-      setManaging({
-        start,
-        practitionerId: first.practitionerId,
-        durationMin,
-      });
-      return;
-    }
-
-    if (action === "block") {
-      setRangeMenu(null);
-      setBlockEditing({
-        start,
-        practitionerId: first.practitionerId,
-        durationMin,
-        rangeTargets: groupCalendarRangeTargets(rangeSelection.targets),
-      });
-      return;
-    }
-
-    setRangeSaving(true);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/staff/schedule", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          startMinute: rangeSelection.startMinute,
-          endMinute: rangeSelection.endMinute,
-          targets: rangeSelection.targets.map((target) => ({
-            date: target.date,
-            practitionerId: target.practitionerId,
-          })),
-        }),
-      });
-      if (!response.ok) throw new Error("calendar_range");
-      clearRangeSelection();
-      setMessage(t.saved);
-      await load();
-    } catch {
-      setMessage(t.conflict);
-    } finally {
-      setRangeSaving(false);
-    }
+    setManaging({
+      start,
+      practitionerId: first.practitionerId,
+      durationMin: selection.endMinute - selection.startMinute,
+    });
   }
 
   function changeZoom(direction: -1 | 1) {
@@ -1197,10 +1118,7 @@ export function SharedCalendar({
                   hourHeight={ZOOM_HEIGHTS[zoom]}
                   outsideHours={t.outsideHours}
                   selection={rangeSelection}
-                  onSelectionChange={(next) => {
-                    setRangeMenu(null);
-                    setRangeSelection(next);
-                  }}
+                  onSelectionChange={setRangeSelection}
                   onSelectionComplete={finishRangeSelection}
                 />
               )}
@@ -1222,79 +1140,6 @@ export function SharedCalendar({
         </DndContext>
       ) : null}
 
-      {rangeSelection && rangeMenu ? (
-        <>
-          <button
-            type="button"
-            aria-label={t.cancel}
-            className="fixed inset-0 z-[90] cursor-default bg-transparent"
-            onClick={clearRangeSelection}
-          />
-          <div
-            role="dialog"
-            aria-label={t.chooseRangeAction}
-            className="fixed z-[95] w-[270px] rounded-[8px] border border-line-card bg-card p-[12px] shadow-card"
-            style={{ left: rangeMenu.x, top: rangeMenu.y }}
-          >
-            <p className="font-sans text-[12px] font-medium text-ink">
-              {t.chooseRangeAction}
-            </p>
-            <p className="mt-[4px] font-sans text-[11px] text-muted">
-              {t.selectedRange}:{" "}
-              {pad(Math.floor(rangeSelection.startMinute / 60))}:
-              {pad(rangeSelection.startMinute % 60)}–
-              {pad(Math.floor(rangeSelection.endMinute / 60))}:
-              {pad(rangeSelection.endMinute % 60)} ·{" "}
-              {rangeSelection.targets.length}
-            </p>
-            <div className="mt-[10px] grid gap-[6px]">
-              {data?.canManageAppointments ? (
-                <button
-                  type="button"
-                  disabled={rangeSelection.targets.length !== 1 || rangeSaving}
-                  onClick={() => void applyRangeAction("appointment")}
-                  className={cn(buttonCls, "w-full disabled:opacity-40")}
-                >
-                  {t.create}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                disabled={rangeSaving}
-                onClick={() => void applyRangeAction("block")}
-                className={cn(buttonCls, "w-full")}
-              >
-                {t.createBlock}
-              </button>
-              <button
-                type="button"
-                disabled={rangeSaving}
-                onClick={() => void applyRangeAction("open")}
-                className={cn(buttonCls, "w-full")}
-              >
-                {t.markOpen}
-              </button>
-              <button
-                type="button"
-                disabled={rangeSaving}
-                onClick={() => void applyRangeAction("closed")}
-                className={cn(buttonCls, "w-full")}
-              >
-                {t.markClosed}
-              </button>
-              <button
-                type="button"
-                disabled={rangeSaving}
-                onClick={clearRangeSelection}
-                className={cn(buttonCls, "w-full")}
-              >
-                {t.cancel}
-              </button>
-            </div>
-          </div>
-        </>
-      ) : null}
-
       {paletteOpen && data ? (
         <InternalServicePaletteEditor
           locale={locale}
@@ -1311,7 +1156,6 @@ export function SharedCalendar({
           initialStart={blockEditing.start}
           initialPractitionerId={blockEditing.practitionerId}
           initialDurationMin={blockEditing.durationMin}
-          initialRangeTargets={blockEditing.rangeTargets}
           block={blockEditing.block}
           templates={[...data.templates].sort(
             (a, b) =>
@@ -1724,7 +1568,7 @@ function TimeGrid({
   outsideHours: string;
   selection: CalendarRangeSelection | null;
   onSelectionChange: (selection: CalendarRangeSelection) => void;
-  onSelectionComplete: (point: { x: number; y: number }) => void;
+  onSelectionComplete: (selection: CalendarRangeSelection) => void;
 }) {
   const days = Array.from(
     { length: view === "day" ? 1 : 7 },
@@ -1738,13 +1582,17 @@ function TimeGrid({
     practitionerId: practitioner.id,
   }));
   const rangeAnchorRef = useRef<CalendarRangeCell | null>(null);
+  const currentSelectionRef = useRef<CalendarRangeSelection | null>(null);
   const selectingRef = useRef(false);
 
   function updateRange(focus: CalendarRangeCell) {
     const anchor = rangeAnchorRef.current;
     if (!anchor) return;
     const next = normalizeCalendarRange(anchor, focus, rangeColumns);
-    if (next) onSelectionChange(next);
+    if (next) {
+      currentSelectionRef.current = next;
+      onSelectionChange(next);
+    }
   }
 
   function beginRange(cell: CalendarRangeCell) {
@@ -1753,25 +1601,32 @@ function TimeGrid({
     updateRange(cell);
   }
 
-  function completeRange(point: { x: number; y: number }) {
+  function completeRange() {
     if (!selectingRef.current) return;
+    const completed = currentSelectionRef.current;
     selectingRef.current = false;
     rangeAnchorRef.current = null;
-    onSelectionComplete(point);
+    if (completed) onSelectionComplete(completed);
   }
 
   useEffect(() => {
-    function finishPointerRange(event: PointerEvent) {
+    function finishPointerRange() {
       if (!selectingRef.current) return;
+      const completed = currentSelectionRef.current;
       selectingRef.current = false;
       rangeAnchorRef.current = null;
-      onSelectionComplete({ x: event.clientX, y: event.clientY });
+      if (completed) onSelectionComplete(completed);
+    }
+    function cancelPointerRange() {
+      selectingRef.current = false;
+      rangeAnchorRef.current = null;
+      currentSelectionRef.current = null;
     }
     window.addEventListener("pointerup", finishPointerRange);
-    window.addEventListener("pointercancel", finishPointerRange);
+    window.addEventListener("pointercancel", cancelPointerRange);
     return () => {
       window.removeEventListener("pointerup", finishPointerRange);
-      window.removeEventListener("pointercancel", finishPointerRange);
+      window.removeEventListener("pointercancel", cancelPointerRange);
     };
   }, [onSelectionComplete]);
   const rangeBounds = calendarWorkingBounds(columns, data) ?? {
@@ -1999,7 +1854,7 @@ function CalendarColumn({
   selection: CalendarRangeSelection | null;
   onRangeStart: (cell: CalendarRangeCell) => void;
   onRangeMove: (cell: CalendarRangeCell) => void;
-  onRangeEnd: (point: { x: number; y: number }) => void;
+  onRangeEnd: () => void;
 }) {
   const availability = data.availabilities.find(
     (item) => item.date === day && item.practitionerId === practitioner.id,
@@ -2018,6 +1873,8 @@ function CalendarColumn({
   const nowMinutes = now.getHours() * 60 + now.getMinutes() - range.startMinute;
   const isToday = day === today();
   const dayHeight = ((range.endMinute - range.startMinute) / 60) * hourHeight;
+  const selectedRange =
+    selection?.startColumnIndex === columnIndex ? selection : null;
   return (
     <div
       className="relative border-r border-line-card bg-card"
@@ -2060,6 +1917,20 @@ function CalendarColumn({
             />
           );
         })}
+        {selectedRange ? (
+          <div
+            data-calendar-range-selection="true"
+            className="pointer-events-none absolute inset-x-0 z-[2] border border-[#ad8f68] bg-[#ded4c7]"
+            style={{
+              top:
+                ((selectedRange.startMinute - range.startMinute) / 60) *
+                hourHeight,
+              height:
+                ((selectedRange.endMinute - selectedRange.startMinute) / 60) *
+                hourHeight,
+            }}
+          />
+        ) : null}
         {isToday &&
         nowMinutes >= 0 &&
         nowMinutes <= range.endMinute - range.startMinute ? (
@@ -2137,7 +2008,7 @@ function TimeCellDropTarget({
   fmtTime: Intl.DateTimeFormat;
   onRangeStart: (cell: CalendarRangeCell) => void;
   onRangeMove: (cell: CalendarRangeCell) => void;
-  onRangeEnd: (point: { x: number; y: number }) => void;
+  onRangeEnd: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell:${day}:${practitioner.id}:${minute}`,
@@ -2170,27 +2041,23 @@ function TimeCellDropTarget({
           minute,
         })
       }
-      onPointerUp={(event) =>
-        onRangeEnd({ x: event.clientX, y: event.clientY })
-      }
+      onPointerUp={onRangeEnd}
       onKeyDown={(event) => {
         if (past || (event.key !== "Enter" && event.key !== " ")) return;
         event.preventDefault();
-        const rect = event.currentTarget.getBoundingClientRect();
         onRangeStart({
           date: day,
           practitionerId: practitioner.id,
           columnIndex,
           minute,
         });
-        onRangeEnd({ x: rect.right, y: rect.bottom });
+        onRangeEnd();
       }}
       disabled={past}
       className={cn(
         "absolute inset-x-0 z-[1] touch-none border-0 bg-transparent select-none focus:ring-2 focus:ring-accent focus:outline-none",
         open ? "hover:bg-card/65" : "hover:bg-btn-fill/55",
         isOver && "bg-accent/20 ring-2 ring-accent ring-inset",
-        selected && "bg-accent/25 ring-1 ring-accent/70 ring-inset",
         past && "pointer-events-none",
       )}
       style={{ top, height }}

@@ -65,10 +65,10 @@ multi-employee assignment, staff-own-only assignment, atomic conflict validation
 occurrences with optimistic version checks and audit records, without customer notifications.
 Day and week calendars scroll horizontally inside the grid but use page-level vertical scrolling;
 month dates remain navigable even without working hours or events. Empty quarter-hour positions
-support rectangular click-drag selection across times, days, and employees. Releasing a selection
-offers appointment creation for a single column or atomic internal-block/open/closed operations
-for every selected date/employee target. A dragged single-column appointment duration overrides
-the service default for that staff-created appointment only.
+support vertical click-drag selection locked to the starting date/employee column. The complete
+range renders as one continuous shaded block without internal grid borders and opens Create
+appointment immediately on release. Its dragged duration overrides the service default for that
+staff-created appointment only.
 All appointment and block mutation paths share employee/room/device overlap checks and
 transaction-scoped PostgreSQL advisory locks so cross-type reservations cannot race. Internal
 blocks do not rewrite canonical working hours or `Availability.slots`. Active practitioners

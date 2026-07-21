@@ -14,7 +14,7 @@ const columns = [
   { date: "2026-07-22", practitionerId: "b" },
 ];
 
-test("calendar ranges normalize reverse drags into a rectangular band", () => {
+test("calendar ranges normalize reverse drags within the anchor column", () => {
   const selection = normalizeCalendarRange(
     { ...columns[3], columnIndex: 3, minute: 12 * 60 },
     { ...columns[1], columnIndex: 1, minute: 10 * 60 + 30 },
@@ -23,13 +23,14 @@ test("calendar ranges normalize reverse drags into a rectangular band", () => {
   assert.deepEqual(selection, {
     startMinute: 630,
     endMinute: 735,
-    startColumnIndex: 1,
+    startColumnIndex: 3,
     endColumnIndex: 3,
-    targets: columns.slice(1, 4),
+    targets: [columns[3]],
   });
-  assert.equal(calendarRangeContains(selection, 2, 690), true);
+  assert.equal(calendarRangeContains(selection, 3, 690), true);
+  assert.equal(calendarRangeContains(selection, 2, 690), false);
   assert.equal(calendarRangeContains(selection, 0, 690), false);
-  assert.equal(calendarRangeContains(selection, 2, 735), false);
+  assert.equal(calendarRangeContains(selection, 3, 735), false);
 });
 
 test("calendar range targets group exact employees by date", () => {

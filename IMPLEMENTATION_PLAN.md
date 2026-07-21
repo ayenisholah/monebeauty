@@ -83,9 +83,9 @@
   fallback, expose quarter-hour targets only on hover/drop, add a visible drag overlay, and
   compact the service/employee tiles.
 - Remove nested Day/Week vertical scrolling, keep every Month date navigable, and add accessible
-  rectangular quarter-hour range selection across dates/employees with an action chooser. Use the
-  dragged duration for single-column staff appointments and atomic exact-target batch writes for
-  internal blocks and open/closed availability.
+  vertical quarter-hour selection locked to the starting date/employee. Render the selection as
+  one continuous borderless-interior block and open Create appointment immediately with the
+  dragged duration; keep internal blocks and availability on their dedicated controls.
 - Aggregate public availability across the ordered qualified roster and allocate the first
   conflict-free employee/resource atomically without exposing employee identity publicly.
 

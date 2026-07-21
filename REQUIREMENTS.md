@@ -81,10 +81,10 @@ layout changes the internal-service palette to a horizontal tray and preserves s
 the grid scrolls horizontally. Pointer, touch, and keyboard users must retain equivalent actions.
 Day/week grids have no nested vertical scrollbar; their full height participates in page scrolling.
 Every month date is navigable, including empty future dates. Empty day/week quarter-hour targets
-support a rectangular selection with the same time band repeated across every crossed date/employee
-column. On release, users choose Create appointment, Internal block, Mark open, or Mark closed.
-Appointments require exactly one column and use the selected duration; block and availability
-operations apply atomically to all exact selected targets with existing admin/staff RBAC.
+support vertical selection locked to the starting date/employee column. Selected cells render as
+one continuous shaded range without internal borders and immediately open Create appointment on
+release, using the complete selected duration. Internal blocks and availability remain available
+through their dedicated drag/drop and toolbar controls.
 
 `CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
 duration, Mone-compatible color, active state, and display order. Generate the complete Finnish

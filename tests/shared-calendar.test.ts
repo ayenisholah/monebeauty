@@ -23,8 +23,6 @@ const appointmentForm = readFileSync(
   "components/calendar/AppointmentForm.tsx",
   "utf8",
 );
-const blockApi = readFileSync("app/api/calendar/blocks/route.ts", "utf8");
-const scheduleApi = readFileSync("app/api/staff/schedule/route.ts", "utf8");
 const migration = readFileSync(
   "prisma/migrations/20260719110000_shared_employee_calendar/migration.sql",
   "utf8",
@@ -200,7 +198,8 @@ test("calendar permissions restrict staff operations to their linked employee", 
 
 test("staff can create confirmed appointments from a button or selected range", () => {
   assert.match(calendar, /t\.create/);
-  assert.match(calendar, /applyRangeAction\("appointment"\)/);
+  assert.match(calendar, /finishRangeSelection/);
+  assert.match(calendar, /setManaging\(\{/);
   assert.match(calendar, /durationMin/);
   assert.match(appointmentForm, /Search clients/);
   assert.match(appointmentForm, /Add a new client/);
@@ -217,7 +216,7 @@ test("staff can create confirmed appointments from a button or selected range", 
   assert.match(createApi, /gdpr_booking_staff/);
 });
 
-test("day and week support rectangular range actions without an inner vertical scroll", () => {
+test("day and week open appointments from one continuous vertical range", () => {
   assert.match(calendar, /overflow-x-auto overflow-y-hidden/);
   assert.match(calendar, /TIME_GRID_EDGE_PADDING = 12/);
   assert.match(
@@ -225,12 +224,10 @@ test("day and week support rectangular range actions without an inner vertical s
     /height: timelineHeight \+ TIME_GRID_EDGE_PADDING \* 2/,
   );
   assert.match(calendar, /normalizeCalendarRange/);
-  assert.match(calendar, /applyRangeAction\("block"\)/);
-  assert.match(calendar, /applyRangeAction\("open"\)/);
-  assert.match(calendar, /applyRangeAction\("closed"\)/);
-  assert.match(scheduleApi, /export async function PATCH/);
-  assert.match(scheduleApi, /applyAvailabilityRange/);
-  assert.match(blockApi, /exactTargets/);
+  assert.match(calendar, /data-calendar-range-selection="true"/);
+  assert.match(calendar, /bg-\[#ded4c7\]/);
+  assert.doesNotMatch(calendar, /applyRangeAction/);
+  assert.doesNotMatch(calendar, /chooseRangeAction/);
 });
 
 test("month dates remain navigable without availability or events", () => {
