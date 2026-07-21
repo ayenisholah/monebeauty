@@ -204,6 +204,13 @@ test("staff can create confirmed appointments from a button or selected range", 
   assert.match(calendar, /durationMin/);
   assert.match(appointmentForm, /Search clients/);
   assert.match(appointmentForm, /Add a new client/);
+  assert.match(appointmentForm, /function ClientCombobox/);
+  assert.match(appointmentForm, /new AbortController\(\)/);
+  assert.match(appointmentForm, /}, 300\)/);
+  assert.doesNotMatch(appointmentForm, /searchAction/);
+  assert.match(createApi, /fullName: \{ contains: q/);
+  assert.match(createApi, /email: \{ contains: q/);
+  assert.match(createApi, /phone: \{ contains: q \}/);
   assert.match(createApi, /status: "CONFIRMED"/);
   assert.match(createApi, /channel: "staff"/);
   assert.match(createApi, /notifyAppointmentConfirmation/);

@@ -42,7 +42,8 @@
   backgrounds, client/procedure/room/time cards, and confirmed drag-to-move behavior.
 - Add a persistent Create appointment action and empty-time click creation with CRM client
   search/inline creation, confirmed staff bookings, lifecycle editing, auditing, and localized
-  durable notifications.
+  durable notifications. Existing-client lookup uses a searchable dropdown with 300 ms debounced
+  name, phone, or email queries and no manual search button.
 - Enforce employee, room, and device overlap protection in shared booking logic and PostgreSQL.
 - Persist canonical weekly hours on each employee, batch-resolve working dates, crop shared
   day/week grids to the selected employees' open-time union, and disable unavailable picker dates.

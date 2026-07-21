@@ -62,6 +62,8 @@ change calendar setup or other clinic configuration.
 Staff-created appointments search or create a CRM client, require recorded GDPR acknowledgement,
 start as confirmed, and send the localized durable email/SMS confirmation. Creation, detail
 changes, lifecycle actions, schedule moves, sensitive access, and denied mutations are audited.
+Existing-client selection uses an accessible dropdown with 300 ms debounced lookup by name,
+phone, or email; no separate search action is required.
 
 ### Timma-style internal calendar reservations (owner-approved, 2026-07-21)
 

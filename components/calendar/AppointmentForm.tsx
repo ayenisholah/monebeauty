@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  CaretDown,
+  Check,
+  MagnifyingGlass,
+  SpinnerGap,
+} from "@phosphor-icons/react";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 import { TimePicker } from "@/components/ui/TimePicker";
@@ -51,7 +57,10 @@ const copy = {
     edit: "Edit appointment",
     client: "Client",
     search: "Search clients",
-    searchAction: "Search",
+    searchHint: "Enter at least 2 characters",
+    searchLoading: "Searching clients…",
+    searchEmpty: "No clients found",
+    searchError: "Client search could not be loaded",
     addClient: "Add a new client",
     existingClient: "Choose an existing client",
     name: "Full name",
@@ -83,7 +92,10 @@ const copy = {
     edit: "Muokkaa ajanvarausta",
     client: "Asiakas",
     search: "Hae asiakkaita",
-    searchAction: "Hae",
+    searchHint: "Kirjoita vähintään 2 merkkiä",
+    searchLoading: "Haetaan asiakkaita…",
+    searchEmpty: "Asiakkaita ei löytynyt",
+    searchError: "Asiakashakua ei voitu ladata",
     addClient: "Lisää uusi asiakas",
     existingClient: "Valitse olemassa oleva asiakas",
     name: "Koko nimi",
@@ -115,7 +127,10 @@ const copy = {
     edit: "Изменить запись",
     client: "Клиент",
     search: "Поиск клиентов",
-    searchAction: "Найти",
+    searchHint: "Введите не менее 2 символов",
+    searchLoading: "Поиск клиентов…",
+    searchEmpty: "Клиенты не найдены",
+    searchError: "Не удалось загрузить поиск клиентов",
     addClient: "Добавить нового клиента",
     existingClient: "Выбрать существующего клиента",
     name: "Полное имя",
@@ -178,9 +193,11 @@ export function AppointmentForm({
 }) {
   const t = copy[locale];
   const [options, setOptions] = useState<Options | null>(null);
-  const [search, setSearch] = useState("");
   const [newClient, setNewClient] = useState(!detail);
   const [clientId, setClientId] = useState(detail?.clientId ?? "");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(
+    detail?.client ?? null,
+  );
   const [client, setClient] = useState({ fullName: "", phone: "", email: "" });
   const [serviceId, setServiceId] = useState(detail?.serviceId ?? "");
   const [procedureIndex, setProcedureIndex] = useState(
@@ -205,9 +222,8 @@ export function AppointmentForm({
   const [availableDates, setAvailableDates] = useState<string[] | undefined>();
   const [scheduleSlots, setScheduleSlots] = useState<StaffSlot[]>([]);
 
-  async function load(q = "", nextLocale = notificationLocale) {
+  async function load(nextLocale = notificationLocale) {
     const params = new URLSearchParams({ locale: nextLocale });
-    if (q.trim()) params.set("q", q.trim());
     const response = await fetch(`/api/calendar/appointments?${params}`);
     if (!response.ok) throw new Error("load");
     setOptions((await response.json()) as Options);
@@ -404,15 +420,32 @@ export function AppointmentForm({
           {detail ? t.edit : t.create}
         </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label={t.client} wide>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={!newClient ? activeButton : button}
-                onClick={() => setNewClient(false)}
-              >
-                {t.existingClient}
-              </button>
+          <div className="sm:col-span-2">
+            <span className="mb-1.5 block font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+              {t.client}
+            </span>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <ClientCombobox
+                locale={notificationLocale}
+                selected={selectedClient}
+                active={!newClient}
+                labels={{
+                  trigger: t.existingClient,
+                  search: t.search,
+                  hint: t.searchHint,
+                  loading: t.searchLoading,
+                  empty: t.searchEmpty,
+                  error: t.searchError,
+                }}
+                onSelect={(next) => {
+                  setSelectedClient(next);
+                  setClientId(next.id);
+                  setNewClient(false);
+                }}
+                onOpen={() => {
+                  if (selectedClient) setNewClient(false);
+                }}
+              />
               {!detail ? (
                 <button
                   type="button"
@@ -423,7 +456,7 @@ export function AppointmentForm({
                 </button>
               ) : null}
             </div>
-          </Field>
+          </div>
           {newClient ? (
             <>
               <Field label={t.name}>
@@ -455,51 +488,7 @@ export function AppointmentForm({
                 />
               </Field>
             </>
-          ) : (
-            <Field label={t.search} wide>
-              <div className="flex gap-2">
-                <input
-                  className={input}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className={button}
-                  onClick={() =>
-                    void load(search).catch(() => setMessage(t.conflict))
-                  }
-                >
-                  {t.searchAction}
-                </button>
-              </div>
-              {detail && clientId === detail.clientId ? (
-                <div className="mt-2 rounded border border-accent bg-btn-fill p-2 font-sans text-sm">
-                  <strong>{detail.client.fullName}</strong>
-                  <span className="block text-xs text-muted">
-                    {detail.client.phone} · {detail.client.email}
-                  </span>
-                </div>
-              ) : null}
-              {options?.clients.length ? (
-                <div className="mt-2 grid gap-1">
-                  {options.clients.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setClientId(item.id)}
-                      className={`rounded border p-2 text-left font-sans text-sm ${clientId === item.id ? "border-accent bg-btn-fill" : "border-line-card"}`}
-                    >
-                      <strong>{item.fullName}</strong>
-                      <span className="block text-xs text-muted">
-                        {item.phone} · {item.email}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </Field>
-          )}
+          ) : null}
           <Field label={t.service}>
             <ThemedSelect
               value={serviceId}
@@ -598,7 +587,7 @@ export function AppointmentForm({
                 setNotificationLocale(next);
                 setServiceId("");
                 setProcedureIndex("");
-                void load("", next).catch(() => setMessage(t.conflict));
+                void load(next).catch(() => setMessage(t.conflict));
               }}
               options={[
                 { value: "fi", label: "Suomi" },
@@ -695,6 +684,248 @@ export function AppointmentForm({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ClientCombobox({
+  locale,
+  selected,
+  active,
+  labels,
+  onSelect,
+  onOpen,
+}: {
+  locale: Locale;
+  selected: Client | null;
+  active?: boolean;
+  labels: {
+    trigger: string;
+    search: string;
+    hint: string;
+    loading: string;
+    empty: string;
+    error: string;
+  };
+  onSelect: (client: Client) => void;
+  onOpen: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Client[]>([]);
+  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle",
+  );
+  const rootRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  function close() {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+    setStatus("idle");
+  }
+
+  useEffect(() => {
+    function dismiss(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node))
+        close();
+    }
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
+  }, []);
+
+  useEffect(() => {
+    const normalized = query.trim();
+    if (!open || normalized.length < 2) return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setStatus("loading");
+      try {
+        const params = new URLSearchParams({ locale, q: normalized });
+        const response = await fetch(`/api/calendar/appointments?${params}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("client_search");
+        const payload = (await response.json()) as { clients?: Client[] };
+        setResults(Array.isArray(payload.clients) ? payload.clients : []);
+        setStatus("ready");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        setResults([]);
+        setStatus("error");
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [locale, open, query]);
+
+  function choose(client: Client) {
+    onSelect(client);
+    close();
+    window.requestAnimationFrame(() =>
+      rootRef.current
+        ?.querySelector<HTMLButtonElement>("[data-client-trigger]")
+        ?.focus(),
+    );
+  }
+
+  function onOptionKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      window.requestAnimationFrame(() =>
+        rootRef.current
+          ?.querySelector<HTMLButtonElement>("[data-client-trigger]")
+          ?.focus(),
+      );
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const next = (index + direction + results.length) % results.length;
+      optionRefs.current[next]?.focus();
+    }
+  }
+
+  return (
+    <div ref={rootRef} className="relative min-w-0">
+      <button
+        data-client-trigger
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => {
+          if (open) close();
+          else {
+            onOpen();
+            setOpen(true);
+          }
+        }}
+        onKeyDown={(event) => {
+          if (["ArrowDown", "Enter", " "].includes(event.key)) {
+            event.preventDefault();
+            onOpen();
+            setOpen(true);
+          }
+        }}
+        className={`flex min-h-[44px] w-full items-center justify-between gap-3 rounded-[4px] border bg-page px-3 text-left font-sans text-sm outline-none focus:border-accent ${active ? "border-accent bg-btn-fill" : "border-line-btn"}`}
+      >
+        <span className="min-w-0 truncate">
+          {selected?.fullName ?? labels.trigger}
+        </span>
+        <CaretDown
+          size={15}
+          weight="thin"
+          className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? (
+        <div className="absolute top-[calc(100%+6px)] left-0 z-[120] w-full min-w-[300px] overflow-hidden rounded-[7px] border border-line-card bg-card shadow-card">
+          <label className="flex items-center gap-2 border-b border-line-hair px-3">
+            <MagnifyingGlass size={16} weight="thin" className="text-muted" />
+            <input
+              autoFocus
+              type="search"
+              value={query}
+              aria-label={labels.search}
+              placeholder={labels.search}
+              onChange={(event) => {
+                const next = event.target.value;
+                setQuery(next);
+                if (next.trim().length < 2) {
+                  setResults([]);
+                  setStatus("idle");
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  close();
+                }
+                if (event.key === "ArrowDown" && results.length) {
+                  event.preventDefault();
+                  optionRefs.current[0]?.focus();
+                }
+              }}
+              className="min-h-[44px] min-w-0 flex-1 bg-transparent font-sans text-sm text-ink outline-none placeholder:text-muted"
+            />
+          </label>
+          <div
+            role="listbox"
+            aria-label={labels.trigger}
+            className="max-h-[280px] overflow-y-auto p-1.5"
+          >
+            {status === "loading" ? (
+              <p
+                role="status"
+                className="flex items-center gap-2 px-3 py-3 font-sans text-sm text-muted"
+              >
+                <SpinnerGap size={16} className="animate-spin" />
+                {labels.loading}
+              </p>
+            ) : null}
+            {status === "idle" ? (
+              <p className="px-3 py-3 font-sans text-sm text-muted">
+                {labels.hint}
+              </p>
+            ) : null}
+            {status === "error" ? (
+              <p
+                role="alert"
+                className="px-3 py-3 font-sans text-sm text-[#8c3434]"
+              >
+                {labels.error}
+              </p>
+            ) : null}
+            {status === "ready" && !results.length ? (
+              <p className="px-3 py-3 font-sans text-sm text-muted">
+                {labels.empty}
+              </p>
+            ) : null}
+            {status === "ready"
+              ? results.map((client, index) => {
+                  const isSelected = selected?.id === client.id;
+                  return (
+                    <button
+                      key={client.id}
+                      ref={(element) => {
+                        optionRefs.current[index] = element;
+                      }}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => choose(client)}
+                      onKeyDown={(event) => onOptionKeyDown(event, index)}
+                      className={`flex min-h-[52px] w-full items-center justify-between gap-3 rounded-[4px] px-3 py-2 text-left font-sans hover:bg-page focus:bg-page focus:outline-none ${isSelected ? "bg-btn-fill text-accent" : "text-body"}`}
+                    >
+                      <span className="min-w-0">
+                        <strong className="block truncate text-sm font-medium text-ink">
+                          {client.fullName}
+                        </strong>
+                        <span className="block truncate text-xs text-muted">
+                          {[client.phone, client.email]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </span>
+                      {isSelected ? <Check size={15} weight="bold" /> : null}
+                    </button>
+                  );
+                })
+              : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
