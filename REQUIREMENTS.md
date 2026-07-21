@@ -65,20 +65,26 @@ changes, lifecycle actions, schedule moves, sensitive access, and denied mutatio
 
 ### Timma-style internal calendar reservations (owner-approved, 2026-07-21)
 
-The calendar must provide dense day, Monday-first week, and month views inside the existing
+The calendar must provide dense day, full Monday-first seven-day week, and month views inside the existing
 localized admin shell. Its toolbar includes All/Working and generated employee filters, view and
 date navigation, a themed date picker, Create appointment, zoom, refresh, and setup. Day/week
 hours use the selected employees' open-time union plus a separate out-of-hours exception row,
-48 px/hour by default, sticky headers and bilateral time labels. Zoom persists locally at compact,
+48 px/hour by default, sticky headers and bilateral time labels. Past weekdays remain visible.
+Every employee/day column renders visible one-hour rows even without appointments or configured
+availability; an otherwise empty grid falls back to 10:00–19:00. Invisible 15-minute hit targets
+retain exact placement but become visible only on hover or as the active drop target. Zoom persists locally at compact,
 default, or expanded density. Week headings use initials at high density and full names for a
 narrow selection. Month uses a seven-column grid, compact event rows, and `+N more`. The mobile
 layout changes the internal-service palette to a horizontal tray and preserves sticky axes while
 the grid scrolls horizontally. Pointer, touch, and keyboard users must retain equivalent actions.
 
 `CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
-duration, Mone-compatible color, active state, and display order. Seed lunch break, personal time,
-work errand, sick leave, and vacation at 60 minutes. Admins alone manage templates. Active
-templates may be dragged or selected then placed at a 15-minute calendar cell. The Booking info
+duration, Mone-compatible color, active state, and display order. Generate the complete Finnish
+catalog and drag aliases from `internal-services.txt`; retain the first four internal entries as
+the default shortcuts, leave all remaining entries unselected, and allow at most 24 locally
+selected shortcuts. Admins alone manage
+templates. Active templates may be dragged or selected then placed at a 15-minute position inside
+an hourly row. Dragging shows a floating preview and highlights the hovered future vacant target. The Booking info
 modal contains date/start/end, a primary item, ordered additional items, target employee, at most
 one optional room or device, notes, and recurrence/add-to-others. Items are sequential; their
 durations determine the end, and an edited end changes the final item duration.
@@ -125,12 +131,12 @@ redacted integration attempt with provider operation, outcome, HTTP status, prov
 latency, safe response metadata, retry number, and related entity. Logs expire after 30 days and
 must exclude secrets, authorization data, raw payment data, and unnecessary personal content.
 
-Public booking remains **Service -> Time -> You**. Every bookable service has one fixed
-primary employee, so service selection directly determines the employee schedule without a
-customer-facing employee picker. Optional qualified backups are available only for internal
-reassignment. Rooms and physical devices are separate resources and every active appointment
+Public booking remains **Service -> Time -> You**. Every bookable service has an ordered set of
+qualified employees and no customer-facing employee picker. Public availability combines their
+resource-safe slots; creation assigns the first conflict-free employee in calendar display order
+inside the locked transaction. Rooms and physical devices are separate resources and every active appointment
 must be rejected if it overlaps its employee, room, or required device. This section
-supersedes the 2026-07-17 single-clinic-resource decision below.
+supersedes both the fixed-primary and 2026-07-17 single-clinic-resource decisions below.
 
 ## Superseded public booking assignment (2026-07-17)
 

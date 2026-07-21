@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getServiceId, openPublicSlots } from "@/lib/booking";
+import { getServiceId, openPublicSlotCandidates } from "@/lib/booking";
 import { notifyAppointmentReceipt } from "@/lib/notifications";
 import { normalizeInternationalPhone } from "@/lib/phone";
 import { routing, type Locale } from "@/i18n/routing";
@@ -82,68 +82,75 @@ export async function POST(req: NextRequest) {
   const dateStr = start.slice(0, 10);
 
   try {
-    const available = await openPublicSlots({
+    const candidates = await openPublicSlotCandidates({
       dateStr,
       serviceKey: service,
       locale,
+      start,
     });
-    const matchingSlot = available.find((slot) => slot.start === start);
-    if (!matchingSlot) {
+    if (!candidates.length) {
       return NextResponse.json({ error: "slot_taken" }, { status: 409 });
     }
 
-    const practitionerId = matchingSlot.practitionerId;
     const serviceId = await getServiceId(svc.slug);
-    const endDate = new Date(matchingSlot.end);
-
-    const existingAppointment = await prisma.appointment.findFirst({
-      where: {
-        status: { not: "CANCELLED" },
-        start: { lt: endDate },
-        end: { gt: startDate },
-        OR: [
-          { practitionerId },
-          { roomId: matchingSlot.roomId },
-          ...(matchingSlot.deviceId ? [{ deviceId: matchingSlot.deviceId }] : []),
-        ],
+    const appointment = await prisma.$transaction(
+      async (tx) => {
+        let matchingSlot: (typeof candidates)[number] | null = null;
+        for (const candidate of candidates) {
+          const clash = await lockAndFindReservationConflict(tx, {
+            start: startDate,
+            end: new Date(candidate.end),
+            practitionerIds: [candidate.practitionerId],
+            roomId: candidate.roomId,
+            deviceId: candidate.deviceId,
+          });
+          if (!clash) {
+            matchingSlot = candidate;
+            break;
+          }
+        }
+        if (!matchingSlot) throw new Error("slot_taken");
+        const existing = accountClient
+          ? accountClient
+          : await tx.client.findFirst({ where: { email, userId: null } });
+        const client = existing
+          ? await tx.client.update({
+              where: { id: existing.id },
+              data: { fullName, phone, consentGdpr: true },
+            })
+          : await tx.client.create({
+              data: { fullName, phone, email, consentGdpr: true },
+            });
+        const created = await tx.appointment.create({
+          data: {
+            clientId: client.id,
+            practitionerId: matchingSlot.practitionerId,
+            serviceId,
+            roomId: matchingSlot.roomId,
+            deviceId: matchingSlot.deviceId,
+            locale,
+            start: startDate,
+            end: new Date(matchingSlot.end),
+            status: "BOOKED",
+            channel: "web",
+            notes,
+            procedureIndex: procedure?.index ?? null,
+            procedureTitle: procedure?.procedure.title ?? null,
+            procedurePrice: procedure?.procedure.price ?? null,
+          },
+          include: {
+            client: { select: { fullName: true, email: true, phone: true } },
+            service: { select: { slug: true } },
+            practitioner: { select: { name: true } },
+          },
+        });
+        await tx.consent.create({
+          data: { clientId: client.id, type: "gdpr_booking", granted: true },
+        });
+        return created;
       },
-      select: { id: true },
-    });
-    if (existingAppointment) return NextResponse.json({ error: "slot_taken" }, { status: 409 });
-
-    // Double-book guard — any non-cancelled appointment overlapping this window.
-    const appointment = await prisma.$transaction(async (tx) => {
-      const clash = await lockAndFindReservationConflict(tx, { start: startDate, end: endDate, practitionerIds: [practitionerId], roomId: matchingSlot.roomId, deviceId: matchingSlot.deviceId });
-      if (clash) throw new Error("slot_taken");
-      const existing = accountClient
-        ? accountClient
-        : await tx.client.findFirst({ where: { email, userId: null } });
-      const client = existing
-        ? await tx.client.update({ where: { id: existing.id }, data: { fullName, phone, consentGdpr: true } })
-        : await tx.client.create({ data: { fullName, phone, email, consentGdpr: true } });
-      const created = await tx.appointment.create({ data: {
-        clientId: client.id,
-        practitionerId,
-        serviceId,
-        roomId: matchingSlot.roomId,
-        deviceId: matchingSlot.deviceId,
-        locale,
-        start: startDate,
-        end: endDate,
-        status: "BOOKED",
-        channel: "web",
-        notes,
-        procedureIndex: procedure?.index ?? null,
-        procedureTitle: procedure?.procedure.title ?? null,
-        procedurePrice: procedure?.procedure.price ?? null,
-      }, include: {
-        client: { select: { fullName: true, email: true, phone: true } },
-        service: { select: { slug: true } },
-        practitioner: { select: { name: true } },
-      } });
-      await tx.consent.create({ data: { clientId: client.id, type: "gdpr_booking", granted: true } });
-      return created;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     try {
       await notifyAppointmentReceipt(appointment, locale);
@@ -203,7 +210,11 @@ export async function POST(req: NextRequest) {
         : null,
     });
   } catch (error) {
-    if ((error instanceof Error && error.message === "slot_taken") || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"))
+    if (
+      (error instanceof Error && error.message === "slot_taken") ||
+      (error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034")
+    )
       return NextResponse.json({ error: "slot_taken" }, { status: 409 });
     // DB unavailable — signal the wizard to show its call/email fallback.
     return NextResponse.json(

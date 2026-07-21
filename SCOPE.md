@@ -28,9 +28,9 @@ sensitive access/security events are recorded in an immutable admin-visible audi
 Shared calendar and employee-owned booking (owner-approved, 2026-07-19): the admin exposes
 `/admin/kalenteri` as a Timma-inspired shared day/week/month calendar. All active employees
 are visible in separate time-based columns; appointment cards show client, procedure, room,
-and time. Services have one fixed public owner plus optional qualified backup employees.
-Public booking remains Service -> Time -> You, but the selected service now writes directly
-to its configured employee schedule. Admins may move appointments between qualified employees;
+and time. Bookable services share an ordered qualified employee roster. Public booking remains
+Service -> Time -> You and exposes no employee picker; for each chosen time the server assigns
+the first available qualified employee in calendar display order. Admins may move appointments between qualified employees;
 staff may create and move appointments only within their linked employee calendar and compatible
 rooms/devices. The calendar exposes a
 Create appointment action and empty available times can be clicked to prefill a new booking.
@@ -46,11 +46,16 @@ and a mobile service tray. Day columns are per employee; week columns are groupe
 and employee; month cells use compact rows with overflow disclosure. Mone design tokens remain
 authoritative for the visual treatment.
 
-Five localized internal calendar-service templates (lunch break, personal time, work errand,
-sick leave, and vacation) form a separate unavailable-time reservation layer. They never enter
-clinical services, client histories, receipts, reminders, or treatment content. Admins configure
-template labels, color, duration, order, and active state; staff may use active templates only.
-Dragging or selecting a template and choosing a 15-minute calendar cell opens a localized
+The localized internal calendar-service catalog is generated from `internal-services.txt` and
+forms a separate unavailable-time reservation layer. Its first four entries (lunch break,
+personal time, work errand, and sick leave) are selected by default; vacation and every other
+entry remain available but unselected. The Edit dialog
+lists the complete catalog and lets each user keep up to 24 shortcuts with Finnish drag labels no
+longer than 14 characters. These entries never enter clinical services, client histories,
+receipts, reminders, or treatment content. Admins configure template labels, color, duration,
+order, and active state; staff may use active templates only.
+Dragging or selecting a template and choosing a quarter-hour position inside a visible one-hour
+calendar row opens a localized
 Booking info editor for sequential items, employee, optional room or device, notes, and repeat/
 add-to-others. Recurrence supports weekdays, an end date no more than 12 months away, admins'
 multi-employee assignment, staff-own-only assignment, atomic conflict validation, and at most
@@ -84,10 +89,11 @@ transactional email/SMS. Appointment administration supports confirmation, avail
 validated rescheduling, completion, cancellation, reminders, and audited custom messages.
 Customer-facing automatic messages use the record locale through Resend and Sinch.
 
-Public booking assignment (superseded 2026-07-19): the customer flow remains Service ->
-Time -> You and customers do not choose between employees. Each bookable service has one
-fixed public owner; choosing the service deterministically selects that employee and exposes
-only their resource-safe availability. Historical appointment relations are preserved.
+Public booking assignment (owner-approved 2026-07-21): the customer flow remains Service ->
+Time -> You and customers do not choose between employees. Each bookable service has an ordered
+qualified employee roster. Availability is the union of conflict-free employee/resource slots;
+creation assigns the first available employee in display order inside the locked booking
+transaction. Historical appointment relations are preserved.
 
 Themed controls (owner-approved, 2026-07-18): all dropdowns, calendars, and time pickers use
 custom Mone Beauty controls. Compact fields use popovers and the booking calendar remains

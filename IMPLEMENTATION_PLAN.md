@@ -33,8 +33,9 @@
 
 - Add localized `/admin/kalenteri` navigation and reuse the calendar presentation at
   `/henkilosto` with role-specific data and controls.
-- Replace the synthetic default-provider assignment with a fixed primary employee per
-  service plus qualified internal backups; preserve historical relations.
+- Replace the synthetic default-provider assignment with four real, ordered qualified employees;
+  public booking assigns the first conflict-free employee in display order while preserving
+  historical relations and keeping employee identity out of the customer flow.
 - Add admin setup for employees, working hours, rooms, physical devices, and service/resource
   mappings.
 - Render Timma-inspired day/week/month views with all employees visible, availability
@@ -67,6 +68,21 @@
   locks; apply them to public and internal appointment creation and rescheduling paths.
 - Cover recurrence, snapping, durations, localization, limits, RBAC, concurrency, availability,
   automatic practitioner roster population, responsive interaction, lint, typecheck, and build.
+
+## Timma employee roster and palette fidelity (owner-approved, 2026-07-21)
+
+- Replace the visible synthetic clinic employee with Ilona Bagaturija, Irene, Vladislava, and
+  Inna; provision linked staff accounts, stable calendar colors, and employee-filter persistence.
+- Generate the full 119-entry Finnish internal-service catalog from `internal-services.txt`, keep
+  the first four selected by default with all remaining rows unselected, and add a per-user Edit dialog for up to 24 visible,
+  ordered, 14-character shortcuts in the desktop rail/mobile tray.
+- Drop internal services onto exact 15-minute positions within visible hourly rows and open the reference-style Booking info
+  editor prefilled with service, employee, date, start/end, resource, notes, and recurrence.
+- Keep full Monday-first weeks, render vacant one-hour rows with a 10:00–19:00 empty-grid
+  fallback, expose quarter-hour targets only on hover/drop, add a visible drag overlay, and
+  compact the service/employee tiles.
+- Aggregate public availability across the ordered qualified roster and allocate the first
+  conflict-free employee/resource atomically without exposing employee identity publicly.
 
 ## Client account and integration observability expansion (owner-approved, 2026-07-19)
 

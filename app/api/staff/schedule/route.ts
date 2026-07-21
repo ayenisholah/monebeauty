@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auditForUser, requireApiUser } from "@/lib/auth";
-import { getDefaultPractitionerId } from "@/lib/booking";
+import { getFirstActivePractitionerId } from "@/lib/booking";
 import type { AuthUser } from "@/lib/auth";
 import {
   dateFromYmd,
@@ -25,7 +25,7 @@ function forbidden() {
 async function resolvePractitionerId(user: AuthUser, requested?: unknown) {
   if (user.role === "ADMIN") {
     const id = String(requested ?? "");
-    return id || getDefaultPractitionerId();
+    return id || getFirstActivePractitionerId();
   }
   const staff = await prisma.staffUser.findUnique({
     where: { userId: user.id },

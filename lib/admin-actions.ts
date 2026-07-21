@@ -23,7 +23,7 @@ import {
 import { adminBase, adminHref } from "@/lib/admin-routing";
 import type { Locale as AppLocale } from "@/i18n/routing";
 import { PUBLIC_PATHS, articlePath, productPath } from "@/lib/public-routes";
-import { openSlots } from "@/lib/booking";
+import { openPublicSlotCandidates } from "@/lib/booking";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 import { runExternalApiAttempt } from "@/lib/external-api";
 import {
@@ -1194,12 +1194,20 @@ export async function refundOrderAction(formData: FormData) {
       operation: "refunds.create",
       context: { orderId: order.id, correlationId: refund.idempotencyKey },
       requestMetadata: { amount: requestedMinor, currency: order.currency },
-      run: () => stripeClient().refunds.create({
-        payment_intent: payment.stripePaymentIntentId!,
-        amount: requestedMinor,
-        reason: "requested_by_customer",
-        metadata: { source: "website", orderId: order.id, refundId: refund.id },
-      }, { idempotencyKey: refund.idempotencyKey }),
+      run: () =>
+        stripeClient().refunds.create(
+          {
+            payment_intent: payment.stripePaymentIntentId!,
+            amount: requestedMinor,
+            reason: "requested_by_customer",
+            metadata: {
+              source: "website",
+              orderId: order.id,
+              refundId: refund.id,
+            },
+          },
+          { idempotencyKey: refund.idempotencyKey },
+        ),
       responseMetadata: (value) => ({ id: value.id, status: value.status }),
     });
     await prisma.refund.update({
@@ -1399,48 +1407,55 @@ export async function updateAppointmentAction(formData: FormData) {
     const start = value(formData, "start");
     if (!start || Number.isNaN(Date.parse(start)))
       redirect(`${returnTo}?error=invalid_time`);
-    const available = await openSlots({
+    const candidates = await openPublicSlotCandidates({
       dateStr: start.slice(0, 10),
       serviceKey: appointment.service.slug,
+      start,
     });
-    const slot = available.find((candidate) => candidate.start === start);
-    if (!slot) redirect(`${returnTo}?error=slot_taken`);
-    const overlap = await prisma.appointment.findFirst({
-      where: {
-        id: { not: id },
-        practitionerId: slot.practitionerId,
-        status: { not: "CANCELLED" },
-        start: { lt: new Date(slot.end) },
-        end: { gt: new Date(slot.start) },
-      },
-      select: { id: true },
-    });
-    if (overlap) redirect(`${returnTo}?error=slot_taken`);
+    if (!candidates.length) redirect(`${returnTo}?error=slot_taken`);
     const updated = await prisma.$transaction(async (tx) => {
-      const reservationConflict = await lockAndFindReservationConflict(tx, { start: new Date(slot.start), end: new Date(slot.end), practitionerIds: [slot.practitionerId], roomId: slot.roomId, deviceId: slot.deviceId, excludeAppointmentId: id });
-      if (reservationConflict) throw new Error("slot_taken");
-      const changed = await tx.appointment.update({ where: { id }, data: {
-        start: new Date(slot.start),
-        end: new Date(slot.end),
-        practitionerId: slot.practitionerId,
-        roomId: slot.roomId,
-        deviceId: slot.deviceId,
-        version: { increment: 1 },
-        status: "RESCHEDULED",
-        confirmedAt: null,
-      }, include: appointmentInclude });
+      let slot: (typeof candidates)[number] | null = null;
+      for (const candidate of candidates) {
+        const reservationConflict = await lockAndFindReservationConflict(tx, {
+          start: new Date(candidate.start),
+          end: new Date(candidate.end),
+          practitionerIds: [candidate.practitionerId],
+          roomId: candidate.roomId,
+          deviceId: candidate.deviceId,
+          excludeAppointmentId: id,
+        });
+        if (!reservationConflict) {
+          slot = candidate;
+          break;
+        }
+      }
+      if (!slot) throw new Error("slot_taken");
+      const changed = await tx.appointment.update({
+        where: { id },
+        data: {
+          start: new Date(slot.start),
+          end: new Date(slot.end),
+          practitionerId: slot.practitionerId,
+          roomId: slot.roomId,
+          deviceId: slot.deviceId,
+          version: { increment: 1 },
+          status: "RESCHEDULED",
+          confirmedAt: null,
+        },
+        include: appointmentInclude,
+      });
       await tx.appointmentEvent.create({
-      data: {
-        appointmentId: id,
-        kind: "RESCHEDULED",
-        actor: user.email,
-        previousStatus: appointment.status,
-        nextStatus: changed.status,
-        previousStart: appointment.start,
-        previousEnd: appointment.end,
-        nextStart: changed.start,
-        nextEnd: changed.end,
-      },
+        data: {
+          appointmentId: id,
+          kind: "RESCHEDULED",
+          actor: user.email,
+          previousStatus: appointment.status,
+          nextStatus: changed.status,
+          previousStart: appointment.start,
+          previousEnd: appointment.end,
+          nextStart: changed.start,
+          nextEnd: changed.end,
+        },
       });
       return changed;
     });

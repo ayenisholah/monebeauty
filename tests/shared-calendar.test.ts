@@ -100,6 +100,8 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /"day" \| "week" \| "month"/);
   assert.match(calendar, /data\.practitioners\.map/);
   assert.match(calendar, /DndContext/);
+  assert.match(calendar, /DragOverlay/);
+  assert.match(calendar, /handleDragStart/);
   assert.match(calendar, /Confirm calendar change/);
   assert.match(calendar, /appointment\.clientName/);
   assert.match(calendar, /appointment\.procedure/);
@@ -107,6 +109,23 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /calendarWorkingBounds/);
   assert.match(calendar, /outsideAppointments/);
   assert.doesNotMatch(calendar, /const HOUR_START = 6/);
+  assert.match(calendar, /grid-cols-\[140px_minmax\(0,1fr\)\]/);
+  assert.match(calendar, /InternalServicePaletteEditor/);
+  assert.match(calendar, /cell:\$\{day\}:\$\{practitioner\.id\}:\$\{minute\}/);
+  assert.match(
+    calendar,
+    /calendarDropStart\(targetDate, Number\(targetMinuteRaw\)\)/,
+  );
+  assert.match(calendar, /startMinute: 10 \* 60/);
+  assert.match(calendar, /endMinute: 19 \* 60/);
+  assert.match(calendar, /transparent \$\{hourHeight - 1\}px/);
+  assert.match(calendar, /border-0 bg-transparent/);
+  assert.match(calendar, /isOver && "bg-accent\/20/);
+  assert.match(calendar, /length: view === "day" \? 1 : 7/);
+  assert.match(calendar, /lg:min-h-\[34px\]/);
+  assert.match(calendar, /const employeeButtonCls =\s*"[^"]*min-h-\[34px\]/);
+  assert.match(calendarApi, /dragLabel:/);
+  assert.match(calendarApi, /defaultEnabled:/);
 });
 
 test("calendar view persists independently for admin and staff", () => {
@@ -151,7 +170,7 @@ test("calendar permissions restrict staff operations to their linked employee", 
 
 test("staff can create confirmed appointments from a button or open time", () => {
   assert.match(calendar, /t\.create/);
-  assert.match(calendar, /onCreate\(slot\.start, practitioner\.id\)/);
+  assert.match(calendar, /onCreate\(start, practitioner\.id\)/);
   assert.match(appointmentForm, /Search clients/);
   assert.match(appointmentForm, /Add a new client/);
   assert.match(createApi, /status: "CONFIRMED"/);

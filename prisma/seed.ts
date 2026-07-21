@@ -1,10 +1,16 @@
 import { randomBytes, scrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { PrismaClient, type ServiceCategory } from "@prisma/client";
+import { INTERNAL_CALENDAR_SERVICES } from "../lib/internal-calendar-services";
 
 const prisma = new PrismaClient();
 const scryptAsync = promisify(scrypt);
-const DEFAULT_BOOKING_PRACTITIONER_NAME = "Mone Beauty Clinic";
+const CALENDAR_STAFF = [
+  { name: "Ilona Bagaturija", color: "#D5897E" },
+  { name: "Irene", color: "#9B9BEF" },
+  { name: "Vladislava", color: "#7F83D8" },
+  { name: "Inna", color: "#A9B88E" },
+] as const;
 
 // Keep in sync with content/booking-services.ts (kept inline so `prisma db seed` via tsx
 // needs no path-alias resolution). The booking API also self-heals these rows if missing.
@@ -32,14 +38,6 @@ const BUSINESS_HOURS = {
   stepMin: 30,
   daysAhead: 30,
 };
-
-const CALENDAR_BLOCK_TEMPLATES = [
-  { key: "lunch", labelFi: "Lounastauko", labelEn: "Lunch break", labelRu: "Обеденный перерыв", color: "#D8C5A8" },
-  { key: "personal", labelFi: "Oma aika", labelEn: "Personal time", labelRu: "Личное время", color: "#CBB8A6" },
-  { key: "errand", labelFi: "Työasia", labelEn: "Work errand", labelRu: "Рабочее поручение", color: "#B7C7BD" },
-  { key: "sick", labelFi: "Sairausloma", labelEn: "Sick leave", labelRu: "Больничный", color: "#D6AAA0" },
-  { key: "vacation", labelFi: "Loma", labelEn: "Vacation", labelRu: "Отпуск", color: "#B8C5D1" },
-] as const;
 
 function slotsForDate(date: Date) {
   const slots = [];
@@ -74,26 +72,54 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
-  for (const [displayOrder, template] of CALENDAR_BLOCK_TEMPLATES.entries()) {
+  for (const template of INTERNAL_CALENDAR_SERVICES) {
+    const data = {
+      key: template.key,
+      labelFi: template.labelFi,
+      labelEn: template.labelEn,
+      labelRu: template.labelRu,
+      color: template.color,
+      displayOrder: template.displayOrder,
+      defaultDurationMin: template.defaultDurationMin,
+      active: true,
+    };
     await prisma.calendarBlockTemplate.upsert({
       where: { key: template.key },
-      update: {},
-      create: { ...template, displayOrder, defaultDurationMin: 60 },
+      update: data,
+      create: data,
     });
   }
 
-  let practitioner = await prisma.practitioner.findFirst({
-    where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
-    orderBy: { id: "asc" },
-  });
-  if (!practitioner) {
-    practitioner = await prisma.practitioner.create({
-      data: {
-        name: DEFAULT_BOOKING_PRACTITIONER_NAME,
-        role: "Specialist",
-        calendarColor: "#B89B72",
-      },
+  const practitioners: Array<{ id: string }> = [];
+  for (const [displayOrder, staff] of CALENDAR_STAFF.entries()) {
+    const aliases =
+      staff.name === "Ilona Bagaturija" ? [staff.name, "Ilona"] : [staff.name];
+    const existing = await prisma.practitioner.findFirst({
+      where: { name: { in: aliases, mode: "insensitive" } },
+      orderBy: { id: "asc" },
     });
+    practitioners.push(
+      existing
+        ? await prisma.practitioner.update({
+            where: { id: existing.id },
+            data: {
+              name: staff.name,
+              active: true,
+              role: "Specialist",
+              displayOrder,
+              calendarColor: staff.color,
+            },
+          })
+        : await prisma.practitioner.create({
+            data: {
+              name: staff.name,
+              role: "Specialist",
+              active: true,
+              displayOrder,
+              calendarColor: staff.color,
+            },
+          }),
+    );
   }
 
   const serviceIds: string[] = [];
@@ -122,7 +148,7 @@ async function main() {
       update: {
         category: s.category,
         published: s.bookable,
-        primaryPractitionerId: s.bookable ? practitioner.id : null,
+        primaryPractitionerId: null,
         requiresDevice: Boolean(deviceId),
         rooms: s.bookable ? { connect: { id: treatmentRoom.id } } : undefined,
         devices: deviceId ? { connect: { id: deviceId } } : undefined,
@@ -131,7 +157,7 @@ async function main() {
         slug: s.slug,
         category: s.category,
         published: s.bookable,
-        primaryPractitionerId: s.bookable ? practitioner.id : null,
+        primaryPractitionerId: null,
         requiresDevice: Boolean(deviceId),
         rooms: s.bookable ? { connect: { id: treatmentRoom.id } } : undefined,
         devices: deviceId ? { connect: { id: deviceId } } : undefined,
@@ -140,12 +166,12 @@ async function main() {
     if (s.bookable) serviceIds.push(service.id);
   }
 
-  await prisma.practitioner.update({
-    where: { id: practitioner.id },
-    data: {
-      services: { connect: serviceIds.map((id) => ({ id })) },
-    },
-  });
+  for (const practitioner of practitioners) {
+    await prisma.practitioner.update({
+      where: { id: practitioner.id },
+      data: { services: { set: serviceIds.map((id) => ({ id })) } },
+    });
+  }
 
   for (const [index, amount] of [50, 100, 350, 650, 1000].entries()) {
     const product = await prisma.product.upsert({
@@ -205,20 +231,19 @@ async function main() {
     const date = new Date(today);
     date.setUTCDate(today.getUTCDate() + i);
     if (!BUSINESS_HOURS.openDays.includes(date.getUTCDay())) continue;
-    await prisma.availability.upsert({
-      where: {
-        practitionerId_date: {
+    for (const practitioner of practitioners) {
+      await prisma.availability.upsert({
+        where: {
+          practitionerId_date: { practitionerId: practitioner.id, date },
+        },
+        update: {},
+        create: {
           practitionerId: practitioner.id,
           date,
+          slots: slotsForDate(date),
         },
-      },
-      update: {},
-      create: {
-        practitionerId: practitioner.id,
-        date,
-        slots: slotsForDate(date),
-      },
-    });
+      });
+    }
   }
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -250,7 +275,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded default practitioner + ${SERVICES.length} services + gift cards + ${BUSINESS_HOURS.daysAhead} days of availability.`,
+    `Seeded ${practitioners.length} calendar employees + ${SERVICES.length} services + gift cards + ${BUSINESS_HOURS.daysAhead} days of availability.`,
   );
 }
 

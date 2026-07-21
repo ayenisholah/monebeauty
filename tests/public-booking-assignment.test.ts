@@ -58,18 +58,21 @@ test("provider details stay internal throughout the public booking flow", () => 
 });
 
 test("public booking APIs ignore forged practitioner values", () => {
-  assert.match(bookingRoute, /openPublicSlots/);
+  assert.match(bookingRoute, /openPublicSlotCandidates/);
   assert.match(slotsRoute, /openPublicSlots/);
   assert.doesNotMatch(bookingRoute, /payload\.practitionerId/);
   assert.doesNotMatch(slotsRoute, /searchParams\.get\("practitioner"\)/);
-  assert.match(bookingRoute, /practitionerId = matchingSlot\.practitionerId/);
+  assert.match(bookingRoute, /practitionerId: matchingSlot\.practitionerId/);
 });
 
-test("the service owner and exclusive resources control new and rescheduled availability", () => {
+test("the ordered qualified roster and exclusive resources control availability", () => {
+  assert.match(bookingLib, /practitioners: \{/);
+  assert.match(bookingLib, /displayOrder: "asc"/);
   assert.match(
     bookingLib,
-    /openSlots[\s\S]*?practitionerId = record\.svc\.primaryPractitionerId/,
+    /for \(const practitioner of record\.svc\.practitioners\)/,
   );
+  assert.match(bookingLib, /if \(seen\.has\(slot\.start\)\) return false/);
   assert.match(bookingLib, /record\.svc\.rooms\.length === 0/);
   assert.match(bookingLib, /record\.svc\.requiresDevice/);
   assert.match(bookingLib, /booking\.deviceId !== item\.id/);
@@ -78,16 +81,14 @@ test("the service owner and exclusive resources control new and rescheduled avai
   assert.match(changeRequests, /practitionerId: matching\.practitionerId/);
   assert.match(changeRequests, /roomId: matching\.roomId/);
   assert.match(changeRequests, /deviceId: matching\.deviceId/);
-  assert.match(
-    bookingRoute,
-    /OR: \[[\s\S]*?\{ practitionerId \}[\s\S]*?roomId: matchingSlot\.roomId/,
-  );
+  assert.match(bookingRoute, /for \(const candidate of candidates\)/);
+  assert.match(bookingRoute, /lockAndFindReservationConflict/);
 });
 
 test("public date pickers receive batched resource-safe working dates", () => {
   assert.match(bookingLib, /openPublicDates/);
-  assert.match(bookingLib, /availability\.findMany/);
-  assert.match(bookingLib, /appointment\.findMany/);
+  assert.match(bookingLib, /index < requested\.length; index \+= 7/);
+  assert.match(bookingLib, /batch\.map\(\(dateStr\) => openSlots/);
   assert.match(availabilityRoute, /62 \* 86400000/);
   assert.match(wizard, /api\/booking\/availability/);
   assert.match(wizard, /availableDates=\{availableDates\}/);

@@ -1,8 +1,5 @@
 import { prisma } from "@/lib/db";
-import {
-  BUSINESS_HOURS,
-  DEFAULT_BOOKING_PRACTITIONER_NAME,
-} from "@/lib/booking-config";
+import { BUSINESS_HOURS } from "@/lib/booking-config";
 import type { Locale } from "@/i18n/routing";
 import {
   availabilityCovers,
@@ -94,8 +91,11 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
       id: true,
       slug: true,
       durationMin: true,
-      primaryPractitionerId: true,
-      primaryPractitioner: { select: { workingHours: true } },
+      practitioners: {
+        where: { active: true },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+        select: { id: true, workingHours: true },
+      },
       requiresDevice: true,
       rooms: {
         where: { active: true },
@@ -151,8 +151,7 @@ async function candidateSlotsForPractitioner(
   }));
 }
 
-/** Open slots for a date + service: availability candidates minus past and booked overlaps. */
-export async function openSlots({
+async function collectSlotCandidates({
   dateStr,
   serviceKey,
   locale,
@@ -164,12 +163,8 @@ export async function openSlots({
   const record = await serviceRecord(serviceKey, locale);
   if (!record) return [];
   const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
-  const workingHours = parseWorkingHours(
-    record.svc.primaryPractitioner?.workingHours,
-  );
-
-  const practitionerId = record.svc.primaryPractitionerId;
-  if (!practitionerId || record.svc.rooms.length === 0) return [];
+  const practitionerIds = record.svc.practitioners.map((item) => item.id);
+  if (!practitionerIds.length || record.svc.rooms.length === 0) return [];
   if (record.svc.requiresDevice && record.svc.devices.length === 0) return [];
 
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -180,7 +175,7 @@ export async function openSlots({
       start: { gte: dayStart, lt: dayEnd },
       status: { not: "CANCELLED" },
       OR: [
-        { practitionerId },
+        { practitionerId: { in: practitionerIds } },
         { roomId: { in: record.svc.rooms.map((room) => room.id) } },
         ...(record.svc.devices.length
           ? [
@@ -207,64 +202,137 @@ export async function openSlots({
       start: { lt: dayEnd },
       end: { gt: dayStart },
       OR: [
-        { participants: { some: { practitionerId } } },
+        { participants: { some: { practitionerId: { in: practitionerIds } } } },
         { roomId: { in: record.svc.rooms.map((room) => room.id) } },
-        ...(record.svc.devices.length ? [{ deviceId: { in: record.svc.devices.map((device) => device.id) } }] : []),
+        ...(record.svc.devices.length
+          ? [
+              {
+                deviceId: { in: record.svc.devices.map((device) => device.id) },
+              },
+            ]
+          : []),
       ],
     },
-    select: { roomId: true, deviceId: true, start: true, end: true, participants: { select: { practitionerId: true } } },
+    select: {
+      roomId: true,
+      deviceId: true,
+      start: true,
+      end: true,
+      participants: { select: { practitionerId: true } },
+    },
   });
 
   const now = Date.now();
   const out: SlotDto[] = [];
-  const candidates = await candidateSlotsForPractitioner(
-    dateStr,
-    duration,
-    practitionerId,
-    workingHours,
-  );
-  for (const candidate of candidates) {
-    if (candidate.start.getTime() <= now) continue;
-    const employeeClash = booked.some(
-      (booking) =>
-        booking.practitionerId === practitionerId &&
-        overlaps(candidate.start, candidate.end, booking.start, booking.end),
+  for (const practitioner of record.svc.practitioners) {
+    const candidates = await candidateSlotsForPractitioner(
+      dateStr,
+      duration,
+      practitioner.id,
+      parseWorkingHours(practitioner.workingHours),
     );
-    const employeeBlock = blocked.some((block) => block.participants.some((participant) => participant.practitionerId === practitionerId) && overlaps(candidate.start, candidate.end, block.start, block.end));
-    if (employeeClash || employeeBlock) continue;
-    const room = record.svc.rooms.find((item) =>
-      booked.every(
+    for (const candidate of candidates) {
+      if (candidate.start.getTime() <= now) continue;
+      const employeeClash = booked.some(
         (booking) =>
-          booking.roomId !== item.id ||
-          !overlaps(candidate.start, candidate.end, booking.start, booking.end),
-      ) && blocked.every((block) => block.roomId !== item.id || !overlaps(candidate.start, candidate.end, block.start, block.end)),
-    );
-    if (!room) continue;
-    const device = record.svc.requiresDevice
-      ? record.svc.devices.find((item) =>
+          booking.practitionerId === practitioner.id &&
+          overlaps(candidate.start, candidate.end, booking.start, booking.end),
+      );
+      const employeeBlock = blocked.some(
+        (block) =>
+          block.participants.some(
+            (participant) => participant.practitionerId === practitioner.id,
+          ) && overlaps(candidate.start, candidate.end, block.start, block.end),
+      );
+      if (employeeClash || employeeBlock) continue;
+      const room = record.svc.rooms.find(
+        (item) =>
           booked.every(
             (booking) =>
-              booking.deviceId !== item.id ||
+              booking.roomId !== item.id ||
               !overlaps(
                 candidate.start,
                 candidate.end,
                 booking.start,
                 booking.end,
               ),
-          ) && blocked.every((block) => block.deviceId !== item.id || !overlaps(candidate.start, candidate.end, block.start, block.end)),
-        )
-      : null;
-    if (record.svc.requiresDevice && !device) continue;
-    out.push({
-      start: candidate.start.toISOString(),
-      end: candidate.end.toISOString(),
-      label: dateLabel(candidate.start),
-      practitionerId,
-      roomId: room.id,
-      deviceId: device?.id ?? null,
-    });
+          ) &&
+          blocked.every(
+            (block) =>
+              block.roomId !== item.id ||
+              !overlaps(candidate.start, candidate.end, block.start, block.end),
+          ),
+      );
+      if (!room) continue;
+      const device = record.svc.requiresDevice
+        ? record.svc.devices.find(
+            (item) =>
+              booked.every(
+                (booking) =>
+                  booking.deviceId !== item.id ||
+                  !overlaps(
+                    candidate.start,
+                    candidate.end,
+                    booking.start,
+                    booking.end,
+                  ),
+              ) &&
+              blocked.every(
+                (block) =>
+                  block.deviceId !== item.id ||
+                  !overlaps(
+                    candidate.start,
+                    candidate.end,
+                    block.start,
+                    block.end,
+                  ),
+              ),
+          )
+        : null;
+      if (record.svc.requiresDevice && !device) continue;
+      out.push({
+        start: candidate.start.toISOString(),
+        end: candidate.end.toISOString(),
+        label: dateLabel(candidate.start),
+        practitionerId: practitioner.id,
+        roomId: room.id,
+        deviceId: device?.id ?? null,
+      });
+    }
   }
-  return out.sort((a, b) => a.start.localeCompare(b.start));
+  return out.sort(
+    (a, b) =>
+      a.start.localeCompare(b.start) ||
+      practitionerIds.indexOf(a.practitionerId) -
+        practitionerIds.indexOf(b.practitionerId),
+  );
+}
+
+/** Open public/admin slots, deduplicated to the first available employee. */
+export async function openSlots(args: {
+  dateStr: string;
+  serviceKey: string;
+  locale?: Locale;
+}): Promise<SlotDto[]> {
+  const candidates = await collectSlotCandidates(args);
+  const seen = new Set<string>();
+  return candidates.filter((slot) => {
+    if (seen.has(slot.start)) return false;
+    seen.add(slot.start);
+    return true;
+  });
+}
+
+/** Ordered internal candidates used by the locked public booking transaction. */
+export async function openPublicSlotCandidates(args: {
+  dateStr: string;
+  serviceKey: string;
+  locale?: Locale;
+  start: string;
+}) {
+  return (await collectSlotCandidates(args)).filter(
+    (slot) => slot.start === args.start,
+  );
 }
 
 /** Dates with at least one currently bookable slot, resolved in one batched query. */
@@ -279,129 +347,31 @@ export async function openPublicDates({
   serviceKey: string;
   locale?: Locale;
 }): Promise<string[]> {
-  const record = await serviceRecord(serviceKey, locale);
-  if (!record?.svc.primaryPractitionerId || record.svc.rooms.length === 0)
-    return [];
-  if (record.svc.requiresDevice && record.svc.devices.length === 0) return [];
-
-  const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
-  const practitionerId = record.svc.primaryPractitionerId;
-  const workingHours = parseWorkingHours(
-    record.svc.primaryPractitioner?.workingHours,
-  );
   const from = new Date(`${fromDate}T00:00:00.000Z`);
   const through = new Date(`${toDate}T00:00:00.000Z`);
   const until = new Date(through.getTime() + 24 * 60 * 60 * 1000);
-  const [availabilityRows, booked, blocked] = await Promise.all([
-    prisma.availability.findMany({
-      where: { practitionerId, date: { gte: from, lt: until } },
-      select: { date: true, slots: true },
-    }),
-    prisma.appointment.findMany({
-      where: {
-        start: { lt: until },
-        end: { gt: from },
-        status: { not: "CANCELLED" },
-        OR: [
-          { practitionerId },
-          { roomId: { in: record.svc.rooms.map((room) => room.id) } },
-          ...(record.svc.devices.length
-            ? [
-                {
-                  deviceId: {
-                    in: record.svc.devices.map((device) => device.id),
-                  },
-                },
-              ]
-            : []),
-        ],
-      },
-      select: {
-        practitionerId: true,
-        roomId: true,
-        deviceId: true,
-        start: true,
-        end: true,
-      },
-    }),
-    prisma.calendarBlock.findMany({
-      where: {
-        status: "ACTIVE",
-        start: { lt: until }, end: { gt: from },
-        OR: [
-          { participants: { some: { practitionerId } } },
-          { roomId: { in: record.svc.rooms.map((room) => room.id) } },
-          ...(record.svc.devices.length ? [{ deviceId: { in: record.svc.devices.map((device) => device.id) } }] : []),
-        ],
-      },
-      select: { roomId: true, deviceId: true, start: true, end: true, participants: { select: { practitionerId: true } } },
-    }),
-  ]);
-  const availability = new Map(
-    availabilityRows.map((row) => [
-      row.date.toISOString().slice(0, 10),
-      row.slots,
-    ]),
-  );
-  const now = Date.now();
-  const dates: string[] = [];
-
+  const requested: string[] = [];
   for (
     let cursor = new Date(from);
     cursor < until;
     cursor = new Date(cursor.getTime() + 86400000)
   ) {
-    const dateStr = cursor.toISOString().slice(0, 10);
-    const raw = availability.get(dateStr);
-    if (!raw && !isOpenDate(dateStr, workingHours)) continue;
-    const candidates = raw
-      ? (Array.isArray(raw) ? (raw as AvailabilitySlot[]) : [])
-          .filter((slot) => (slot.status ?? "open") === "open")
-          .map((slot) => {
-            const start = new Date(slot.start);
-            return { start, end: new Date(start.getTime() + duration * 60000) };
-          })
-          .filter((slot) => availabilityCovers(raw, slot.start, slot.end))
-      : generateSlots(dateStr, duration, workingHours).map((start) => ({
-          start,
-          end: new Date(start.getTime() + duration * 60000),
-        }));
-    const hasBookable = candidates.some((candidate) => {
-      if (candidate.start.getTime() <= now) return false;
-      if (
-        booked.some(
-          (item) =>
-            item.practitionerId === practitionerId &&
-            overlaps(candidate.start, candidate.end, item.start, item.end),
-        )
-      )
-        return false;
-      if (blocked.some((item) => item.participants.some((participant) => participant.practitionerId === practitionerId) && overlaps(candidate.start, candidate.end, item.start, item.end))) return false;
-      const roomAvailable = record.svc.rooms.some((room) =>
-        booked.every(
-          (item) =>
-            item.roomId !== room.id ||
-            !overlaps(candidate.start, candidate.end, item.start, item.end),
-        ) && blocked.every((item) => item.roomId !== room.id || !overlaps(candidate.start, candidate.end, item.start, item.end)),
-      );
-      if (!roomAvailable) return false;
-      return (
-        !record.svc.requiresDevice ||
-        record.svc.devices.some((device) =>
-          booked.every(
-            (item) =>
-              item.deviceId !== device.id ||
-              !overlaps(candidate.start, candidate.end, item.start, item.end),
-          ) && blocked.every((item) => item.deviceId !== device.id || !overlaps(candidate.start, candidate.end, item.start, item.end)),
-        )
-      );
+    requested.push(cursor.toISOString().slice(0, 10));
+  }
+  const dates: string[] = [];
+  for (let index = 0; index < requested.length; index += 7) {
+    const batch = requested.slice(index, index + 7);
+    const results = await Promise.all(
+      batch.map((dateStr) => openSlots({ dateStr, serviceKey, locale })),
+    );
+    results.forEach((slots, offset) => {
+      if (slots.length) dates.push(batch[offset]);
     });
-    if (hasBookable) dates.push(dateStr);
   }
   return dates;
 }
 
-/** Public availability is always owned by the clinic's stable default practitioner. */
+/** Public availability uses the ordered qualified employee roster. */
 export async function openPublicSlots({
   dateStr,
   serviceKey,
@@ -414,52 +384,14 @@ export async function openPublicSlots({
   return openSlots({ dateStr, serviceKey, locale });
 }
 
-/** Find-or-create the single shared default practitioner (self-heals if unseeded). */
-export async function getDefaultPractitionerId(
-  serviceId?: string,
-): Promise<string> {
-  const existing = await prisma.practitioner.findFirst({
-    where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
-    orderBy: { id: "asc" },
+export async function getFirstActivePractitionerId(): Promise<string> {
+  const practitioner = await prisma.practitioner.findFirst({
+    where: { active: true },
+    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
     select: { id: true },
   });
-
-  let practitionerId = existing?.id;
-  if (!practitionerId) {
-    try {
-      practitionerId = (
-        await prisma.practitioner.create({
-          data: {
-            name: DEFAULT_BOOKING_PRACTITIONER_NAME,
-            role: "Specialist",
-          },
-          select: { id: true },
-        })
-      ).id;
-    } catch (err) {
-      // A concurrent request may have created it; re-resolve before giving up.
-      const again = await prisma.practitioner.findFirst({
-        where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
-        orderBy: { id: "asc" },
-        select: { id: true },
-      });
-      if (!again) throw err;
-      practitionerId = again.id;
-    }
-  }
-
-  if (serviceId) {
-    // Best-effort service link; a failed write must never break slot reads.
-    try {
-      await prisma.practitioner.update({
-        where: { id: practitionerId },
-        data: { services: { connect: { id: serviceId } } },
-      });
-    } catch (err) {
-      console.error("[booking] service link skipped", err);
-    }
-  }
-  return practitionerId;
+  if (!practitioner) throw new Error("employee_required");
+  return practitioner.id;
 }
 
 /** Resolve an existing database-owned booking service; runtime never self-seeds content. */

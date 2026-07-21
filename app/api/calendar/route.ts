@@ -7,6 +7,7 @@ import {
   parseWorkingHours,
 } from "@/lib/staff-schedule";
 import { staffPractitionerId } from "@/lib/calendar-scheduling";
+import { INTERNAL_CALENDAR_SERVICE_BY_KEY } from "@/lib/internal-calendar-services";
 
 export async function GET(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
@@ -34,80 +35,87 @@ export async function GET(req: NextRequest) {
     user.role === "STAFF"
       ? { active: true, id: ownPractitionerId! }
       : { active: true };
-  const [practitioners, rooms, devices, availabilities, appointments, templates, blocks] =
-    await Promise.all([
-      prisma.practitioner.findMany({
-        where: practitionerWhere,
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: {
-          id: true,
-          name: true,
-          role: true,
-          calendarColor: true,
-          workingHours: true,
-        },
-      }),
-      prisma.room.findMany({
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: { id: true, name: true },
-      }),
-      prisma.device.findMany({
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: { id: true, name: true },
-      }),
-      prisma.availability.findMany({
-        where: {
-          date: { gte: from, lt: to },
-          practitioner: practitionerWhere,
-        },
-        select: { practitionerId: true, date: true, slots: true },
-      }),
-      prisma.appointment.findMany({
-        where: {
-          status: { not: "CANCELLED" },
-          start: { lt: to },
-          end: { gt: from },
-          practitioner: practitionerWhere,
-        },
-        orderBy: { start: "asc" },
-        include: {
-          client: { select: { fullName: true } },
-          service: {
-            select: {
-              slug: true,
-              primaryPractitionerId: true,
-              practitioners: { select: { id: true } },
-              rooms: { where: { active: true }, select: { id: true } },
-              devices: { where: { active: true }, select: { id: true } },
-              requiresDevice: true,
-            },
+  const [
+    practitioners,
+    rooms,
+    devices,
+    availabilities,
+    appointments,
+    templates,
+    blocks,
+  ] = await Promise.all([
+    prisma.practitioner.findMany({
+      where: practitionerWhere,
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        calendarColor: true,
+        workingHours: true,
+      },
+    }),
+    prisma.room.findMany({
+      where: { active: true },
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+    prisma.device.findMany({
+      where: { active: true },
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+    prisma.availability.findMany({
+      where: {
+        date: { gte: from, lt: to },
+        practitioner: practitionerWhere,
+      },
+      select: { practitionerId: true, date: true, slots: true },
+    }),
+    prisma.appointment.findMany({
+      where: {
+        status: { not: "CANCELLED" },
+        start: { lt: to },
+        end: { gt: from },
+        practitioner: practitionerWhere,
+      },
+      orderBy: { start: "asc" },
+      include: {
+        client: { select: { fullName: true } },
+        service: {
+          select: {
+            slug: true,
+            primaryPractitionerId: true,
+            practitioners: { select: { id: true } },
+            rooms: { where: { active: true }, select: { id: true } },
+            devices: { where: { active: true }, select: { id: true } },
+            requiresDevice: true,
           },
-          room: { select: { id: true, name: true } },
-          device: { select: { id: true, name: true } },
         },
-      }),
-      prisma.calendarBlockTemplate.findMany({
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
-      }),
-      prisma.calendarBlock.findMany({
-        where: {
-          status: "ACTIVE",
-          start: { lt: to },
-          end: { gt: from },
-          participants: { some: { practitioner: practitionerWhere } },
-        },
-        orderBy: { start: "asc" },
-        include: {
-          participants: { select: { practitionerId: true } },
-          items: { orderBy: { displayOrder: "asc" } },
-          room: { select: { id: true, name: true } },
-          device: { select: { id: true, name: true } },
-        },
-      }),
-    ]);
+        room: { select: { id: true, name: true } },
+        device: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.calendarBlockTemplate.findMany({
+      where: { active: true },
+      orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
+    }),
+    prisma.calendarBlock.findMany({
+      where: {
+        status: "ACTIVE",
+        start: { lt: to },
+        end: { gt: from },
+        participants: { some: { practitioner: practitionerWhere } },
+      },
+      orderBy: { start: "asc" },
+      include: {
+        participants: { select: { practitionerId: true } },
+        items: { orderBy: { displayOrder: "asc" } },
+        room: { select: { id: true, name: true } },
+        device: { select: { id: true, name: true } },
+      },
+    }),
+  ]);
 
   const normalizedPractitioners = practitioners.map((practitioner) => ({
     ...practitioner,
@@ -129,6 +137,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
+    viewerId: user.id,
     practitioners: normalizedPractitioners,
     rooms,
     devices,
@@ -174,15 +183,29 @@ export async function GET(req: NextRequest) {
         appointment.status,
       ),
     })),
-    templates: templates.map((template) => ({
-      id: template.id,
-      key: template.key,
-      label: locale === "fi" ? template.labelFi : locale === "ru" ? template.labelRu : template.labelEn,
-      labels: { fi: template.labelFi, en: template.labelEn, ru: template.labelRu },
-      defaultDurationMin: template.defaultDurationMin,
-      color: template.color,
-      displayOrder: template.displayOrder,
-    })),
+    templates: templates.map((template) => {
+      const catalogEntry = INTERNAL_CALENDAR_SERVICE_BY_KEY.get(template.key);
+      return {
+        id: template.id,
+        key: template.key,
+        label:
+          locale === "fi"
+            ? template.labelFi
+            : locale === "ru"
+              ? template.labelRu
+              : template.labelEn,
+        labels: {
+          fi: template.labelFi,
+          en: template.labelEn,
+          ru: template.labelRu,
+        },
+        dragLabel: catalogEntry?.dragLabel ?? template.labelFi.slice(0, 14),
+        defaultEnabled: catalogEntry?.defaultEnabled ?? false,
+        defaultDurationMin: template.defaultDurationMin,
+        color: template.color,
+        displayOrder: template.displayOrder,
+      };
+    }),
     blocks: blocks.map((block) => ({
       id: block.id,
       seriesId: block.seriesId,
@@ -194,11 +217,18 @@ export async function GET(req: NextRequest) {
       deviceId: block.deviceId,
       room: block.room,
       device: block.device,
-      practitionerIds: block.participants.map((participant) => participant.practitionerId),
+      practitionerIds: block.participants.map(
+        (participant) => participant.practitionerId,
+      ),
       items: block.items.map((item) => ({
         templateId: item.templateId,
         durationMin: item.durationMin,
-        label: locale === "fi" ? item.labelFi : locale === "ru" ? item.labelRu : item.labelEn,
+        label:
+          locale === "fi"
+            ? item.labelFi
+            : locale === "ru"
+              ? item.labelRu
+              : item.labelEn,
       })),
     })),
   });
