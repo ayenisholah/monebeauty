@@ -13,7 +13,7 @@ async function admin() {
 export async function GET() {
   if (!(await admin()))
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  const [practitioners, rooms, devices, services, staffUsers] =
+  const [practitioners, rooms, devices, services, staffUsers, templates] =
     await Promise.all([
       prisma.practitioner.findMany({
         orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
@@ -49,12 +49,16 @@ export async function GET() {
           staff: { select: { practitionerId: true } },
         },
       }),
+      prisma.calendarBlockTemplate.findMany({
+        orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
+      }),
     ]);
   return NextResponse.json({
     practitioners,
     rooms,
     devices,
     staffUsers,
+    templates,
     services: services.map((service) => ({
       id: service.id,
       slug: service.slug,
@@ -79,6 +83,23 @@ export async function POST(req: NextRequest) {
   if (!payload) return bad("invalid_json");
   const action = String(payload.action ?? "");
 
+  if (action === "saveBlockTemplate") {
+    const id = String(payload.id ?? "");
+    const labelFi = String(payload.labelFi ?? "").trim().slice(0, 80);
+    const labelEn = String(payload.labelEn ?? "").trim().slice(0, 80);
+    const labelRu = String(payload.labelRu ?? "").trim().slice(0, 80);
+    const color = String(payload.color ?? "#B89B72");
+    const defaultDurationMin = Number(payload.defaultDurationMin);
+    if (!id || !labelFi || !labelEn || !labelRu || !/^#[0-9A-F]{6}$/i.test(color) || !Number.isInteger(defaultDurationMin) || defaultDurationMin < 15 || defaultDurationMin > 1440 || defaultDurationMin % 15)
+      return bad("invalid_template");
+    const row = await prisma.calendarBlockTemplate.update({
+      where: { id },
+      data: { labelFi, labelEn, labelRu, color, defaultDurationMin, active: payload.active !== false, displayOrder: Math.round(Number(payload.displayOrder) || 0) },
+    });
+    await prisma.auditLog.create({ data: { actor: user.email, actorUserId: user.id, actorRole: user.role, action: "calendar_block_template_updated", entity: "CalendarBlockTemplate", entityId: row.id } });
+    return NextResponse.json({ id: row.id });
+  }
+
   if (action === "savePractitioner") {
     const id = String(payload.id ?? "");
     const name = String(payload.name ?? "").trim();
@@ -93,9 +114,8 @@ export async function POST(req: NextRequest) {
       displayOrder: Math.round(Number(payload.displayOrder) || 0),
       active: payload.active !== false,
     };
-    const row = id
-      ? await prisma.practitioner.update({ where: { id }, data })
-      : await prisma.practitioner.create({ data });
+    if (!id) return bad("employee_accounts_only");
+    const row = await prisma.practitioner.update({ where: { id }, data });
     const userId = String(payload.userId ?? "");
     if (userId) {
       await prisma.staffUser.upsert({
@@ -107,7 +127,7 @@ export async function POST(req: NextRequest) {
     await prisma.auditLog.create({
       data: {
         actor: user.email,
-        action: id ? "calendar_employee_updated" : "calendar_employee_created",
+        action: "calendar_employee_updated",
         entity: "Practitioner",
         entityId: row.id,
       },

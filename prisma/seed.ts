@@ -33,6 +33,14 @@ const BUSINESS_HOURS = {
   daysAhead: 30,
 };
 
+const CALENDAR_BLOCK_TEMPLATES = [
+  { key: "lunch", labelFi: "Lounastauko", labelEn: "Lunch break", labelRu: "Обеденный перерыв", color: "#D8C5A8" },
+  { key: "personal", labelFi: "Oma aika", labelEn: "Personal time", labelRu: "Личное время", color: "#CBB8A6" },
+  { key: "errand", labelFi: "Työasia", labelEn: "Work errand", labelRu: "Рабочее поручение", color: "#B7C7BD" },
+  { key: "sick", labelFi: "Sairausloma", labelEn: "Sick leave", labelRu: "Больничный", color: "#D6AAA0" },
+  { key: "vacation", labelFi: "Loma", labelEn: "Vacation", labelRu: "Отпуск", color: "#B8C5D1" },
+] as const;
+
 function slotsForDate(date: Date) {
   const slots = [];
   for (
@@ -66,6 +74,14 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
+  for (const [displayOrder, template] of CALENDAR_BLOCK_TEMPLATES.entries()) {
+    await prisma.calendarBlockTemplate.upsert({
+      where: { key: template.key },
+      update: {},
+      create: { ...template, displayOrder, defaultDurationMin: 60 },
+    });
+  }
+
   let practitioner = await prisma.practitioner.findFirst({
     where: { name: DEFAULT_BOOKING_PRACTITIONER_NAME },
     orderBy: { id: "asc" },

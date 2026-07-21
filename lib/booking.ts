@@ -201,6 +201,19 @@ export async function openSlots({
       end: true,
     },
   });
+  const blocked = await prisma.calendarBlock.findMany({
+    where: {
+      status: "ACTIVE",
+      start: { lt: dayEnd },
+      end: { gt: dayStart },
+      OR: [
+        { participants: { some: { practitionerId } } },
+        { roomId: { in: record.svc.rooms.map((room) => room.id) } },
+        ...(record.svc.devices.length ? [{ deviceId: { in: record.svc.devices.map((device) => device.id) } }] : []),
+      ],
+    },
+    select: { roomId: true, deviceId: true, start: true, end: true, participants: { select: { practitionerId: true } } },
+  });
 
   const now = Date.now();
   const out: SlotDto[] = [];
@@ -217,13 +230,14 @@ export async function openSlots({
         booking.practitionerId === practitionerId &&
         overlaps(candidate.start, candidate.end, booking.start, booking.end),
     );
-    if (employeeClash) continue;
+    const employeeBlock = blocked.some((block) => block.participants.some((participant) => participant.practitionerId === practitionerId) && overlaps(candidate.start, candidate.end, block.start, block.end));
+    if (employeeClash || employeeBlock) continue;
     const room = record.svc.rooms.find((item) =>
       booked.every(
         (booking) =>
           booking.roomId !== item.id ||
           !overlaps(candidate.start, candidate.end, booking.start, booking.end),
-      ),
+      ) && blocked.every((block) => block.roomId !== item.id || !overlaps(candidate.start, candidate.end, block.start, block.end)),
     );
     if (!room) continue;
     const device = record.svc.requiresDevice
@@ -237,7 +251,7 @@ export async function openSlots({
                 booking.start,
                 booking.end,
               ),
-          ),
+          ) && blocked.every((block) => block.deviceId !== item.id || !overlaps(candidate.start, candidate.end, block.start, block.end)),
         )
       : null;
     if (record.svc.requiresDevice && !device) continue;
@@ -278,7 +292,7 @@ export async function openPublicDates({
   const from = new Date(`${fromDate}T00:00:00.000Z`);
   const through = new Date(`${toDate}T00:00:00.000Z`);
   const until = new Date(through.getTime() + 24 * 60 * 60 * 1000);
-  const [availabilityRows, booked] = await Promise.all([
+  const [availabilityRows, booked, blocked] = await Promise.all([
     prisma.availability.findMany({
       where: { practitionerId, date: { gte: from, lt: until } },
       select: { date: true, slots: true },
@@ -309,6 +323,18 @@ export async function openPublicDates({
         start: true,
         end: true,
       },
+    }),
+    prisma.calendarBlock.findMany({
+      where: {
+        status: "ACTIVE",
+        start: { lt: until }, end: { gt: from },
+        OR: [
+          { participants: { some: { practitionerId } } },
+          { roomId: { in: record.svc.rooms.map((room) => room.id) } },
+          ...(record.svc.devices.length ? [{ deviceId: { in: record.svc.devices.map((device) => device.id) } }] : []),
+        ],
+      },
+      select: { roomId: true, deviceId: true, start: true, end: true, participants: { select: { practitionerId: true } } },
     }),
   ]);
   const availability = new Map(
@@ -350,12 +376,13 @@ export async function openPublicDates({
         )
       )
         return false;
+      if (blocked.some((item) => item.participants.some((participant) => participant.practitionerId === practitionerId) && overlaps(candidate.start, candidate.end, item.start, item.end))) return false;
       const roomAvailable = record.svc.rooms.some((room) =>
         booked.every(
           (item) =>
             item.roomId !== room.id ||
             !overlaps(candidate.start, candidate.end, item.start, item.end),
-        ),
+        ) && blocked.every((item) => item.roomId !== room.id || !overlaps(candidate.start, candidate.end, item.start, item.end)),
       );
       if (!roomAvailable) return false;
       return (
@@ -365,7 +392,7 @@ export async function openPublicDates({
             (item) =>
               item.deviceId !== device.id ||
               !overlaps(candidate.start, candidate.end, item.start, item.end),
-          ),
+          ) && blocked.every((item) => item.deviceId !== device.id || !overlaps(candidate.start, candidate.end, item.start, item.end)),
         )
       );
     });

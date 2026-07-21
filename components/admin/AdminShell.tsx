@@ -20,18 +20,25 @@ import {
   UserCircle,
   UsersThree,
   ShieldCheck,
+  SidebarSimple,
   PlugsConnected,
   X,
 } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/routing";
 import { adminLogoutAction } from "@/lib/admin-actions";
 import { adminBase, adminHref, type AdminModule } from "@/lib/admin-routing";
+import {
+  ADMIN_SIDEBAR_COOKIE,
+  ADMIN_SIDEBAR_COOKIE_MAX_AGE,
+} from "@/lib/admin-sidebar";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
 
 type Labels = {
   appName: string;
   menu: string;
   close: string;
+  expandSidebar: string;
+  collapseSidebar: string;
   logout: string;
   locale: string;
   nav: Record<Exclude<AdminModule, "login">, string>;
@@ -63,15 +70,18 @@ export function AdminShell({
   locale,
   labels,
   user,
+  initialCollapsed,
   wide = false,
 }: {
   children: React.ReactNode;
   locale: Locale;
   labels: Labels;
   user: { email: string; name: string | null };
+  initialCollapsed: boolean;
   wide?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
   const pathname = usePathname();
   const router = useRouter();
   const drawerId = useId();
@@ -122,20 +132,44 @@ export function AdminShell({
     router.push(`${nextPath}${window.location.search}${window.location.hash}`);
   }
 
+  function setSidebarCollapsed(next: boolean) {
+    setCollapsed(next);
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${ADMIN_SIDEBAR_COOKIE}=${next ? "collapsed" : "expanded"}; Max-Age=${ADMIN_SIDEBAR_COOKIE_MAX_AGE}; Path=/; SameSite=Lax${secure}`;
+  }
+
   const sidebar = (
     <aside
       id={drawerId}
       ref={drawerRef}
       aria-label={labels.appName}
-      className={`fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,292px)] flex-col border-r border-line-header bg-card shadow-card transition-transform duration-200 motion-reduce:transition-none [@media(min-width:900px)]:translate-x-0 [@media(min-width:900px)]:shadow-none ${open ? "translate-x-0" : "-translate-x-full"}`}
+      className={`fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,292px)] flex-col border-r border-line-header bg-card shadow-card transition-[transform,width] duration-200 motion-reduce:transition-none [@media(min-width:900px)]:translate-x-0 [@media(min-width:900px)]:shadow-none ${collapsed ? "[@media(min-width:900px)]:w-[76px]" : "[@media(min-width:900px)]:w-[292px]"} ${open ? "translate-x-0" : "-translate-x-full"}`}
     >
-      <div className="flex min-h-[76px] items-center justify-between border-b border-line-hair px-[20px]">
+      <div
+        className={`flex min-h-[76px] items-center justify-between border-b border-line-hair px-[16px] ${collapsed ? "[@media(min-width:900px)]:justify-center" : ""}`}
+      >
         <Link
           href={adminBase(locale)}
-          className="font-display text-[23px] font-medium"
+          className={`font-display text-[23px] font-medium ${collapsed ? "[@media(min-width:900px)]:hidden" : ""}`}
         >
           {labels.appName}
         </Link>
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed(!collapsed)}
+          aria-expanded={!collapsed}
+          aria-controls={drawerId}
+          aria-label={collapsed ? labels.expandSidebar : labels.collapseSidebar}
+          title={collapsed ? labels.expandSidebar : labels.collapseSidebar}
+          className="hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-[4px] hover:bg-btn-fill focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none [@media(min-width:900px)]:inline-flex"
+        >
+          <SidebarSimple
+            size={22}
+            weight="thin"
+            aria-hidden="true"
+            className={`transition-transform duration-200 motion-reduce:transition-none ${collapsed ? "rotate-180" : ""}`}
+          />
+        </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -158,16 +192,31 @@ export function AdminShell({
               href={href}
               aria-current={active ? "page" : undefined}
               onClick={() => setOpen(false)}
-              className={`mb-[4px] flex min-h-[44px] items-center gap-[12px] rounded-[6px] px-[12px] font-sans text-[14px] transition-colors ${active ? "bg-btn-fill text-ink" : "text-body hover:bg-page hover:text-ink"}`}
+              aria-label={collapsed ? labels.nav[module] : undefined}
+              title={collapsed ? labels.nav[module] : undefined}
+              className={`mb-[4px] flex min-h-[44px] items-center gap-[12px] rounded-[6px] px-[12px] font-sans text-[14px] transition-[color,background-color,padding] ${collapsed ? "[@media(min-width:900px)]:justify-center [@media(min-width:900px)]:gap-0 [@media(min-width:900px)]:px-0" : ""} ${active ? "bg-btn-fill text-ink" : "text-body hover:bg-page hover:text-ink"}`}
             >
-              <Icon size={20} weight="thin" aria-hidden="true" />
-              {labels.nav[module]}
+              <Icon
+                size={20}
+                weight="thin"
+                aria-hidden="true"
+                className="shrink-0"
+              />
+              <span
+                className={
+                  collapsed ? "[@media(min-width:900px)]:sr-only" : undefined
+                }
+              >
+                {labels.nav[module]}
+              </span>
             </Link>
           );
         })}
       </nav>
       <div className="border-t border-line-hair p-[16px]">
-        <div className="mb-[12px] flex items-center gap-[10px]">
+        <div
+          className={`mb-[12px] flex items-center gap-[10px] ${collapsed ? "[@media(min-width:900px)]:hidden" : ""}`}
+        >
           <UserCircle size={26} weight="thin" aria-hidden="true" />
           <div className="min-w-0 font-sans">
             <div className="truncate text-[14px] text-ink">
@@ -176,7 +225,9 @@ export function AdminShell({
             <div className="truncate text-label text-muted">{user.email}</div>
           </div>
         </div>
-        <label className="mb-[10px] block font-sans text-label tracking-[.08em] text-muted uppercase">
+        <label
+          className={`mb-[10px] block font-sans text-label tracking-[.08em] text-muted uppercase ${collapsed ? "[@media(min-width:900px)]:hidden" : ""}`}
+        >
           {labels.locale}
           <ThemedSelect
             value={locale}
@@ -193,10 +244,18 @@ export function AdminShell({
           <input type="hidden" name="locale" value={locale} />
           <button
             type="submit"
-            className="flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[14px] text-body hover:bg-btn-fill hover:text-ink"
+            aria-label={collapsed ? labels.logout : undefined}
+            title={collapsed ? labels.logout : undefined}
+            className={`flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[14px] text-body hover:bg-btn-fill hover:text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${collapsed ? "[@media(min-width:900px)]:justify-center [@media(min-width:900px)]:gap-0 [@media(min-width:900px)]:px-0" : ""}`}
           >
             <SignOut size={20} weight="thin" aria-hidden="true" />
-            {labels.logout}
+            <span
+              className={
+                collapsed ? "[@media(min-width:900px)]:sr-only" : undefined
+              }
+            >
+              {labels.logout}
+            </span>
           </button>
         </form>
       </div>
@@ -230,7 +289,9 @@ export function AdminShell({
           className="fixed inset-0 z-[60] bg-ink/30 backdrop-blur-[1px] [@media(min-width:900px)]:hidden"
         />
       ) : null}
-      <main className="min-w-0 px-[16px] py-[28px] sm:px-[24px] [@media(min-width:900px)]:ml-[292px] [@media(min-width:900px)]:px-[clamp(28px,4vw,60px)] [@media(min-width:900px)]:py-[42px]">
+      <main
+        className={`min-w-0 px-[16px] py-[28px] transition-[margin-left] duration-200 motion-reduce:transition-none sm:px-[24px] [@media(min-width:900px)]:px-[clamp(28px,4vw,60px)] [@media(min-width:900px)]:py-[42px] ${collapsed ? "[@media(min-width:900px)]:ml-[76px]" : "[@media(min-width:900px)]:ml-[292px]"}`}
+      >
         <div
           className={wide ? "mx-auto max-w-[1800px]" : "mx-auto max-w-[1280px]"}
         >

@@ -626,6 +626,8 @@
     "appName": "Mone Beauty -hallinta",
     "menu": "Avaa navigointi",
     "close": "Sulje navigointi",
+    "expandSidebar": "Laajenna navigointi",
+    "collapseSidebar": "Pienennä navigointi",
     "logout": "Kirjaudu ulos",
     "locale": "Käyttöliittymän kieli",
     "nav": {

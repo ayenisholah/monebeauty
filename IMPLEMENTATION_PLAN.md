@@ -48,6 +48,26 @@
   Scheduling time controls expose open covered slots only; the hours editor retains a full-day
   override and out-of-hours legacy appointments remain visible in an exception row.
 
+## Timma-style calendar and internal blocks (owner-approved, 2026-07-21) ✅ implemented
+
+- Rework `/admin/kalenteri` into a dense full-height day/week/month workspace with generated
+  employee filters, sticky axes, bilateral time labels, union-of-working-hours cropping, month
+  overflow, responsive horizontal scrolling, and persisted three-level zoom.
+- Add a desktop draggable internal-service palette and mobile horizontal tray with selection plus
+  click placement as the touch/keyboard fallback.
+- Add localized `CalendarBlockTemplate`, `CalendarBlockSeries`, `CalendarBlock`,
+  `CalendarBlockItem`, and `CalendarBlockParticipant` Prisma models and seed the five approved
+  60-minute templates separately from clinical services.
+- Implement the localized Booking info modal, sequential items and duration math, optional single
+  room/device reservation, weekday recurrence, occurrence preview, 12-month/500-occurrence
+  limits, admin multi-employee and staff-own-only permissions.
+- Add atomic block create/update/cancel APIs with occurrence/future scope, soft cancellation,
+  optimistic versions, audit logging, and admin-only template configuration.
+- Centralize appointment/block employee, room, and device conflict checks and PostgreSQL advisory
+  locks; apply them to public and internal appointment creation and rescheduling paths.
+- Cover recurrence, snapping, durations, localization, limits, RBAC, concurrency, availability,
+  automatic practitioner roster population, responsive interaction, lint, typecheck, and build.
+
 ## Client account and integration observability expansion (owner-approved, 2026-07-19)
 
 - Redesign `/oma-tili` into overview, appointments, orders, addresses, and profile views; expose
@@ -115,8 +135,9 @@ persisted total quantity.
   `palvelut`, `teknologiat`, `sisalto`, `tuotteet`, `hinnasto`, `artikkelit`,
   `keskustelut`, `kirjaudu`, and `uusi`.
   Permanently redirect legacy English admin URLs.
-- Add the localized responsive admin sidebar/drawer, `Admin` translations, context-preserving
-  locale switcher, dashboard warnings/metrics/audits/quick actions, and localized CRUD.
+- Add the localized responsive admin sidebar/drawer, persistent desktop icon-rail collapse,
+  `Admin` translations, context-preserving locale switcher, dashboard
+  warnings/metrics/audits/quick actions, and localized CRUD.
 - Evolve Prisma with `PublicationStatus`, strict per-locale publication, dedicated
   `Technology` content, localized pricing, archive metadata, extended service/product
   metadata, and deletion guards. Every mutation is authorized, validated, audited, and
@@ -127,7 +148,8 @@ persisted total quantity.
   explicitly refreshes existing imported records.
 - Backfill existing localized content and real media. Verify migrations/seed, legacy
   redirects, locale isolation, CRUD/archive/delete/anonymization, booking/cart regressions,
-  390/768/900/desktop sidebar access, lint, type-check, tests, and production build.
+  390/768/899/900/desktop sidebar access and persisted collapse, lint, type-check, tests, and
+  production build.
 - Migrate every public page to its canonical Finnish route, add locale-preserving 308 legacy
   redirects, and centralize paths so public navigation, SEO, email/chat links, and Prisma
   `publicPath` values cannot drift.

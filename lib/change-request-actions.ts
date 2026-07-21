@@ -7,6 +7,7 @@ import { auditForUser, currentUser } from "@/lib/auth";
 import { accountHref } from "@/lib/account-routing";
 import { adminHref } from "@/lib/admin-routing";
 import { openSlots } from "@/lib/booking";
+import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 import { notifyAppointmentChange, sendEmail } from "@/lib/notifications";
 import { CONTACT } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
@@ -147,6 +148,8 @@ export async function reviewAppointmentChangeRequestAction(formData: FormData) {
     if (!matching)
       redirect(`${adminHref(locale, "appointments")}?error=slot_taken`);
     updatedAppointment = await prisma.$transaction(async (tx) => {
+      const reservationConflict = await lockAndFindReservationConflict(tx, { start: new Date(matching.start), end: new Date(matching.end), practitionerIds: [matching.practitionerId], roomId: matching.roomId, deviceId: matching.deviceId, excludeAppointmentId: request.appointmentId });
+      if (reservationConflict) throw new Error("slot_taken");
       const changed = await tx.appointmentChangeRequest.updateMany({
         where: { id, status: "PENDING" },
         data: {

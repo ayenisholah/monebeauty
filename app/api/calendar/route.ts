@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const params = req.nextUrl.searchParams;
+  const locale = ["fi", "en", "ru"].includes(params.get("locale") ?? "")
+    ? (params.get("locale") as "fi" | "en" | "ru")
+    : "fi";
   const from = new Date(String(params.get("from") ?? ""));
   const to = new Date(String(params.get("to") ?? ""));
   if (
@@ -31,7 +34,7 @@ export async function GET(req: NextRequest) {
     user.role === "STAFF"
       ? { active: true, id: ownPractitionerId! }
       : { active: true };
-  const [practitioners, rooms, devices, availabilities, appointments] =
+  const [practitioners, rooms, devices, availabilities, appointments, templates, blocks] =
     await Promise.all([
       prisma.practitioner.findMany({
         where: practitionerWhere,
@@ -85,6 +88,25 @@ export async function GET(req: NextRequest) {
           device: { select: { id: true, name: true } },
         },
       }),
+      prisma.calendarBlockTemplate.findMany({
+        where: { active: true },
+        orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
+      }),
+      prisma.calendarBlock.findMany({
+        where: {
+          status: "ACTIVE",
+          start: { lt: to },
+          end: { gt: from },
+          participants: { some: { practitioner: practitionerWhere } },
+        },
+        orderBy: { start: "asc" },
+        include: {
+          participants: { select: { practitionerId: true } },
+          items: { orderBy: { displayOrder: "asc" } },
+          room: { select: { id: true, name: true } },
+          device: { select: { id: true, name: true } },
+        },
+      }),
     ]);
 
   const normalizedPractitioners = practitioners.map((practitioner) => ({
@@ -111,6 +133,7 @@ export async function GET(req: NextRequest) {
     rooms,
     devices,
     ownPractitionerId,
+    canManageTemplates: user.role === "ADMIN",
     canManageAppointments: true,
     canEditAllAvailability: user.role === "ADMIN",
     canEditOwnAvailability: Boolean(ownPractitionerId),
@@ -150,6 +173,33 @@ export async function GET(req: NextRequest) {
       editable: ["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(
         appointment.status,
       ),
+    })),
+    templates: templates.map((template) => ({
+      id: template.id,
+      key: template.key,
+      label: locale === "fi" ? template.labelFi : locale === "ru" ? template.labelRu : template.labelEn,
+      labels: { fi: template.labelFi, en: template.labelEn, ru: template.labelRu },
+      defaultDurationMin: template.defaultDurationMin,
+      color: template.color,
+      displayOrder: template.displayOrder,
+    })),
+    blocks: blocks.map((block) => ({
+      id: block.id,
+      seriesId: block.seriesId,
+      version: block.version,
+      start: block.start.toISOString(),
+      end: block.end.toISOString(),
+      notes: block.notes,
+      roomId: block.roomId,
+      deviceId: block.deviceId,
+      room: block.room,
+      device: block.device,
+      practitionerIds: block.participants.map((participant) => participant.practitionerId),
+      items: block.items.map((item) => ({
+        templateId: item.templateId,
+        durationMin: item.durationMin,
+        label: locale === "fi" ? item.labelFi : locale === "ru" ? item.labelRu : item.labelEn,
+      })),
     })),
   });
 }

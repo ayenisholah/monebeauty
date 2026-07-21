@@ -31,6 +31,11 @@ import {
   AppointmentForm,
   type AppointmentDetail as ManageAppointmentDetail,
 } from "@/components/calendar/AppointmentForm";
+import {
+  CalendarBlockEditor,
+  type CalendarBlock,
+  type CalendarBlockTemplate,
+} from "@/components/calendar/CalendarBlockEditor";
 
 type View = "day" | "week" | "month";
 const VIEW_STORAGE_KEYS = {
@@ -73,12 +78,15 @@ type Payload = {
   canManageAppointments: boolean;
   canEditAllAvailability: boolean;
   canEditOwnAvailability: boolean;
+  canManageTemplates: boolean;
   availabilities: Array<{
     practitionerId: string;
     date: string;
     slots: Slot[];
   }>;
   appointments: Appointment[];
+  templates: CalendarBlockTemplate[];
+  blocks: CalendarBlock[];
 };
 type AppointmentDetail = {
   id: string;
@@ -96,7 +104,8 @@ type AppointmentDetail = {
   device: string | null;
 };
 
-const HOUR_HEIGHT = 56;
+const ZOOM_HEIGHTS = { compact: 36, default: 48, expanded: 68 } as const;
+type Zoom = keyof typeof ZOOM_HEIGHTS;
 
 const copy = {
   en: {
@@ -133,6 +142,10 @@ const copy = {
     create: "Create appointment",
     noWorkingHours: "No working hours",
     outsideHours: "Outside working hours",
+    internal: "Internal services",
+    working: "Working",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
   },
   fi: {
     title: "Yhteinen kalenteri",
@@ -168,6 +181,10 @@ const copy = {
     create: "Luo ajanvaraus",
     noWorkingHours: "Ei työaikaa",
     outsideHours: "Työajan ulkopuolella",
+    internal: "Sisäiset palvelut",
+    working: "Työssä",
+    zoomIn: "Lähennä",
+    zoomOut: "Loitonna",
   },
   ru: {
     title: "Общий календарь",
@@ -203,6 +220,10 @@ const copy = {
     create: "Создать запись",
     noWorkingHours: "Нет рабочих часов",
     outsideHours: "Вне рабочего времени",
+    internal: "Внутренние услуги",
+    working: "Работают",
+    zoomIn: "Увеличить",
+    zoomOut: "Уменьшить",
   },
 } as const;
 
@@ -229,6 +250,10 @@ function addDays(value: string, amount: number) {
   const date = dateFromYmd(value);
   date.setUTCDate(date.getUTCDate() + amount);
   return ymd(date);
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).map((part) => part[0]).join("").slice(0, 3).toUpperCase();
 }
 
 function rangeFor(value: string, view: View) {
@@ -268,6 +293,9 @@ export function SharedCalendar({
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [blockEditing, setBlockEditing] = useState<{ start: string; practitionerId: string; block?: CalendarBlock | null } | null>(null);
+  const [zoom, setZoom] = useState<Zoom>("default");
   const [pickerDates, setPickerDates] = useState<string[] | undefined>();
   const [editing, setEditing] = useState<{
     appointment: Appointment;
@@ -316,12 +344,25 @@ export function SharedCalendar({
     return () => window.clearTimeout(timer);
   }, [viewStorageKey]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem("mone-calendar-zoom");
+        if (stored === "compact" || stored === "default" || stored === "expanded") setZoom(stored);
+      } catch {
+        // The default density remains available when storage is disabled.
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setMessage(null);
     const qs = new URLSearchParams({
       from: range.from.toISOString(),
       to: range.to.toISOString(),
+      locale,
     });
     try {
       const response = await fetch(`/api/calendar?${qs}`);
@@ -340,7 +381,7 @@ export function SharedCalendar({
     } finally {
       setLoading(false);
     }
-  }, [range.from, range.to, t.conflict]);
+  }, [range.from, range.to, locale, t.conflict]);
 
   useEffect(() => {
     if (!viewReady) return;
@@ -454,13 +495,32 @@ export function SharedCalendar({
 
   function handleDragEnd(event: DragEndEvent) {
     if (!event.over) return;
+    if (String(event.active.id).startsWith("template:")) {
+      const [, targetDate, practitionerId] = String(event.over.id).split(":");
+      const templateId = String(event.active.id).slice("template:".length);
+      if (!data?.templates.some((item) => item.id === templateId) || !targetDate || !practitionerId) return;
+      setSelectedTemplateId(templateId);
+      setBlockEditing({ start: `${targetDate}T10:00:00.000Z`, practitionerId });
+      return;
+    }
+    if (String(event.active.id).startsWith("block:")) {
+      const block = data?.blocks.find((item) => `block:${item.id}` === event.active.id);
+      if (!block) return;
+      const [, targetDate, practitionerId] = String(event.over.id).split(":");
+      const original = new Date(block.start);
+      const minutes = Math.round(event.delta.y / (ZOOM_HEIGHTS[zoom] / 60) / 15) * 15;
+      const target = new Date(`${targetDate}T00:00:00.000Z`);
+      target.setUTCHours(original.getUTCHours(), original.getUTCMinutes() + minutes, 0, 0);
+      setBlockEditing({ start: target.toISOString(), practitionerId, block: { ...block, start: target.toISOString(), practitionerIds: [practitionerId] } });
+      return;
+    }
     const appointment = data?.appointments.find(
       (item) => item.id === event.active.id,
     );
     if (!appointment?.editable) return;
     const [, targetDate, practitionerId] = String(event.over.id).split(":");
     const original = new Date(appointment.start);
-    const minutes = Math.round(event.delta.y / (HOUR_HEIGHT / 60) / 15) * 15;
+    const minutes = Math.round(event.delta.y / (ZOOM_HEIGHTS[zoom] / 60) / 15) * 15;
     const target = new Date(`${targetDate}T00:00:00.000Z`);
     target.setUTCHours(
       original.getUTCHours(),
@@ -481,6 +541,18 @@ export function SharedCalendar({
       return;
     }
     openEditor(appointment, target.toISOString(), practitionerId);
+  }
+
+  function openCell(start: string, practitionerId: string) {
+    if (selectedTemplateId) setBlockEditing({ start, practitionerId });
+    else openCreate(start, practitionerId);
+  }
+
+  function changeZoom(direction: -1 | 1) {
+    const levels: Zoom[] = ["compact", "default", "expanded"];
+    const next = levels[Math.max(0, Math.min(levels.length - 1, levels.indexOf(zoom) + direction))];
+    setZoom(next);
+    try { window.localStorage.setItem("mone-calendar-zoom", next); } catch {}
   }
 
   async function saveEdit() {
@@ -647,6 +719,9 @@ export function SharedCalendar({
             availableDates={pickerDates}
             onMonthChange={loadPickerDates}
           />
+          <p className="min-w-[180px] flex-1 text-center font-sans text-[13px] font-medium text-ink">
+            {view === "day" ? fmtDate.format(range.from) : `${fmtDate.format(range.from)} – ${fmtDate.format(new Date(range.to.getTime() - 86400000))}`}
+          </p>
           <button
             type="button"
             onClick={() => void load()}
@@ -655,6 +730,8 @@ export function SharedCalendar({
           >
             <ArrowClockwise size={18} />
           </button>
+          <button type="button" onClick={() => changeZoom(-1)} disabled={zoom === "compact"} className={iconButtonCls} aria-label={t.zoomOut}>−</button>
+          <button type="button" onClick={() => changeZoom(1)} disabled={zoom === "expanded"} className={iconButtonCls} aria-label={t.zoomIn}>+</button>
           {data?.canManageAppointments ? (
             <button
               type="button"
@@ -708,6 +785,13 @@ export function SharedCalendar({
           >
             {t.all}
           </button>
+          <button
+            type="button"
+            onClick={() => setSelected(data?.practitioners.filter((employee) => data.availabilities.some((item) => item.practitionerId === employee.id && item.date === date && item.slots.some((slot) => slot.status === "open"))).map((employee) => employee.id) ?? [])}
+            className={buttonCls}
+          >
+            {t.working}
+          </button>
           {data?.practitioners.map((employee) => {
             const active = selected.includes(employee.id);
             return (
@@ -752,6 +836,12 @@ export function SharedCalendar({
       ) : null}
       {!loading && data ? (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="mt-[14px] flex min-w-0 items-center gap-[8px] overflow-x-auto rounded-[8px] border border-line-card bg-card p-[9px]" aria-label={t.internal}>
+            <span className="shrink-0 font-sans text-[11px] tracking-[.08em] text-muted uppercase">{t.internal}</span>
+            {data.templates.map((template) => (
+              <TemplateChip key={template.id} template={template} selected={selectedTemplateId === template.id} onSelect={() => setSelectedTemplateId((current) => current === template.id ? null : template.id)} />
+            ))}
+          </div>
           {view === "month" ? (
             <MonthView
               range={range}
@@ -763,6 +853,7 @@ export function SharedCalendar({
                 setDate(next);
                 changeView("day");
               }}
+              onOpenBlock={(block) => setBlockEditing({ start: block.start, practitionerId: block.practitionerIds[0] ?? "", block })}
             />
           ) : (
             <TimeGrid
@@ -773,12 +864,30 @@ export function SharedCalendar({
               fmtDate={fmtDate}
               fmtTime={fmtTime}
               onOpen={(appointment) => void openAppointment(appointment)}
-              onCreate={openCreate}
+              onCreate={openCell}
+              onOpenBlock={(block) => setBlockEditing({ start: block.start, practitionerId: block.practitionerIds[0] ?? "", block })}
+              hourHeight={ZOOM_HEIGHTS[zoom]}
               noWorkingHours={t.noWorkingHours}
               outsideHours={t.outsideHours}
             />
           )}
         </DndContext>
+      ) : null}
+
+      {blockEditing && data ? (
+        <CalendarBlockEditor
+          locale={locale}
+          initialStart={blockEditing.start}
+          initialPractitionerId={blockEditing.practitionerId}
+          block={blockEditing.block}
+          templates={[...data.templates].sort((a, b) => Number(b.id === selectedTemplateId) - Number(a.id === selectedTemplateId))}
+          practitioners={data.practitioners}
+          rooms={data.rooms}
+          devices={data.devices}
+          canAssignMany={data.canEditAllAvailability}
+          onClose={() => setBlockEditing(null)}
+          onSaved={load}
+        />
       ) : null}
 
       {detail ? (
@@ -1146,7 +1255,9 @@ function TimeGrid({
   fmtDate,
   fmtTime,
   onOpen,
+  onOpenBlock,
   onCreate,
+  hourHeight,
   noWorkingHours,
   outsideHours,
 }: {
@@ -1157,7 +1268,9 @@ function TimeGrid({
   fmtDate: Intl.DateTimeFormat;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
+  onOpenBlock: (block: CalendarBlock) => void;
   onCreate: (start: string, practitionerId: string) => void;
+  hourHeight: number;
   noWorkingHours: string;
   outsideHours: string;
 }) {
@@ -1193,9 +1306,16 @@ function TimeGrid({
       endMinute > rangeBounds.endMinute
     );
   });
+  const outsideBlocks = data.blocks.filter((block) => {
+    if (!block.practitionerIds.some((id) => visibleIds.has(id)) || !visibleDays.has(block.start.slice(0, 10))) return false;
+    const start = new Date(block.start); const end = new Date(block.end);
+    const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
+    const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+    return !rangeBounds || startMinute < rangeBounds.startMinute || endMinute > rangeBounds.endMinute;
+  });
   return (
     <div className="mt-[16px]">
-      {outsideAppointments.length ? (
+      {outsideAppointments.length || outsideBlocks.length ? (
         <div className="mb-[10px] rounded-[7px] border border-[#c98383] bg-[#fff4f2] p-[10px]">
           <p className="font-sans text-[11px] font-medium tracking-[.08em] text-[#8c3434] uppercase">
             {outsideHours}
@@ -1213,6 +1333,11 @@ function TimeGrid({
                 {appointment.clientName}
               </button>
             ))}
+            {outsideBlocks.map((block) => (
+              <button key={block.id} type="button" onClick={() => onOpenBlock(block)} className="rounded-[4px] border border-[#c98383] bg-card px-[9px] py-[6px] text-left font-sans text-[11px]">
+                {fmtDate.format(new Date(block.start))} · {fmtTime.format(new Date(block.start))} · {block.items.map((item) => item.label).join(" + ")}
+              </button>
+            ))}
           </div>
         </div>
       ) : null}
@@ -1225,7 +1350,7 @@ function TimeGrid({
           <div
             className="grid min-w-max"
             style={{
-              gridTemplateColumns: `64px repeat(${Math.max(1, columns.length)}, minmax(190px, 1fr))`,
+              gridTemplateColumns: `64px repeat(${Math.max(1, columns.length)}, minmax(190px, 1fr)) 64px`,
             }}
           >
             <div className="sticky top-0 left-0 z-20 border-r border-line-card bg-card" />
@@ -1241,11 +1366,12 @@ function TimeGrid({
                   className="mx-auto mt-[4px] max-w-[150px] truncate rounded-full px-[10px] py-[4px] font-sans text-[12px] font-medium"
                   style={{ background: `${practitioner.calendarColor}55` }}
                 >
-                  {practitioner.name}
+                  {view === "week" && practitioners.length > 2 ? initials(practitioner.name) : practitioner.name}
                 </div>
               </div>
             ))}
-            <TimeAxis range={rangeBounds} />
+            <div className="sticky top-0 right-0 z-20 border-l border-line-card bg-card" />
+            <TimeAxis range={rangeBounds} hourHeight={hourHeight} />
             {columns.map(({ day, practitioner }) => (
               <CalendarColumn
                 key={`${ymd(day)}:${practitioner.id}`}
@@ -1254,10 +1380,13 @@ function TimeGrid({
                 data={data}
                 fmtTime={fmtTime}
                 onOpen={onOpen}
+                onOpenBlock={onOpenBlock}
                 onCreate={onCreate}
                 range={rangeBounds}
+                hourHeight={hourHeight}
               />
             ))}
+            <TimeAxis range={rangeBounds} hourHeight={hourHeight} right />
           </div>
         </div>
       )}
@@ -1291,13 +1420,17 @@ function calendarWorkingBounds(
 
 function TimeAxis({
   range,
+  hourHeight,
+  right = false,
 }: {
   range: { startMinute: number; endMinute: number };
+  hourHeight: number;
+  right?: boolean;
 }) {
-  const height = ((range.endMinute - range.startMinute) / 60) * HOUR_HEIGHT;
+  const height = ((range.endMinute - range.startMinute) / 60) * hourHeight;
   return (
     <div
-      className="sticky left-0 z-10 border-r border-line-card bg-card"
+      className={cn("sticky z-10 bg-card", right ? "right-0 border-l border-line-card" : "left-0 border-r border-line-card")}
       style={{ height }}
     >
       {Array.from(
@@ -1305,8 +1438,8 @@ function TimeAxis({
         (_, index) => (
           <span
             key={index}
-            className="absolute right-[8px] -translate-y-1/2 font-sans text-[11px] text-muted"
-            style={{ top: index * HOUR_HEIGHT }}
+            className={cn("absolute -translate-y-1/2 font-sans text-[11px] text-muted", right ? "left-[8px]" : "right-[8px]")}
+            style={{ top: index * hourHeight }}
           >
             {pad(range.startMinute / 60 + index)}:00
           </span>
@@ -1322,16 +1455,20 @@ function CalendarColumn({
   data,
   fmtTime,
   onOpen,
+  onOpenBlock,
   onCreate,
   range,
+  hourHeight,
 }: {
   day: string;
   practitioner: Practitioner;
   data: Payload;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
+  onOpenBlock: (block: CalendarBlock) => void;
   onCreate: (start: string, practitionerId: string) => void;
   range: { startMinute: number; endMinute: number };
+  hourHeight: number;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `col:${day}:${practitioner.id}`,
@@ -1344,10 +1481,11 @@ function CalendarColumn({
       item.practitionerId === practitioner.id &&
       item.start.slice(0, 10) === day,
   );
+  const blocks = data.blocks.filter((item) => item.practitionerIds.includes(practitioner.id) && item.start.slice(0, 10) === day);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes() - range.startMinute;
   const isToday = day === today();
-  const dayHeight = ((range.endMinute - range.startMinute) / 60) * HOUR_HEIGHT;
+  const dayHeight = ((range.endMinute - range.startMinute) / 60) * hourHeight;
   return (
     <div
       ref={setNodeRef}
@@ -1357,7 +1495,7 @@ function CalendarColumn({
       )}
       style={{
         height: dayHeight,
-        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT / 2 - 1}px, rgba(89,71,50,.09) ${HOUR_HEIGHT / 2}px, transparent ${HOUR_HEIGHT / 2 + 1}px, transparent ${HOUR_HEIGHT - 1}px, rgba(89,71,50,.16) ${HOUR_HEIGHT}px)`,
+        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${hourHeight / 2 - 1}px, rgba(89,71,50,.09) ${hourHeight / 2}px, transparent ${hourHeight / 2 + 1}px, transparent ${hourHeight - 1}px, rgba(89,71,50,.16) ${hourHeight}px)`,
       }}
     >
       {availability?.slots
@@ -1370,10 +1508,10 @@ function CalendarColumn({
               start.getUTCMinutes() -
               range.startMinute) /
               60) *
-            HOUR_HEIGHT;
+            hourHeight;
           const height = Math.max(
             2,
-            ((end.getTime() - start.getTime()) / 3600000) * HOUR_HEIGHT,
+            ((end.getTime() - start.getTime()) / 3600000) * hourHeight,
           );
           return (
             <button
@@ -1392,7 +1530,7 @@ function CalendarColumn({
       nowMinutes <= range.endMinute - range.startMinute ? (
         <div
           className="pointer-events-none absolute inset-x-0 z-20 border-t border-[#d95f70]"
-          style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+          style={{ top: (nowMinutes / 60) * hourHeight }}
         />
       ) : null}
       {appointments
@@ -1415,8 +1553,10 @@ function CalendarColumn({
             fmtTime={fmtTime}
             onOpen={onOpen}
             rangeStartMinute={range.startMinute}
+            hourHeight={hourHeight}
           />
         ))}
+      {blocks.map((block) => <CalendarBlockCard key={block.id} block={block} templates={data.templates} fmtTime={fmtTime} onOpen={onOpenBlock} rangeStartMinute={range.startMinute} hourHeight={hourHeight} />)}
     </div>
   );
 }
@@ -1427,12 +1567,14 @@ function AppointmentCard({
   fmtTime,
   onOpen,
   rangeStartMinute,
+  hourHeight,
 }: {
   appointment: Appointment;
   color: string;
   fmtTime: Intl.DateTimeFormat;
   onOpen: (appointment: Appointment) => void;
   rangeStartMinute: number;
+  hourHeight: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: appointment.id, disabled: !appointment.editable });
@@ -1441,10 +1583,10 @@ function AppointmentCard({
   const top =
     ((start.getUTCHours() * 60 + start.getUTCMinutes() - rangeStartMinute) /
       60) *
-    HOUR_HEIGHT;
+    hourHeight;
   const height = Math.max(
     32,
-    ((end.getTime() - start.getTime()) / 3600000) * HOUR_HEIGHT,
+    ((end.getTime() - start.getTime()) / 3600000) * hourHeight,
   );
   return (
     <button
@@ -1485,6 +1627,21 @@ function AppointmentCard({
   );
 }
 
+function TemplateChip({ template, selected, onSelect }: { template: CalendarBlockTemplate; selected: boolean; onSelect: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `template:${template.id}` });
+  return <button ref={setNodeRef} type="button" onClick={onSelect} {...attributes} {...listeners} aria-pressed={selected} className={cn("min-h-10 shrink-0 rounded-[4px] border px-3 font-sans text-xs focus:ring-2 focus:ring-accent focus:outline-none", selected && "ring-2 ring-accent", isDragging && "opacity-60")} style={{ background: `${template.color}88`, borderColor: template.color, transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined }}>{template.label} · {template.defaultDurationMin} min</button>;
+}
+
+function CalendarBlockCard({ block, templates, fmtTime, onOpen, rangeStartMinute, hourHeight }: { block: CalendarBlock; templates: CalendarBlockTemplate[]; fmtTime: Intl.DateTimeFormat; onOpen: (block: CalendarBlock) => void; rangeStartMinute: number; hourHeight: number }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `block:${block.id}` });
+  const start = new Date(block.start); const end = new Date(block.end);
+  const top = ((start.getUTCHours() * 60 + start.getUTCMinutes() - rangeStartMinute) / 60) * hourHeight;
+  const height = Math.max(28, ((end.getTime() - start.getTime()) / 3_600_000) * hourHeight);
+  const color = templates.find((template) => template.id === block.items[0]?.templateId)?.color ?? "#B89B72";
+  const label = block.items.map((item) => item.label).join(" + ");
+  return <button ref={setNodeRef} type="button" onClick={() => onOpen(block)} {...attributes} {...listeners} aria-label={`${fmtTime.format(start)}–${fmtTime.format(end)} · ${label}`} className={cn("absolute inset-x-[3px] z-[11] overflow-hidden rounded-[4px] border border-dashed px-[6px] py-[3px] text-left font-sans shadow-sm focus:ring-2 focus:ring-accent focus:outline-none", isDragging && "z-50 opacity-60")} style={{ top, height, background: `${color}E6`, borderColor: color, transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined }}><span className="block text-[10px] font-medium">{fmtTime.format(start)}–{fmtTime.format(end)}</span><strong className="block truncate text-[11px]">{label}</strong></button>;
+}
+
 function MonthView({
   range,
   data,
@@ -1492,6 +1649,7 @@ function MonthView({
   fmtDate,
   fmtTime,
   onOpenDay,
+  onOpenBlock,
 }: {
   range: { from: Date; to: Date };
   data: Payload;
@@ -1499,6 +1657,7 @@ function MonthView({
   fmtDate: Intl.DateTimeFormat;
   fmtTime: Intl.DateTimeFormat;
   onOpenDay: (date: string) => void;
+  onOpenBlock: (block: CalendarBlock) => void;
 }) {
   const days = Array.from(
     { length: 42 },
@@ -1522,11 +1681,16 @@ function MonthView({
             item.start.slice(0, 10) === date &&
             selected.includes(item.practitionerId),
         );
+        const blocks = data.blocks.filter((item) => item.start.slice(0, 10) === date && item.practitionerIds.some((id) => selected.includes(id)));
+        const events = [
+          ...appointments.map((appointment) => ({ id: `a:${appointment.id}`, start: appointment.start, label: appointment.clientName, color: colors.get(appointment.practitionerId) ?? "#B89B72", block: null as CalendarBlock | null })),
+          ...blocks.map((block) => ({ id: `b:${block.id}`, start: block.start, label: block.items.map((item) => item.label).join(" + "), color: data.templates.find((template) => template.id === block.items[0]?.templateId)?.color ?? "#B89B72", block })),
+        ].sort((a, b) => a.start.localeCompare(b.start));
         return (
           <button
             type="button"
             key={date}
-            disabled={!working}
+            disabled={!working && !events.length}
             onClick={() => onOpenDay(date)}
             className="min-h-[120px] border-r border-b border-line-card p-[6px] text-left align-top hover:bg-page disabled:cursor-not-allowed disabled:bg-btn-fill/50 disabled:opacity-50"
           >
@@ -1534,21 +1698,25 @@ function MonthView({
               {fmtDate.format(day)}
             </span>
             <span className="mt-[5px] grid gap-[3px]">
-              {appointments.slice(0, 4).map((appointment) => (
+              {events.slice(0, 4).map((event) => (
                 <span
-                  key={appointment.id}
+                  key={event.id}
+                  role={event.block ? "button" : undefined}
+                  tabIndex={event.block ? 0 : undefined}
+                  onClick={event.block ? (click) => { click.stopPropagation(); onOpenBlock(event.block!); } : undefined}
+                  onKeyDown={event.block ? (key) => { if (key.key === "Enter" || key.key === " ") { key.preventDefault(); onOpenBlock(event.block!); } } : undefined}
                   className="block truncate rounded-[3px] px-[4px] py-[2px] font-sans text-[10px]"
                   style={{
-                    background: `${colors.get(appointment.practitionerId)}55`,
+                    background: `${event.color}55`,
                   }}
                 >
-                  {fmtTime.format(new Date(appointment.start))}{" "}
-                  {appointment.clientName}
+                  {fmtTime.format(new Date(event.start))}{" "}
+                  {event.label}
                 </span>
               ))}
-              {appointments.length > 4 ? (
+              {events.length > 4 ? (
                 <span className="font-sans text-[10px] text-muted">
-                  +{appointments.length - 4}
+                  +{events.length - 4} more
                 </span>
               ) : null}
             </span>

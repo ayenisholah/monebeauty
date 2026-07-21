@@ -63,6 +63,43 @@ Staff-created appointments search or create a CRM client, require recorded GDPR 
 start as confirmed, and send the localized durable email/SMS confirmation. Creation, detail
 changes, lifecycle actions, schedule moves, sensitive access, and denied mutations are audited.
 
+### Timma-style internal calendar reservations (owner-approved, 2026-07-21)
+
+The calendar must provide dense day, Monday-first week, and month views inside the existing
+localized admin shell. Its toolbar includes All/Working and generated employee filters, view and
+date navigation, a themed date picker, Create appointment, zoom, refresh, and setup. Day/week
+hours use the selected employees' open-time union plus a separate out-of-hours exception row,
+48 px/hour by default, sticky headers and bilateral time labels. Zoom persists locally at compact,
+default, or expanded density. Week headings use initials at high density and full names for a
+narrow selection. Month uses a seven-column grid, compact event rows, and `+N more`. The mobile
+layout changes the internal-service palette to a horizontal tray and preserves sticky axes while
+the grid scrolls horizontally. Pointer, touch, and keyboard users must retain equivalent actions.
+
+`CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
+duration, Mone-compatible color, active state, and display order. Seed lunch break, personal time,
+work errand, sick leave, and vacation at 60 minutes. Admins alone manage templates. Active
+templates may be dragged or selected then placed at a 15-minute calendar cell. The Booking info
+modal contains date/start/end, a primary item, ordered additional items, target employee, at most
+one optional room or device, notes, and recurrence/add-to-others. Items are sequential; their
+durations determine the end, and an edited end changes the final item duration.
+
+Recurrence accepts selected weekdays and an inclusive end date no more than 12 months ahead.
+Admins may target multiple active employees; staff may target only their linked employee. The UI
+previews the occurrence count. A request may generate at most 500 concrete occurrences and saves
+atomically: any active appointment/block conflict for an employee, room, or device rejects the
+whole request and identifies the conflicting date/resource. Editing and soft cancellation support
+the current occurrence or all future occurrences in a series, use optimistic `version` checks,
+and are audited without customer notifications.
+
+`CalendarBlockSeries`, `CalendarBlock`, `CalendarBlockItem`, and `CalendarBlockParticipant`
+persist recurrence metadata, concrete time/resource reservations, ordered duration/label
+snapshots, participants, status, and version. `GET /api/calendar` returns localized active
+templates and expanded occurrences. Authenticated create/update/cancel endpoints enforce RBAC.
+Every appointment create/reschedule/move and block mutation uses shared conflict checks covering
+active appointments and blocks plus transaction-scoped PostgreSQL advisory locks for affected
+employee/resource/day keys; existing appointment exclusion constraints remain. Public
+availability omits internally reserved time. Blocks never change working hours or availability.
+
 Working-time visibility (owner-approved, 2026-07-19): normalized
 `Practitioner.workingHours` is the canonical weekly schedule and explicit per-date
 `Availability.slots` override it. Day/week calendars crop to the visible employees' earliest-to-
@@ -369,8 +406,9 @@ Access control + **audit logging** on medical fields.
   `/admin/sisalto`, `/admin/tuotteet`, `/admin/hinnasto`, `/admin/artikkelit`, and
   `/admin/keskustelut`; creation uses `/uusi` and records use `/[id]`.
 - Existing English admin paths permanently redirect to the matching Finnish path.
-- The desktop admin has a permanent left sidebar. Below desktop it becomes an accessible
-  off-canvas drawer with overlay, focus containment, Escape close, and 44px controls.
+- The desktop admin has a left sidebar that collapses to a 76px icon rail and remembers the
+  preference across visits. Below desktop it becomes an accessible off-canvas drawer with
+  overlay, focus containment, Escape close, and 44px controls.
 - Admin navigation, forms, validation, confirmations, status and empty-state labels, login,
   dashboard, and dates are localized through the `Admin` message namespace. Locale changes
   preserve the Finnish path, record id, query string, and editor context.

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -oE '\\(Vol\\\\. ?0?1|Fig\\\\. ?0[0-9]|Est\\\\.[^<]{0,30}|The Editor|journal|editorial|issue|masthead|scissors|coupon|pull-?quote\\)' \"/c/Users/m/shola/monebeauty/Mone Editorial.dc.html\")",
+      "Bash(grep -oE '>[A-Z][^<>{}]{25,140}\\\\.<' \"/c/Users/m/shola/monebeauty/Mone Editorial.dc.html\")",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ]
+  }
+}

@@ -2,11 +2,16 @@ import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import type { Locale as DbLocale, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { groupBy } from "@/lib/collections";
 import { currentUser } from "@/lib/auth";
 import type { Locale } from "@/i18n/routing";
+import {
+  ADMIN_SIDEBAR_COOKIE,
+  isAdminSidebarCollapsed,
+} from "@/lib/admin-sidebar";
 import {
   ADMIN_SEGMENTS,
   LEGACY_ADMIN_SEGMENTS,
@@ -86,6 +91,8 @@ function makeCopy(t: Awaited<ReturnType<typeof getTranslations>>) {
     appName: t("appName"),
     menu: t("menu"),
     close: t("close"),
+    expandSidebar: t("expandSidebar"),
+    collapseSidebar: t("collapseSidebar"),
     logout: t("logout"),
     locale: t("locale"),
     login: {
@@ -250,6 +257,9 @@ export async function AdminRouter({
     : searchParams.saved
       ? copy.common.updated
       : null;
+  const initialSidebarCollapsed = isAdminSidebarCollapsed(
+    (await cookies()).get(ADMIN_SIDEBAR_COOKIE)?.value,
+  );
   return (
     <NextIntlClientProvider
       locale={locale}
@@ -261,11 +271,14 @@ export async function AdminRouter({
           appName: copy.appName,
           menu: copy.menu,
           close: copy.close,
+          expandSidebar: copy.expandSidebar,
+          collapseSidebar: copy.collapseSidebar,
           logout: copy.logout,
           locale: copy.locale,
           nav: copy.nav,
         }}
         user={user}
+        initialCollapsed={initialSidebarCollapsed}
         wide={adminModule === "calendar"}
       >
         {feedback ? (

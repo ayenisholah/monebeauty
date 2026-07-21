@@ -15,6 +15,7 @@ import {
 } from "@/lib/notifications";
 import { resolveProcedure } from "@/lib/procedures";
 import { routing, type Locale } from "@/i18n/routing";
+import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 
 function conflict(error: CalendarConflict | string, status = 409) {
   return NextResponse.json({ error }, { status });
@@ -226,6 +227,8 @@ export async function PATCH(
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
+      const reservationConflict = await lockAndFindReservationConflict(tx, { start, end, practitionerIds: [practitionerId], roomId, deviceId, excludeAppointmentId: id });
+      if (reservationConflict) throw new Error("reservation_conflict");
       const changed = await tx.appointment.updateMany({
         where: { id, version: expectedVersion },
         data: {
@@ -305,6 +308,8 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof Error && error.message === "stale")
       return conflict("stale");
+    if (error instanceof Error && error.message === "reservation_conflict")
+      return conflict("employee_overlap");
     if (error instanceof Prisma.PrismaClientKnownRequestError)
       return conflict("stale");
     throw error;

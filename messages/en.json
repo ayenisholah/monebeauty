@@ -634,6 +634,8 @@
     "appName": "Mone Beauty Admin",
     "menu": "Open navigation",
     "close": "Close navigation",
+    "expandSidebar": "Expand navigation",
+    "collapseSidebar": "Collapse navigation",
     "logout": "Sign out",
     "locale": "Interface language",
     "nav": {

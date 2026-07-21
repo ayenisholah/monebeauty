@@ -38,6 +38,30 @@ Staff availability changes remain restricted to the employee linked to their own
 Rooms and physical treatment devices are separate exclusive resources, so employee, room,
 and device overlaps are rejected server-side and at the database boundary.
 
+Timma-style calendar and internal reservations (owner-approved, 2026-07-21):
+`/admin/kalenteri` is a full-height, dense day/week/month workspace inside the existing Mone
+admin shell. It has generated active-employee filters, sticky employee/time axes, persisted
+compact/default/expanded zoom, working-time-union cropping, responsive horizontal scrolling,
+and a mobile service tray. Day columns are per employee; week columns are grouped by weekday
+and employee; month cells use compact rows with overflow disclosure. Mone design tokens remain
+authoritative for the visual treatment.
+
+Five localized internal calendar-service templates (lunch break, personal time, work errand,
+sick leave, and vacation) form a separate unavailable-time reservation layer. They never enter
+clinical services, client histories, receipts, reminders, or treatment content. Admins configure
+template labels, color, duration, order, and active state; staff may use active templates only.
+Dragging or selecting a template and choosing a 15-minute calendar cell opens a localized
+Booking info editor for sequential items, employee, optional room or device, notes, and repeat/
+add-to-others. Recurrence supports weekdays, an end date no more than 12 months away, admins'
+multi-employee assignment, staff-own-only assignment, atomic conflict validation, and at most
+500 occurrences. Blocks can be moved, edited, or soft-cancelled for one occurrence or all future
+occurrences with optimistic version checks and audit records, without customer notifications.
+All appointment and block mutation paths share employee/room/device overlap checks and
+transaction-scoped PostgreSQL advisory locks so cross-type reservations cannot race. Internal
+blocks do not rewrite canonical working hours or `Availability.slots`. Active practitioners
+continue to populate the calendar automatically in display order; login access and calendar
+visibility remain separate controls.
+
 Expanded client account, saved details, and booking communications (owner-approved,
 2026-07-19): `/oma-tili` is a localized account dashboard for verified identity details,
 appointments and change requests, website orders, saved Finland delivery addresses, and profile
@@ -85,9 +109,11 @@ are under `/palvelut`, device treatments are under `/laitehoidot`, and the staff
 equivalents. API paths, admin paths, product/article slugs, database identifiers, and booking
 query values remain stable.
 
-Admin and runtime-content architecture (owner-approved, 2026-07-16): the custom Prisma admin
-is a responsive multilingual management application with a permanent desktop sidebar and an
-accessible mobile drawer. Admin path segments are Finnish in every interface locale: Finnish
+Admin and runtime-content architecture (owner-approved, 2026-07-16; sidebar updated
+2026-07-21): the custom Prisma admin is a responsive multilingual management application with
+a desktop sidebar that collapses to a persistent icon rail and an accessible mobile drawer.
+The desktop preference is remembered across visits. Admin path segments are Finnish in every
+interface locale: Finnish
 uses `/admin/...`, English `/en/admin/...`, and Russian `/ru/admin/...`; locale switching
 preserves the route, record, query, and editor context. Clinical services, clinical
 technologies, professional products, pricing, pages, and articles are distinct Prisma-backed

@@ -10,6 +10,7 @@ import { createAccountToken, currentUser } from "@/lib/auth";
 import { sendEmail } from "@/lib/notifications";
 import { accountHref } from "@/lib/account-routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
+import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -95,8 +96,7 @@ export async function POST(req: NextRequest) {
     const serviceId = await getServiceId(svc.slug);
     const endDate = new Date(matchingSlot.end);
 
-    // Double-book guard — any non-cancelled appointment overlapping this window.
-    const clash = await prisma.appointment.findFirst({
+    const existingAppointment = await prisma.appointment.findFirst({
       where: {
         status: { not: "CANCELLED" },
         start: { lt: endDate },
@@ -104,32 +104,24 @@ export async function POST(req: NextRequest) {
         OR: [
           { practitionerId },
           { roomId: matchingSlot.roomId },
-          ...(matchingSlot.deviceId
-            ? [{ deviceId: matchingSlot.deviceId }]
-            : []),
+          ...(matchingSlot.deviceId ? [{ deviceId: matchingSlot.deviceId }] : []),
         ],
       },
       select: { id: true },
     });
-    if (clash) {
-      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
-    }
+    if (existingAppointment) return NextResponse.json({ error: "slot_taken" }, { status: 409 });
 
-    // Authenticated bookings attach directly. Guest records never auto-claim an account.
-    const existing = accountClient
-      ? accountClient
-      : await prisma.client.findFirst({ where: { email, userId: null } });
-    const client = existing
-      ? await prisma.client.update({
-          where: { id: existing.id },
-          data: { fullName, phone, consentGdpr: true },
-        })
-      : await prisma.client.create({
-          data: { fullName, phone, email, consentGdpr: true },
-        });
-
-    const appointment = await prisma.appointment.create({
-      data: {
+    // Double-book guard — any non-cancelled appointment overlapping this window.
+    const appointment = await prisma.$transaction(async (tx) => {
+      const clash = await lockAndFindReservationConflict(tx, { start: startDate, end: endDate, practitionerIds: [practitionerId], roomId: matchingSlot.roomId, deviceId: matchingSlot.deviceId });
+      if (clash) throw new Error("slot_taken");
+      const existing = accountClient
+        ? accountClient
+        : await tx.client.findFirst({ where: { email, userId: null } });
+      const client = existing
+        ? await tx.client.update({ where: { id: existing.id }, data: { fullName, phone, consentGdpr: true } })
+        : await tx.client.create({ data: { fullName, phone, email, consentGdpr: true } });
+      const created = await tx.appointment.create({ data: {
         clientId: client.id,
         practitionerId,
         serviceId,
@@ -144,17 +136,14 @@ export async function POST(req: NextRequest) {
         procedureIndex: procedure?.index ?? null,
         procedureTitle: procedure?.procedure.title ?? null,
         procedurePrice: procedure?.procedure.price ?? null,
-      },
-      include: {
+      }, include: {
         client: { select: { fullName: true, email: true, phone: true } },
         service: { select: { slug: true } },
         practitioner: { select: { name: true } },
-      },
-    });
-
-    await prisma.consent.create({
-      data: { clientId: client.id, type: "gdpr_booking", granted: true },
-    });
+      } });
+      await tx.consent.create({ data: { clientId: client.id, type: "gdpr_booking", granted: true } });
+      return created;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     try {
       await notifyAppointmentReceipt(appointment, locale);
@@ -213,7 +202,9 @@ export async function POST(req: NextRequest) {
           }
         : null,
     });
-  } catch {
+  } catch (error) {
+    if ((error instanceof Error && error.message === "slot_taken") || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"))
+      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
     // DB unavailable — signal the wizard to show its call/email fallback.
     return NextResponse.json(
       { error: "unavailable", degraded: true },

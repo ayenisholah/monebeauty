@@ -43,7 +43,9 @@ type SetupPayload = {
   devices: Resource[];
   staffUsers: StaffUser[];
   services: Service[];
+  templates: BlockTemplate[];
 };
+type BlockTemplate = { id: string; key: string; labelFi: string; labelEn: string; labelRu: string; defaultDurationMin: number; color: string; active: boolean; displayOrder: number };
 
 const labels = {
   en: {
@@ -53,6 +55,8 @@ const labels = {
     rooms: "Rooms",
     devices: "Devices",
     services: "Service assignment",
+    internalServices: "Internal calendar services",
+    duration: "Default duration (minutes)",
     add: "Add",
     save: "Save",
     name: "Name",
@@ -78,6 +82,8 @@ const labels = {
     rooms: "Huoneet",
     devices: "Laitteet",
     services: "Palvelujen määritykset",
+    internalServices: "Kalenterin sisäiset palvelut",
+    duration: "Oletuskesto (minuuttia)",
     add: "Lisää",
     save: "Tallenna",
     name: "Nimi",
@@ -103,6 +109,8 @@ const labels = {
     rooms: "Кабинеты",
     devices: "Аппараты",
     services: "Назначение услуг",
+    internalServices: "Внутренние услуги календаря",
+    duration: "Длительность по умолчанию (минуты)",
     add: "Добавить",
     save: "Сохранить",
     name: "Имя",
@@ -200,7 +208,13 @@ export function CalendarSetup({
               save={save}
             />
           ))}
-          <PractitionerForm users={data.staffUsers} t={t} save={save} />
+        </div>
+      </SetupSection>
+      <SetupSection title={t.internalServices}>
+        <div className="grid gap-[10px] xl:grid-cols-2">
+          {data.templates.map((template) => (
+            <TemplateForm key={template.id} item={template} t={t} save={save} />
+          ))}
         </div>
       </SetupSection>
       <div className="grid gap-[16px] xl:grid-cols-2">
@@ -251,6 +265,32 @@ export function CalendarSetup({
         </div>
       </SetupSection>
     </div>
+  );
+}
+
+function TemplateForm({ item, t, save }: { item: BlockTemplate; t: SetupLabels; save: (payload: Record<string, unknown>) => Promise<boolean> }) {
+  const [labelFi, setLabelFi] = useState(item.labelFi);
+  const [labelEn, setLabelEn] = useState(item.labelEn);
+  const [labelRu, setLabelRu] = useState(item.labelRu);
+  const [duration, setDuration] = useState(item.defaultDurationMin);
+  const [color, setColor] = useState(item.color);
+  const [order, setOrder] = useState(item.displayOrder);
+  const [active, setActive] = useState(item.active);
+  return (
+    <form className={card} onSubmit={(event) => { event.preventDefault(); void save({ action: "saveBlockTemplate", id: item.id, labelFi, labelEn, labelRu, defaultDurationMin: duration, color, displayOrder: order, active }); }}>
+      <p className="font-sans text-[11px] tracking-[.08em] text-muted uppercase">{item.key}</p>
+      <div className="grid gap-[9px] sm:grid-cols-3">
+        <Field label="FI"><input className={input} value={labelFi} onChange={(event) => setLabelFi(event.target.value)} required /></Field>
+        <Field label="EN"><input className={input} value={labelEn} onChange={(event) => setLabelEn(event.target.value)} required /></Field>
+        <Field label="RU"><input className={input} value={labelRu} onChange={(event) => setLabelRu(event.target.value)} required /></Field>
+      </div>
+      <div className="grid gap-[9px] sm:grid-cols-3">
+        <Field label={t.duration}><input className={input} type="number" min={15} max={1440} step={15} value={duration} onChange={(event) => setDuration(Number(event.target.value))} /></Field>
+        <Field label={t.color}><input className="h-[44px] w-full rounded border border-line-btn bg-page p-[3px]" type="color" value={color} onChange={(event) => setColor(event.target.value)} /></Field>
+        <Field label={t.order}><input className={input} type="number" value={order} onChange={(event) => setOrder(Number(event.target.value))} /></Field>
+      </div>
+      <div className="mt-[10px] flex items-center justify-between"><Check checked={active} onChange={setActive} label={t.active} /><button className={primary}>{t.save}</button></div>
+    </form>
   );
 }
 

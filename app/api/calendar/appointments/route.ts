@@ -14,6 +14,7 @@ import { notifyAppointmentConfirmation, sendEmail } from "@/lib/notifications";
 import { accountHref } from "@/lib/account-routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { routing, type Locale } from "@/i18n/routing";
+import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -231,6 +232,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const appointment = await prisma.$transaction(async (tx) => {
+      const reservationConflict = await lockAndFindReservationConflict(tx, { start, end, practitionerIds: [practitionerId], roomId, deviceId });
+      if (reservationConflict) throw new Error("slot_taken");
       let client = existingClientId
         ? await tx.client.findFirst({
             where: { id: existingClientId, archivedAt: null },
@@ -360,6 +363,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "client_not_found")
       return bad("client_not_found", 404);
+    if (error instanceof Error && error.message === "slot_taken")
+      return bad("slot_taken", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError)
       return bad("slot_taken", 409);
     throw error;

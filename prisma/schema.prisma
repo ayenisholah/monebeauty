@@ -426,6 +426,7 @@ model Practitioner {
   staff           StaffUser?
   services        Service[]      @relation("PractitionerToService")
   primaryServices Service[]      @relation("PrimaryPractitioner")
+  calendarBlocks  CalendarBlockParticipant[]
 }
 
 model Room {
@@ -435,6 +436,7 @@ model Room {
   displayOrder Int           @default(0)
   appointments Appointment[]
   services     Service[]     @relation("RoomToService")
+  calendarBlocks CalendarBlock[]
 }
 
 model Device {
@@ -444,6 +446,88 @@ model Device {
   displayOrder Int           @default(0)
   appointments Appointment[]
   services     Service[]     @relation("DeviceToService")
+  calendarBlocks CalendarBlock[]
+}
+
+model CalendarBlockTemplate {
+  id                 String              @id @default(cuid())
+  key                String              @unique
+  labelFi            String
+  labelEn            String
+  labelRu            String
+  defaultDurationMin Int                 @default(60)
+  color              String              @default("#B89B72")
+  active             Boolean             @default(true)
+  displayOrder       Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  items              CalendarBlockItem[]
+
+  @@index([active, displayOrder])
+}
+
+model CalendarBlockSeries {
+  id         String          @id @default(cuid())
+  weekdays   Int[]
+  endDate    DateTime
+  createdBy  String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  blocks     CalendarBlock[]
+}
+
+model CalendarBlock {
+  id           String                     @id @default(cuid())
+  seriesId     String?
+  roomId       String?
+  deviceId     String?
+  start        DateTime
+  end          DateTime
+  notes        String?
+  status       CalendarBlockStatus        @default(ACTIVE)
+  version      Int                        @default(1)
+  createdBy    String
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  cancelledAt  DateTime?
+  cancelledBy  String?
+  series       CalendarBlockSeries?       @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  room         Room?                      @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  device       Device?                    @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  items        CalendarBlockItem[]
+  participants CalendarBlockParticipant[]
+
+  @@index([start, end, status])
+  @@index([seriesId, start])
+  @@index([roomId, start, end])
+  @@index([deviceId, start, end])
+}
+
+model CalendarBlockItem {
+  id             String                 @id @default(cuid())
+  blockId        String
+  templateId     String?
+  displayOrder   Int
+  durationMin    Int
+  labelFi        String
+  labelEn        String
+  labelRu        String
+  block          CalendarBlock          @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  template       CalendarBlockTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@unique([blockId, displayOrder])
+  @@index([templateId])
+}
+
+model CalendarBlockParticipant {
+  id             String        @id @default(cuid())
+  blockId        String
+  practitionerId String
+  block          CalendarBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  practitioner   Practitioner  @relation(fields: [practitionerId], references: [id], onDelete: Restrict)
+
+  @@unique([blockId, practitionerId])
+  @@index([practitionerId])
 }
 
 model StaffUser {
@@ -852,6 +936,11 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   RESCHEDULED
+}
+
+enum CalendarBlockStatus {
+  ACTIVE
+  CANCELLED
 }
 
 enum AppointmentEventKind {

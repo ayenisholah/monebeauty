@@ -24,6 +24,7 @@ import { adminBase, adminHref } from "@/lib/admin-routing";
 import type { Locale as AppLocale } from "@/i18n/routing";
 import { PUBLIC_PATHS, articlePath, productPath } from "@/lib/public-routes";
 import { openSlots } from "@/lib/booking";
+import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 import { runExternalApiAttempt } from "@/lib/external-api";
 import {
   notifyAppointmentChange,
@@ -1415,9 +1416,10 @@ export async function updateAppointmentAction(formData: FormData) {
       select: { id: true },
     });
     if (overlap) redirect(`${returnTo}?error=slot_taken`);
-    const updated = await prisma.appointment.update({
-      where: { id },
-      data: {
+    const updated = await prisma.$transaction(async (tx) => {
+      const reservationConflict = await lockAndFindReservationConflict(tx, { start: new Date(slot.start), end: new Date(slot.end), practitionerIds: [slot.practitionerId], roomId: slot.roomId, deviceId: slot.deviceId, excludeAppointmentId: id });
+      if (reservationConflict) throw new Error("slot_taken");
+      const changed = await tx.appointment.update({ where: { id }, data: {
         start: new Date(slot.start),
         end: new Date(slot.end),
         practitionerId: slot.practitionerId,
@@ -1426,21 +1428,21 @@ export async function updateAppointmentAction(formData: FormData) {
         version: { increment: 1 },
         status: "RESCHEDULED",
         confirmedAt: null,
-      },
-      include: appointmentInclude,
-    });
-    await prisma.appointmentEvent.create({
+      }, include: appointmentInclude });
+      await tx.appointmentEvent.create({
       data: {
         appointmentId: id,
         kind: "RESCHEDULED",
         actor: user.email,
         previousStatus: appointment.status,
-        nextStatus: updated.status,
+        nextStatus: changed.status,
         previousStart: appointment.start,
         previousEnd: appointment.end,
-        nextStart: updated.start,
-        nextEnd: updated.end,
+        nextStart: changed.start,
+        nextEnd: changed.end,
       },
+      });
+      return changed;
     });
     await audit({
       actor: user.email,
