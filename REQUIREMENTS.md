@@ -77,6 +77,12 @@ default, or expanded density. Week headings use initials at high density and ful
 narrow selection. Month uses a seven-column grid, compact event rows, and `+N more`. The mobile
 layout changes the internal-service palette to a horizontal tray and preserves sticky axes while
 the grid scrolls horizontally. Pointer, touch, and keyboard users must retain equivalent actions.
+Day/week grids have no nested vertical scrollbar; their full height participates in page scrolling.
+Every month date is navigable, including empty future dates. Empty day/week quarter-hour targets
+support a rectangular selection with the same time band repeated across every crossed date/employee
+column. On release, users choose Create appointment, Internal block, Mark open, or Mark closed.
+Appointments require exactly one column and use the selected duration; block and availability
+operations apply atomically to all exact selected targets with existing admin/staff RBAC.
 
 `CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
 duration, Mone-compatible color, active state, and display order. Generate the complete Finnish

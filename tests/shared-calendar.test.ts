@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   availabilityCovers,
+  applyAvailabilityRange,
   generateStaffSlots,
   openSlotRange,
   workingRangeForDate,
@@ -22,6 +23,8 @@ const appointmentForm = readFileSync(
   "components/calendar/AppointmentForm.tsx",
   "utf8",
 );
+const blockApi = readFileSync("app/api/calendar/blocks/route.ts", "utf8");
+const scheduleApi = readFileSync("app/api/staff/schedule/route.ts", "utf8");
 const migration = readFileSync(
   "prisma/migrations/20260719110000_shared_employee_calendar/migration.sql",
   "utf8",
@@ -63,6 +66,33 @@ test("availability must cover the complete procedure without gaps", () => {
       new Date("2026-07-20T11:00:00.000Z"),
     ),
     false,
+  );
+});
+
+test("availability range updates preserve other quarters", () => {
+  const base = generateStaffSlots("2026-07-21", {
+    openDays: [2],
+    startHour: 10,
+    endHour: 12,
+    stepMin: 30,
+  });
+  const changed = applyAvailabilityRange(
+    base,
+    "2026-07-21",
+    630,
+    675,
+    "closed",
+  );
+  assert.equal(changed.length, 8);
+  assert.deepEqual(
+    changed
+      .filter((slot) => slot.status === "closed")
+      .map((slot) => slot.start.slice(11, 16)),
+    ["10:30", "10:45", "11:00"],
+  );
+  assert.equal(
+    applyAvailabilityRange([], "2026-07-21", 600, 630, "open").length,
+    2,
   );
 });
 
@@ -168,15 +198,38 @@ test("calendar permissions restrict staff operations to their linked employee", 
   assert.match(moveApi, /qualified\.has\(practitionerId\)/);
 });
 
-test("staff can create confirmed appointments from a button or open time", () => {
+test("staff can create confirmed appointments from a button or selected range", () => {
   assert.match(calendar, /t\.create/);
-  assert.match(calendar, /onCreate\(start, practitioner\.id\)/);
+  assert.match(calendar, /applyRangeAction\("appointment"\)/);
+  assert.match(calendar, /durationMin/);
   assert.match(appointmentForm, /Search clients/);
   assert.match(appointmentForm, /Add a new client/);
   assert.match(createApi, /status: "CONFIRMED"/);
   assert.match(createApi, /channel: "staff"/);
   assert.match(createApi, /notifyAppointmentConfirmation/);
   assert.match(createApi, /gdpr_booking_staff/);
+});
+
+test("day and week support rectangular range actions without an inner vertical scroll", () => {
+  assert.match(calendar, /overflow-x-auto overflow-y-hidden/);
+  assert.match(calendar, /TIME_GRID_EDGE_PADDING = 12/);
+  assert.match(
+    calendar,
+    /height: timelineHeight \+ TIME_GRID_EDGE_PADDING \* 2/,
+  );
+  assert.match(calendar, /normalizeCalendarRange/);
+  assert.match(calendar, /applyRangeAction\("block"\)/);
+  assert.match(calendar, /applyRangeAction\("open"\)/);
+  assert.match(calendar, /applyRangeAction\("closed"\)/);
+  assert.match(scheduleApi, /export async function PATCH/);
+  assert.match(scheduleApi, /applyAvailabilityRange/);
+  assert.match(blockApi, /exactTargets/);
+});
+
+test("month dates remain navigable without availability or events", () => {
+  const monthView = calendar.slice(calendar.indexOf("function MonthView"));
+  assert.doesNotMatch(monthView, /disabled=\{!working/);
+  assert.match(monthView, /onClick=\{\(\) => onOpenDay\(date\)\}/);
 });
 
 test("staff can edit open and closed times only through own availability", () => {

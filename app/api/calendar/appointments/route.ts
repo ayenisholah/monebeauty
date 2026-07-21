@@ -193,7 +193,18 @@ export async function POST(req: NextRequest) {
       )
     : null;
   if (procedureRequested && !procedure) return bad("invalid_procedure");
-  const end = new Date(start.getTime() + service.durationMin * 60_000);
+  const requestedDuration =
+    payload.durationMin === undefined
+      ? service.durationMin
+      : Number(payload.durationMin);
+  if (
+    !Number.isInteger(requestedDuration) ||
+    requestedDuration < 15 ||
+    requestedDuration > 12 * 60 ||
+    requestedDuration % 15 !== 0
+  )
+    return bad("invalid_duration");
+  const end = new Date(start.getTime() + requestedDuration * 60_000);
   const date = new Date(`${start.toISOString().slice(0, 10)}T00:00:00.000Z`);
   const availability = await prisma.availability.findUnique({
     where: { practitionerId_date: { practitionerId, date } },
@@ -232,7 +243,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const appointment = await prisma.$transaction(async (tx) => {
-      const reservationConflict = await lockAndFindReservationConflict(tx, { start, end, practitionerIds: [practitionerId], roomId, deviceId });
+      const reservationConflict = await lockAndFindReservationConflict(tx, {
+        start,
+        end,
+        practitionerIds: [practitionerId],
+        roomId,
+        deviceId,
+      });
       if (reservationConflict) throw new Error("slot_taken");
       let client = existingClientId
         ? await tx.client.findFirst({
@@ -299,7 +316,13 @@ export async function POST(req: NextRequest) {
           nextStatus: "CONFIRMED",
           nextStart: start,
           nextEnd: end,
-          changes: { channel: "staff", practitionerId, roomId, deviceId },
+          changes: {
+            channel: "staff",
+            practitionerId,
+            roomId,
+            deviceId,
+            durationMin: requestedDuration,
+          },
         },
       });
       return created;

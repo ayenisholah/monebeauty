@@ -5,6 +5,7 @@ import { auditForUser, requireApiUser } from "@/lib/auth";
 import { getFirstActivePractitionerId } from "@/lib/booking";
 import type { AuthUser } from "@/lib/auth";
 import {
+  applyAvailabilityRange,
   dateFromYmd,
   generateStaffSlots,
   normalizeSlots,
@@ -188,6 +189,147 @@ export async function POST(req: NextRequest) {
     date: ymdFromDate(saved.date),
     slots: normalizeSlots(saved.slots),
   });
+}
+
+export async function PATCH(req: NextRequest) {
+  const user = await requireApiUser(["ADMIN", "STAFF"]);
+  if (!user) return forbidden();
+  const payload = (await req.json().catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
+  if (!payload) return bad("invalid_json");
+
+  const action = String(payload.action ?? "");
+  const startMinute = Number(payload.startMinute);
+  const endMinute = Number(payload.endMinute);
+  const rawTargets = Array.isArray(payload.targets) ? payload.targets : [];
+  const targets = rawTargets.map((value) => {
+    const target = value as Record<string, unknown>;
+    return {
+      date: String(target.date ?? ""),
+      practitionerId: String(target.practitionerId ?? ""),
+    };
+  });
+  if (
+    !["open", "closed"].includes(action) ||
+    !Number.isInteger(startMinute) ||
+    !Number.isInteger(endMinute) ||
+    startMinute < 0 ||
+    endMinute > 1440 ||
+    startMinute >= endMinute ||
+    startMinute % 15 !== 0 ||
+    endMinute % 15 !== 0 ||
+    !targets.length ||
+    targets.length > 64 ||
+    targets.some(
+      (target) => !dateFromYmd(target.date) || !target.practitionerId,
+    ) ||
+    new Set(targets.map((target) => `${target.date}:${target.practitionerId}`))
+      .size !== targets.length
+  )
+    return bad("invalid_range");
+
+  const ownPractitionerId =
+    user.role === "STAFF" ? await resolvePractitionerId(user) : null;
+  if (
+    user.role === "STAFF" &&
+    targets.some((target) => target.practitionerId !== ownPractitionerId)
+  ) {
+    await auditForUser(
+      user,
+      "availability_range_mutation_denied",
+      "Availability",
+      null,
+      { outcome: "DENIED", request: req },
+    );
+    return forbidden();
+  }
+
+  const now = new Date();
+  if (
+    targets.some((target) => {
+      const start = dateFromYmd(target.date)!;
+      start.setUTCMinutes(startMinute);
+      return start <= now;
+    })
+  )
+    return bad("start_in_past");
+
+  const practitionerIds = [
+    ...new Set(targets.map((target) => target.practitionerId)),
+  ];
+  const practitioners = await prisma.practitioner.findMany({
+    where: { id: { in: practitionerIds }, active: true },
+    select: { id: true, workingHours: true },
+  });
+  if (practitioners.length !== practitionerIds.length)
+    return bad("invalid_employee");
+  const practitionerById = new Map(
+    practitioners.map((practitioner) => [practitioner.id, practitioner]),
+  );
+  const dates = targets.map((target) => dateFromYmd(target.date)!);
+  const existing = await prisma.availability.findMany({
+    where: {
+      OR: targets.map((target, index) => ({
+        practitionerId: target.practitionerId,
+        date: dates[index],
+      })),
+    },
+    select: { practitionerId: true, date: true, slots: true },
+  });
+  const existingByKey = new Map(
+    existing.map((row) => [
+      `${row.date.toISOString().slice(0, 10)}:${row.practitionerId}`,
+      row.slots,
+    ]),
+  );
+
+  await prisma.$transaction(
+    targets.map((target, index) => {
+      const practitioner = practitionerById.get(target.practitionerId)!;
+      const base =
+        existingByKey.get(`${target.date}:${target.practitionerId}`) ??
+        generateStaffSlots(
+          target.date,
+          parseWorkingHours(practitioner.workingHours),
+        );
+      const slots = applyAvailabilityRange(
+        base,
+        target.date,
+        startMinute,
+        endMinute,
+        action as "open" | "closed",
+      );
+      return prisma.availability.upsert({
+        where: {
+          practitionerId_date: {
+            practitionerId: target.practitionerId,
+            date: dates[index],
+          },
+        },
+        update: { slots },
+        create: {
+          practitionerId: target.practitionerId,
+          date: dates[index],
+          slots,
+        },
+      });
+    }),
+  );
+  await auditForUser(
+    user,
+    action === "open"
+      ? "availability_range_opened"
+      : "availability_range_closed",
+    "Availability",
+    null,
+    {
+      request: req,
+      metadata: { startMinute, endMinute, targetCount: targets.length },
+    },
+  );
+  return NextResponse.json({ changed: targets.length, action });
 }
 
 export async function PUT(req: NextRequest) {

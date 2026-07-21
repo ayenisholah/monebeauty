@@ -81,6 +81,10 @@
 - Keep full Monday-first weeks, render vacant one-hour rows with a 10:00–19:00 empty-grid
   fallback, expose quarter-hour targets only on hover/drop, add a visible drag overlay, and
   compact the service/employee tiles.
+- Remove nested Day/Week vertical scrolling, keep every Month date navigable, and add accessible
+  rectangular quarter-hour range selection across dates/employees with an action chooser. Use the
+  dragged duration for single-column staff appointments and atomic exact-target batch writes for
+  internal blocks and open/closed availability.
 - Aggregate public availability across the ordered qualified roster and allocate the first
   conflict-free employee/resource atomically without exposing employee identity publicly.
 

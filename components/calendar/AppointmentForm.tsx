@@ -64,6 +64,7 @@ const copy = {
     device: "Device",
     date: "Date",
     time: "Time",
+    duration: "Duration",
     notes: "Booking notes",
     language: "Notification language",
     consent: "The client has accepted the privacy notice for this booking.",
@@ -95,6 +96,7 @@ const copy = {
     device: "Laite",
     date: "Päivä",
     time: "Aika",
+    duration: "Kesto",
     notes: "Varausmuistiinpanot",
     language: "Ilmoitusten kieli",
     consent: "Asiakas on hyväksynyt tämän varauksen tietosuojailmoituksen.",
@@ -126,6 +128,7 @@ const copy = {
     device: "Аппарат",
     date: "Дата",
     time: "Время",
+    duration: "Продолжительность",
     notes: "Примечания к записи",
     language: "Язык уведомлений",
     consent: "Клиент принял уведомление о конфиденциальности для этой записи.",
@@ -160,6 +163,7 @@ export function AppointmentForm({
   locale,
   initialStart,
   initialPractitionerId,
+  initialDurationMin,
   detail,
   onClose,
   onSaved,
@@ -167,6 +171,7 @@ export function AppointmentForm({
   locale: Locale;
   initialStart: string;
   initialPractitionerId: string;
+  initialDurationMin?: number;
   detail?: AppointmentDetail | null;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
@@ -276,8 +281,10 @@ export function AppointmentForm({
       selectedService?.deviceIds.includes(item.id),
     ) ?? [];
   const selectedDuration = selectedService?.durationMin ?? 0;
+  const appointmentDuration =
+    !detail && initialDurationMin ? initialDurationMin : selectedDuration;
   const timeOptions = (() => {
-    const duration = selectedDuration;
+    const duration = appointmentDuration;
     if (!duration) return [];
     return scheduleSlots
       .filter((slot) => slot.status === "open")
@@ -343,6 +350,9 @@ export function AppointmentForm({
           notes,
           locale: notificationLocale,
           consentGdpr: consent,
+          ...(!detail && initialDurationMin
+            ? { durationMin: initialDurationMin }
+            : {}),
         }),
       },
     );
@@ -573,6 +583,13 @@ export function AppointmentForm({
               }
             />
           </Field>
+          {initialDurationMin && !detail ? (
+            <Field label={t.duration}>
+              <div className={`${input} flex items-center`}>
+                {initialDurationMin} min
+              </div>
+            </Field>
+          ) : null}
           <Field label={t.language}>
             <ThemedSelect
               value={notificationLocale}

@@ -164,6 +164,54 @@ export function normalizeSlots(value: unknown): StaffSlot[] {
     .filter((slot): slot is StaffSlot => Boolean(slot));
 }
 
+export function applyAvailabilityRange(
+  rawSlots: unknown,
+  dateStr: string,
+  startMinute: number,
+  endMinute: number,
+  status: "open" | "closed",
+): StaffSlot[] {
+  const date = dateFromYmd(dateStr);
+  if (
+    !date ||
+    !Number.isInteger(startMinute) ||
+    !Number.isInteger(endMinute) ||
+    startMinute < 0 ||
+    endMinute > 1440 ||
+    startMinute >= endMinute ||
+    startMinute % 15 !== 0 ||
+    endMinute % 15 !== 0
+  )
+    return [];
+
+  const quarters = new Map<number, "open" | "closed">();
+  for (const slot of normalizeSlots(rawSlots)) {
+    const start = new Date(slot.start);
+    const end = new Date(slot.end);
+    const from = start.getUTCHours() * 60 + start.getUTCMinutes();
+    const to = end.getUTCHours() * 60 + end.getUTCMinutes();
+    for (let minute = from; minute + 15 <= to; minute += 15) {
+      quarters.set(minute, slot.status === "closed" ? "closed" : "open");
+    }
+  }
+  for (let minute = startMinute; minute < endMinute; minute += 15) {
+    quarters.set(minute, status);
+  }
+
+  return [...quarters]
+    .sort(([left], [right]) => left - right)
+    .map(([minute, quarterStatus]) => {
+      const start = new Date(date);
+      start.setUTCMinutes(minute);
+      const end = new Date(start.getTime() + 15 * 60_000);
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        status: quarterStatus,
+      };
+    });
+}
+
 export function availabilityCovers(rawSlots: unknown, start: Date, end: Date) {
   const intervals = normalizeSlots(rawSlots)
     .filter((slot) => slot.status === "open")

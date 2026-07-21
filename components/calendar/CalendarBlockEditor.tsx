@@ -32,6 +32,10 @@ export type CalendarBlock = {
   }>;
 };
 type Named = { id: string; name: string };
+export type CalendarBlockRangeTarget = {
+  date: string;
+  practitionerIds: string[];
+};
 
 const text = {
   en: {
@@ -50,6 +54,8 @@ const text = {
     repeat: "Repeat or add to others…",
     until: "End date",
     preview: "occurrences",
+    selectedDates: "Selected dates",
+    selectedEmployees: "Selected employees",
     save: "Save",
     cancel: "Close",
     cancelBlock: "Cancel block",
@@ -74,6 +80,8 @@ const text = {
     repeat: "Toista tai lisää muille…",
     until: "Päättymispäivä",
     preview: "esiintymää",
+    selectedDates: "Valitut päivät",
+    selectedEmployees: "Valitut työntekijät",
     save: "Tallenna",
     cancel: "Sulje",
     cancelBlock: "Peru varaus",
@@ -98,6 +106,8 @@ const text = {
     repeat: "Повторить или добавить другим…",
     until: "Дата окончания",
     preview: "повторений",
+    selectedDates: "Выбранные даты",
+    selectedEmployees: "Выбранные сотрудники",
     save: "Сохранить",
     cancel: "Закрыть",
     cancelBlock: "Отменить блок",
@@ -130,6 +140,8 @@ export function CalendarBlockEditor({
   locale,
   initialStart,
   initialPractitionerId,
+  initialDurationMin,
+  initialRangeTargets,
   block,
   templates,
   practitioners,
@@ -142,6 +154,8 @@ export function CalendarBlockEditor({
   locale: "fi" | "en" | "ru";
   initialStart: string;
   initialPractitionerId: string;
+  initialDurationMin?: number;
+  initialRangeTargets?: CalendarBlockRangeTarget[];
   block?: CalendarBlock | null;
   templates: CalendarBlockTemplate[];
   practitioners: Named[];
@@ -154,6 +168,7 @@ export function CalendarBlockEditor({
   const t = text[locale];
   const initial = new Date(block?.start ?? initialStart);
   const initialTemplate = block?.items[0]?.templateId ?? templates[0]?.id ?? "";
+  const rangeMode = Boolean(initialRangeTargets?.length);
   const [date, setDate] = useState(ymd(initial));
   const [startTime, setStartTime] = useState(hm(initial));
   const [items, setItems] = useState<
@@ -166,13 +181,22 @@ export function CalendarBlockEditor({
       {
         templateId: initialTemplate,
         durationMin:
+          initialDurationMin ??
           templates.find((item) => item.id === initialTemplate)
-            ?.defaultDurationMin ?? 60,
+            ?.defaultDurationMin ??
+          60,
       },
     ],
   );
   const [participantIds, setParticipantIds] = useState(
-    block?.practitionerIds ?? [initialPractitionerId],
+    block?.practitionerIds ??
+      (initialRangeTargets?.length
+        ? [
+            ...new Set(
+              initialRangeTargets.flatMap((target) => target.practitionerIds),
+            ),
+          ]
+        : [initialPractitionerId]),
   );
   const [resource, setResource] = useState(
     block?.roomId
@@ -239,6 +263,7 @@ export function CalendarBlockEditor({
       notes,
       weekdays: repeat ? weekdays : [],
       recurrenceEnd: repeat ? `${recurrenceEnd}T23:59:59.999Z` : null,
+      ...(rangeMode ? { targets: initialRangeTargets } : {}),
     };
     const response = await fetch(
       block ? `/api/calendar/blocks/${block.id}` : "/api/calendar/blocks",
@@ -324,16 +349,25 @@ export function CalendarBlockEditor({
         ) : null}
         <div className="grid lg:grid-cols-[300px_minmax(0,1fr)]">
           <div className="border-b border-line-hair p-[16px] lg:border-r lg:border-b-0">
-            <label className="font-sans text-xs font-medium text-body">
-              {t.date}
-              <DatePicker
-                locale={locale}
-                value={date}
-                onValueChange={setDate}
-                ariaLabel={t.date}
-                className="mt-1 w-full"
-              />
-            </label>
+            {rangeMode ? (
+              <div className="rounded border border-line-card bg-page p-3 font-sans text-xs text-body">
+                <strong className="block font-medium">{t.selectedDates}</strong>
+                <span>
+                  {initialRangeTargets?.map((target) => target.date).join(", ")}
+                </span>
+              </div>
+            ) : (
+              <label className="font-sans text-xs font-medium text-body">
+                {t.date}
+                <DatePicker
+                  locale={locale}
+                  value={date}
+                  onValueChange={setDate}
+                  ariaLabel={t.date}
+                  className="mt-1 w-full"
+                />
+              </label>
+            )}
             <div className="mt-4 grid grid-cols-2 gap-2">
               <label className="font-sans text-xs font-medium text-body">
                 {t.start}
@@ -429,24 +463,38 @@ export function CalendarBlockEditor({
                 className="mt-2"
               />
             </fieldset>
-            <label className="mt-4 block font-sans text-xs font-medium text-body">
-              {t.employee}
-              <ThemedSelect
-                value={participantIds[0] ?? ""}
-                disabled={!canAssignMany}
-                onValueChange={(value) =>
-                  setParticipantIds((current) => [
-                    value,
-                    ...current.slice(1).filter((id) => id !== value),
-                  ])
-                }
-                options={practitioners.map((person) => ({
-                  value: person.id,
-                  label: person.name,
-                }))}
-                className="mt-1"
-              />
-            </label>
+            {rangeMode ? (
+              <div className="mt-4 rounded border border-line-card bg-page p-3 font-sans text-xs text-body">
+                <strong className="block font-medium">
+                  {t.selectedEmployees}
+                </strong>
+                <span>
+                  {practitioners
+                    .filter((person) => participantIds.includes(person.id))
+                    .map((person) => person.name)
+                    .join(", ")}
+                </span>
+              </div>
+            ) : (
+              <label className="mt-4 block font-sans text-xs font-medium text-body">
+                {t.employee}
+                <ThemedSelect
+                  value={participantIds[0] ?? ""}
+                  disabled={!canAssignMany}
+                  onValueChange={(value) =>
+                    setParticipantIds((current) => [
+                      value,
+                      ...current.slice(1).filter((id) => id !== value),
+                    ])
+                  }
+                  options={practitioners.map((person) => ({
+                    value: person.id,
+                    label: person.name,
+                  }))}
+                  className="mt-1"
+                />
+              </label>
+            )}
             <label className="mt-4 block font-sans text-xs font-medium text-body">
               {t.resource}
               <ThemedSelect
@@ -466,7 +514,7 @@ export function CalendarBlockEditor({
                 ]}
               />
             </label>
-            {!block ? (
+            {!block && !rangeMode ? (
               <fieldset className="mt-4 rounded border border-line-card bg-page p-3">
                 <label className="flex min-h-10 items-center gap-2 font-sans text-sm">
                   <input
@@ -543,7 +591,7 @@ export function CalendarBlockEditor({
                   </div>
                 ) : null}
               </fieldset>
-            ) : block.seriesId ? (
+            ) : block?.seriesId ? (
               <div className="mt-4 flex gap-3">
                 {(["occurrence", "future"] as const).map((value) => (
                   <label
