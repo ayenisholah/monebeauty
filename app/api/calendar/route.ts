@@ -185,6 +185,11 @@ export async function GET(req: NextRequest) {
     })),
     templates: templates.map((template) => {
       const catalogEntry = INTERNAL_CALENDAR_SERVICE_BY_KEY.get(template.key);
+      const dragLabels = catalogEntry?.dragLabels ?? {
+        fi: Array.from(template.labelFi).slice(0, 14).join(""),
+        en: Array.from(template.labelEn).slice(0, 14).join(""),
+        ru: Array.from(template.labelRu).slice(0, 14).join(""),
+      };
       return {
         id: template.id,
         key: template.key,
@@ -199,7 +204,8 @@ export async function GET(req: NextRequest) {
           en: template.labelEn,
           ru: template.labelRu,
         },
-        dragLabel: catalogEntry?.dragLabel ?? template.labelFi.slice(0, 14),
+        dragLabel: dragLabels[locale],
+        dragLabels,
         defaultEnabled: catalogEntry?.defaultEnabled ?? false,
         defaultDurationMin: template.defaultDurationMin,
         color: template.color,

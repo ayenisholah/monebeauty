@@ -12,6 +12,10 @@ import {
 
 const calendar = readFileSync("components/calendar/SharedCalendar.tsx", "utf8");
 const calendarApi = readFileSync("app/api/calendar/route.ts", "utf8");
+const paletteEditor = readFileSync(
+  "components/calendar/InternalServicePaletteEditor.tsx",
+  "utf8",
+);
 const moveApi = readFileSync(
   "app/api/calendar/appointments/[id]/route.ts",
   "utf8",
@@ -163,7 +167,20 @@ test("calendar exposes all-employee views and confirmed drag editing", () => {
   assert.match(calendar, /lg:min-h-\[34px\]/);
   assert.match(calendar, /const employeeButtonCls =\s*"[^"]*min-h-\[34px\]/);
   assert.match(calendarApi, /dragLabel:/);
+  assert.match(calendarApi, /dragLabels,/);
   assert.match(calendarApi, /defaultEnabled:/);
+});
+
+test("internal-service palette follows the active locale", () => {
+  assert.match(paletteEditor, /template\?\.labels\[locale\]/);
+  assert.match(paletteEditor, /item\.aliases\[locale\]/);
+  assert.match(paletteEditor, /moveUp: "Siirrä ylös"/);
+  assert.match(paletteEditor, /moveUp: "Переместить вверх"/);
+  assert.doesNotMatch(paletteEditor, /template\?\.labels\.fi/);
+  assert.match(calendar, /preference\.aliases\[locale\]/);
+  assert.match(calendar, /mone-calendar-palette-v3/);
+  assert.match(calendar, /mone-calendar-palette-v2/);
+  assert.match(calendar, /shouldMigrate/);
 });
 
 test("calendar view persists independently for admin and staff", () => {

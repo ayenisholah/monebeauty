@@ -13,6 +13,7 @@ type Template = {
   key: string;
   labels: { fi: string; en: string; ru: string };
   dragLabel: string;
+  dragLabels: { fi: string; en: string; ru: string };
   defaultEnabled: boolean;
 };
 
@@ -24,6 +25,8 @@ const copy = {
     alias: "Drag & drop name",
     close: "Close",
     save: "Save changes",
+    moveUp: "Move up",
+    moveDown: "Move down",
   },
   fi: {
     title: "Valitse palvelut vedä ja pudota -listaan",
@@ -32,6 +35,8 @@ const copy = {
     alias: "Vedä ja pudota -nimi",
     close: "Sulje",
     save: "Tallenna muutokset",
+    moveUp: "Siirrä ylös",
+    moveDown: "Siirrä alas",
   },
   ru: {
     title: "Выберите услуги для списка перетаскивания",
@@ -40,6 +45,8 @@ const copy = {
     alias: "Короткое название",
     close: "Закрыть",
     save: "Сохранить",
+    moveUp: "Переместить вверх",
+    moveDown: "Переместить вниз",
   },
 } as const;
 
@@ -59,7 +66,7 @@ export function InternalServicePaletteEditor({
   const t = copy[locale];
   const catalog = templates.map((template) => ({
     key: template.key,
-    dragLabel: template.dragLabel,
+    dragLabels: template.dragLabels,
     defaultEnabled: template.defaultEnabled,
   }));
   const [draft, setDraft] = useState(() =>
@@ -156,23 +163,27 @@ export function InternalServicePaletteEditor({
                         )
                       }
                       className="size-4 accent-accent"
-                      aria-label={template?.labels.fi ?? item.key}
+                      aria-label={template?.labels[locale] ?? item.key}
                     />
                     <span className="font-sans text-[13px] text-body">
-                      {template?.labels.fi ?? item.key}
+                      {template?.labels[locale] ?? item.key}
                     </span>
                     <input
-                      value={item.alias}
+                      value={item.aliases[locale]}
                       maxLength={14}
+                      aria-label={`${t.alias}: ${template?.labels[locale] ?? item.key}`}
                       onChange={(event) =>
                         setDraft((current) =>
                           current.map((entry) =>
                             entry.key === item.key
                               ? {
                                   ...entry,
-                                  alias: truncateCalendarAlias(
-                                    event.target.value,
-                                  ),
+                                  aliases: {
+                                    ...entry.aliases,
+                                    [locale]: truncateCalendarAlias(
+                                      event.target.value,
+                                    ),
+                                  },
                                 }
                               : entry,
                           ),
@@ -186,7 +197,7 @@ export function InternalServicePaletteEditor({
                         onClick={() => move(index, -1)}
                         disabled={index === 0}
                         className="size-9 rounded border border-line-btn disabled:opacity-30"
-                        aria-label="Move up"
+                        aria-label={t.moveUp}
                       >
                         <ArrowUp size={15} />
                       </button>
@@ -195,7 +206,7 @@ export function InternalServicePaletteEditor({
                         onClick={() => move(index, 1)}
                         disabled={index === draft.length - 1}
                         className="size-9 rounded border border-line-btn disabled:opacity-30"
-                        aria-label="Move down"
+                        aria-label={t.moveDown}
                       >
                         <ArrowDown size={15} />
                       </button>

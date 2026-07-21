@@ -6,6 +6,7 @@ export type InternalCalendarService = {
   labelEn: string;
   labelRu: string;
   dragLabel: string;
+  dragLabels: { fi: string; en: string; ru: string };
   defaultDurationMin: number;
   color: string;
   defaultEnabled: boolean;

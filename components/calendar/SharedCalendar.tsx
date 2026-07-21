@@ -210,8 +210,7 @@ const copy = {
     workdayRemoved: "Työpäivä poistettu.",
     workdayConflict:
       "Siirrä tai peru työntekijän ajanvaraukset ennen työpäivän muuttamista.",
-    workdayInvalid:
-      "Työpäivää ei voitu tallentaa. Tarkista päivä ja työaika.",
+    workdayInvalid: "Työpäivää ei voitu tallentaa. Tarkista päivä ja työaika.",
     applyHours: "Käytä työaikoja",
     startHour: "Alkaa",
     endHour: "Päättyy",
@@ -382,8 +381,9 @@ export function SharedCalendar({
     deviceId: string;
   } | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
-  const [workdayEditor, setWorkdayEditor] =
-    useState<WorkdayEditor | null>(null);
+  const [workdayEditor, setWorkdayEditor] = useState<WorkdayEditor | null>(
+    null,
+  );
   const [workdaySaving, setWorkdaySaving] = useState(false);
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [managing, setManaging] = useState<{
@@ -418,15 +418,17 @@ export function SharedCalendar({
         const template = data?.templates.find(
           (item) => item.key === preference.key,
         );
-        return template ? [{ template, alias: preference.alias }] : [];
+        return template
+          ? [{ template, alias: preference.aliases[locale] }]
+          : [];
       }),
-    [data?.templates, palette],
+    [data?.templates, locale, palette],
   );
   const paletteCatalog = useMemo(
     () =>
       data?.templates.map((template) => ({
         key: template.key,
-        dragLabel: template.dragLabel,
+        dragLabels: template.dragLabels,
         defaultEnabled: template.defaultEnabled,
       })) ?? [],
     [data?.templates],
@@ -490,7 +492,8 @@ export function SharedCalendar({
     if (!data) return;
     const owner = `${setupHref ? "admin" : "staff"}:${data.viewerId}`;
     const selectionKey = `mone-calendar-employees:${owner}`;
-    const paletteKey = `mone-calendar-palette-v2:${owner}`;
+    const paletteKey = `mone-calendar-palette-v3:${owner}`;
+    const legacyPaletteKey = `mone-calendar-palette-v2:${owner}`;
     if (selectionOwnerRef.current !== selectionKey) {
       let stored: unknown = null;
       try {
@@ -517,12 +520,23 @@ export function SharedCalendar({
     }
     if (paletteOwnerRef.current !== paletteKey) {
       let stored: unknown = null;
+      let shouldMigrate = false;
       try {
-        stored = JSON.parse(window.localStorage.getItem(paletteKey) ?? "null");
+        const current = window.localStorage.getItem(paletteKey);
+        const legacy = window.localStorage.getItem(legacyPaletteKey);
+        const saved = current ?? legacy;
+        shouldMigrate = current === null && legacy !== null;
+        stored = JSON.parse(saved ?? "null");
       } catch {
         stored = null;
       }
-      setPalette(normalizeInternalPalette(stored, paletteCatalog));
+      const normalized = normalizeInternalPalette(stored, paletteCatalog);
+      setPalette(normalized);
+      if (shouldMigrate) {
+        try {
+          window.localStorage.setItem(paletteKey, JSON.stringify(normalized));
+        } catch {}
+      }
       paletteOwnerRef.current = paletteKey;
     } else {
       setPalette((current) =>
@@ -565,7 +579,7 @@ export function SharedCalendar({
     if (!data) return;
     try {
       window.localStorage.setItem(
-        `mone-calendar-palette-v2:${setupHref ? "admin" : "staff"}:${data.viewerId}`,
+        `mone-calendar-palette-v3:${setupHref ? "admin" : "staff"}:${data.viewerId}`,
         JSON.stringify(normalized),
       );
     } catch {}
@@ -842,8 +856,7 @@ export function SharedCalendar({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action:
-          workdayEditor.mode === "add" ? "add_workday" : "remove_workday",
+        action: workdayEditor.mode === "add" ? "add_workday" : "remove_workday",
         practitionerId: workdayEditor.practitionerId,
         date: workdayEditor.date,
         ...(workdayEditor.mode === "add"
@@ -1411,9 +1424,7 @@ export function SharedCalendar({
               id="workday-editor-title"
               className="font-display text-[30px] font-medium"
             >
-              {workdayEditor.mode === "add"
-                ? t.addWorkday
-                : t.removeWorkday}
+              {workdayEditor.mode === "add" ? t.addWorkday : t.removeWorkday}
             </h2>
             <div className="mt-[18px] grid gap-[14px]">
               <Field label={t.employee}>
@@ -1467,10 +1478,7 @@ export function SharedCalendar({
                           startMinute,
                           endMinute: Math.min(
                             24 * 60,
-                            Math.max(
-                              workdayEditor.endMinute,
-                              startMinute + 15,
-                            ),
+                            Math.max(workdayEditor.endMinute, startMinute + 15),
                           ),
                         });
                       }}
@@ -2501,14 +2509,17 @@ function TooltipIconButton({
         disabled={disabled}
         aria-label={label}
         aria-describedby={tooltipId}
-        className={cn(iconButtonCls, "disabled:cursor-not-allowed disabled:opacity-35")}
+        className={cn(
+          iconButtonCls,
+          "disabled:cursor-not-allowed disabled:opacity-35",
+        )}
       >
         {children}
       </button>
       <span
         id={tooltipId}
         role="tooltip"
-        className="pointer-events-none absolute top-[calc(100%+7px)] left-1/2 z-[150] -translate-x-1/2 rounded-[4px] bg-ink px-2 py-1 font-sans text-[11px] whitespace-nowrap text-page opacity-0 shadow-card transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+        className="pointer-events-none absolute top-[calc(100%+7px)] left-1/2 z-[150] -translate-x-1/2 rounded-[4px] bg-ink px-2 py-1 font-sans text-[11px] whitespace-nowrap text-page opacity-0 shadow-card transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
       >
         {label}
       </span>

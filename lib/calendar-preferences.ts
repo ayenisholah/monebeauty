@@ -5,13 +5,13 @@ import {
 
 export type InternalPaletteCatalogItem = {
   key: string;
-  dragLabel: string;
+  dragLabels: { fi: string; en: string; ru: string };
   defaultEnabled: boolean;
 };
 
 export type InternalPalettePreference = {
   key: string;
-  alias: string;
+  aliases: { fi: string; en: string; ru: string };
   enabled: boolean;
 };
 
@@ -22,7 +22,7 @@ export function truncateCalendarAlias(value: string) {
 function defaultCatalog(): InternalPaletteCatalogItem[] {
   return INTERNAL_CALENDAR_SERVICES.map((service) => ({
     key: service.key,
-    dragLabel: service.dragLabel,
+    dragLabels: service.dragLabels,
     defaultEnabled: service.defaultEnabled,
   }));
 }
@@ -39,7 +39,10 @@ export function normalizeInternalPalette(
   if (Array.isArray(value)) {
     for (const raw of value) {
       if (!raw || typeof raw !== "object") continue;
-      const item = raw as Partial<InternalPalettePreference>;
+      const item = raw as Partial<InternalPalettePreference> & {
+        alias?: unknown;
+        aliases?: Partial<InternalPalettePreference["aliases"]>;
+      };
       if (!item.key || !catalogByKey.has(item.key) || seen.has(item.key))
         continue;
       const fallback = catalogByKey.get(item.key)!;
@@ -48,10 +51,23 @@ export function normalizeInternalPalette(
         requestedEnabled && enabledCount < INTERNAL_PALETTE_MAX_SELECTED;
       if (enabled) enabledCount += 1;
       seen.add(item.key);
+      const legacyFinnishAlias = truncateCalendarAlias(
+        String(item.alias ?? ""),
+      );
       normalized.push({
         key: item.key,
-        alias:
-          truncateCalendarAlias(String(item.alias ?? "")) || fallback.dragLabel,
+        aliases: {
+          fi:
+            truncateCalendarAlias(String(item.aliases?.fi ?? "")) ||
+            legacyFinnishAlias ||
+            fallback.dragLabels.fi,
+          en:
+            truncateCalendarAlias(String(item.aliases?.en ?? "")) ||
+            fallback.dragLabels.en,
+          ru:
+            truncateCalendarAlias(String(item.aliases?.ru ?? "")) ||
+            fallback.dragLabels.ru,
+        },
         enabled,
       });
     }
@@ -64,7 +80,11 @@ export function normalizeInternalPalette(
     if (enabled) enabledCount += 1;
     normalized.push({
       key: item.key,
-      alias: truncateCalendarAlias(item.dragLabel),
+      aliases: {
+        fi: truncateCalendarAlias(item.dragLabels.fi),
+        en: truncateCalendarAlias(item.dragLabels.en),
+        ru: truncateCalendarAlias(item.dragLabels.ru),
+      },
       enabled,
     });
   }

@@ -54,9 +54,11 @@ authoritative for the visual treatment.
 The localized internal calendar-service catalog is generated from `internal-services.txt` and
 forms a separate unavailable-time reservation layer. Its first four entries (lunch break,
 personal time, work errand, and sick leave) are selected by default; vacation and every other
-entry remain available but unselected. The Edit dialog
-lists the complete catalog and lets each user keep up to 24 shortcuts with Finnish drag labels no
-longer than 14 characters. These entries never enter clinical services, client histories,
+entry remain available but unselected. The Edit dialog lists the complete catalog and lets each
+user keep up to 24 shortcuts with independently editable Finnish, English, and Russian drag labels
+no longer than 14 characters. The catalog, dialog controls, shortcut rail, and drag preview follow
+the active interface locale while the approved Finnish names and aliases remain unchanged. These
+entries never enter clinical services, client histories,
 receipts, reminders, or treatment content. Admins configure template labels, color, duration,
 order, and active state; staff may use active templates only.
 Dragging or selecting a template and choosing a quarter-hour position inside a visible one-hour

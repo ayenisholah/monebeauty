@@ -10,6 +10,7 @@ export type CalendarBlockTemplate = {
   label: string;
   labels: { fi: string; en: string; ru: string };
   dragLabel: string;
+  dragLabels: { fi: string; en: string; ru: string };
   defaultEnabled: boolean;
   defaultDurationMin: number;
   color: string;

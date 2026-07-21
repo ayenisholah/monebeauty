@@ -82,6 +82,10 @@
 - Generate the full 119-entry Finnish internal-service catalog from `internal-services.txt`, keep
   the first four selected by default with all remaining rows unselected, and add a per-user Edit dialog for up to 24 visible,
   ordered, 14-character shortcuts in the desktop rail/mobile tray.
+- Localize all 119 catalog names and drag aliases in English and Russian while preserving the
+  Finnish source unchanged. Localize every palette-dialog control and accessible name, store
+  independent FI/EN/RU shortcut aliases, and migrate existing Finnish-only preferences without
+  losing visibility or order.
 - Drop internal services onto exact 15-minute positions within visible hourly rows and open the reference-style Booking info
   editor prefilled with service, employee, date, start/end, resource, notes, and recurrence.
 - Keep full Monday-first weeks, render vacant one-hour rows with a 10:00–19:00 empty-grid

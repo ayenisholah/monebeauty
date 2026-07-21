@@ -5,6 +5,11 @@
     "labelEn": "Lunch break",
     "labelRu": "Обеденный перерыв",
     "dragLabel": "Ruokatauko",
+    "dragLabels": {
+      "fi": "Ruokatauko",
+      "en": "Lunch break",
+      "ru": "Обед"
+    },
     "defaultDurationMin": 60,
     "color": "#D8C5A8",
     "defaultEnabled": true,
@@ -16,6 +21,11 @@
     "labelEn": "Personal time",
     "labelRu": "Личное время",
     "dragLabel": "Henkilökoh",
+    "dragLabels": {
+      "fi": "Henkilökoh",
+      "en": "Personal time",
+      "ru": "Личное время"
+    },
     "defaultDurationMin": 60,
     "color": "#CBB8A6",
     "defaultEnabled": true,
@@ -27,6 +37,11 @@
     "labelEn": "Work errand",
     "labelRu": "Рабочее поручение",
     "dragLabel": "Työmeno",
+    "dragLabels": {
+      "fi": "Työmeno",
+      "en": "Work errand",
+      "ru": "Поручение"
+    },
     "defaultDurationMin": 60,
     "color": "#B7C7BD",
     "defaultEnabled": true,
@@ -38,6 +53,11 @@
     "labelEn": "Sick leave",
     "labelRu": "Больничный",
     "dragLabel": "Sairasloma",
+    "dragLabels": {
+      "fi": "Sairasloma",
+      "en": "Sick leave",
+      "ru": "Больничный"
+    },
     "defaultDurationMin": 60,
     "color": "#D6AAA0",
     "defaultEnabled": true,
@@ -49,6 +69,11 @@
     "labelEn": "Vacation",
     "labelRu": "Отпуск",
     "dragLabel": "Loma",
+    "dragLabels": {
+      "fi": "Loma",
+      "en": "Vacation",
+      "ru": "Отпуск"
+    },
     "defaultDurationMin": 60,
     "color": "#B8C5D1",
     "defaultEnabled": false,
@@ -57,9 +82,14 @@
   {
     "key": "timma-4f6eb0417cff8f70",
     "labelFi": "Brow Lift-kulmien laminointi ja kestovärjäys",
-    "labelEn": "Brow Lift-kulmien laminointi ja kestovärjäys",
-    "labelRu": "Brow Lift-kulmien laminointi ja kestovärjäys",
+    "labelEn": "Brow Lift lamination and tinting",
+    "labelRu": "Ламинирование и окрашивание бровей Brow Lift",
     "dragLabel": "Kulmien vä",
+    "dragLabels": {
+      "fi": "Kulmien vä",
+      "en": "Brow Lift",
+      "ru": "Ламинация"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -68,9 +98,14 @@
   {
     "key": "timma-b7255865bd75ea9b",
     "labelFi": "Ripsien kestotaivutus & värjäys",
-    "labelEn": "Ripsien kestotaivutus & värjäys",
-    "labelRu": "Ripsien kestotaivutus & värjäys",
+    "labelEn": "Lash lift and tinting",
+    "labelRu": "Лифтинг и окрашивание ресниц",
     "dragLabel": "Ripsien ke",
+    "dragLabels": {
+      "fi": "Ripsien ke",
+      "en": "Lash lift",
+      "ru": "Лифтинг ресниц"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -79,9 +114,14 @@
   {
     "key": "timma-8971a5f4da620cc2",
     "labelFi": "Kulmien värjäys ja muotoilu",
-    "labelEn": "Kulmien värjäys ja muotoilu",
-    "labelRu": "Kulmien värjäys ja muotoilu",
+    "labelEn": "Eyebrow tinting and shaping",
+    "labelRu": "Окрашивание и коррекция бровей",
     "dragLabel": "Kulmien vä",
+    "dragLabels": {
+      "fi": "Kulmien vä",
+      "en": "Brow tint",
+      "ru": "Брови"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -90,9 +130,14 @@
   {
     "key": "timma-58a937d6602dcf04",
     "labelFi": "Kasvojen puhdistus",
-    "labelEn": "Kasvojen puhdistus",
-    "labelRu": "Kasvojen puhdistus",
+    "labelEn": "Facial cleansing",
+    "labelRu": "Чистка лица",
     "dragLabel": "Ultraäänip",
+    "dragLabels": {
+      "fi": "Ultraäänip",
+      "en": "Facial cleanse",
+      "ru": "Чистка лица"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -101,9 +146,14 @@
   {
     "key": "timma-c4f6e015c72dc675",
     "labelFi": "Yksilöllinen hoito israelilaisella ammattikosmetiikalla Shor",
-    "labelEn": "Yksilöllinen hoito israelilaisella ammattikosmetiikalla Shor",
-    "labelRu": "Yksilöllinen hoito israelilaisella ammattikosmetiikalla Shor",
+    "labelEn": "Individual treatment with Shor professional Israeli cosmetics",
+    "labelRu": "Индивидуальный уход с израильской профессиональной косметикой Shor",
     "dragLabel": "Mekaaninen",
+    "dragLabels": {
+      "fi": "Mekaaninen",
+      "en": "Shor treatment",
+      "ru": "Уход Shor"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -112,9 +162,14 @@
   {
     "key": "timma-9509dd375e769cf1",
     "labelFi": "Fraktionaalinen mesoterapia",
-    "labelEn": "Fraktionaalinen mesoterapia",
-    "labelRu": "Fraktionaalinen mesoterapia",
+    "labelEn": "Fractional mesotherapy",
+    "labelRu": "Фракционная мезотерапия",
     "dragLabel": "Timanttihi",
+    "dragLabels": {
+      "fi": "Timanttihi",
+      "en": "Fractional mes",
+      "ru": "Фракц. мезо"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -123,9 +178,14 @@
   {
     "key": "timma-9c4b68ae4cbd6fdb",
     "labelFi": "Kasvojen kuorinta",
-    "labelEn": "Kasvojen kuorinta",
-    "labelRu": "Kasvojen kuorinta",
+    "labelEn": "Facial peel",
+    "labelRu": "Пилинг лица",
     "dragLabel": "Mikroneula",
+    "dragLabels": {
+      "fi": "Mikroneula",
+      "en": "Facial peel",
+      "ru": "Пилинг лица"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -134,9 +194,14 @@
   {
     "key": "timma-2cb6ed40117a4315",
     "labelFi": "Mikrovirrat kasvoille",
-    "labelEn": "Mikrovirrat kasvoille",
-    "labelRu": "Mikrovirrat kasvoille",
+    "labelEn": "Facial microcurrent treatment",
+    "labelRu": "Микротоки для лица",
     "dragLabel": "Kasvohoito",
+    "dragLabels": {
+      "fi": "Kasvohoito",
+      "en": "Microcurrent",
+      "ru": "Микротоки"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -145,9 +210,14 @@
   {
     "key": "timma-9b04d110ea61b18e",
     "labelFi": "Kasvojen hieronta Endosfääriterapia",
-    "labelEn": "Kasvojen hieronta Endosfääriterapia",
-    "labelRu": "Kasvojen hieronta Endosfääriterapia",
+    "labelEn": "Endospheres facial massage",
+    "labelRu": "Массаж лица Endospheres",
     "dragLabel": "Kasvojen h",
+    "dragLabels": {
+      "fi": "Kasvojen h",
+      "en": "Endo face",
+      "ru": "Эндо лицо"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -156,9 +226,14 @@
   {
     "key": "timma-5c5c4273adff3a84",
     "labelFi": "Papilloomien poisto",
-    "labelEn": "Papilloomien poisto",
-    "labelRu": "Papilloomien poisto",
+    "labelEn": "Papilloma removal",
+    "labelRu": "Удаление папиллом",
     "dragLabel": "Papilloomi",
+    "dragLabels": {
+      "fi": "Papilloomi",
+      "en": "Papilloma",
+      "ru": "Папилломы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -167,9 +242,14 @@
   {
     "key": "timma-fd8e40d3d0680cec",
     "labelFi": "PRX -piling kasvoille",
-    "labelEn": "PRX -piling kasvoille",
-    "labelRu": "PRX -piling kasvoille",
+    "labelEn": "PRX facial peel",
+    "labelRu": "PRX-пилинг для лица",
     "dragLabel": "PRX  -pili",
+    "dragLabels": {
+      "fi": "PRX  -pili",
+      "en": "PRX peel",
+      "ru": "PRX-пилинг"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -181,6 +261,11 @@
     "labelEn": "PRX Plus",
     "labelRu": "PRX Plus",
     "dragLabel": "PRX Plus",
+    "dragLabels": {
+      "fi": "PRX Plus",
+      "en": "PRX Plus",
+      "ru": "PRX Plus"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -189,9 +274,14 @@
   {
     "key": "timma-f1a208cc6f9bf9f7",
     "labelFi": "Kosmetologin konsultaatio",
-    "labelEn": "Kosmetologin konsultaatio",
-    "labelRu": "Kosmetologin konsultaatio",
+    "labelEn": "Cosmetologist consultation",
+    "labelRu": "Консультация косметолога",
     "dragLabel": "Kosmetolog",
+    "dragLabels": {
+      "fi": "Kosmetolog",
+      "en": "Consultation",
+      "ru": "Консультация"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -200,9 +290,14 @@
   {
     "key": "timma-41ff2b22ad0e7769",
     "labelFi": "Paketti: Endospheres-terapia 45 min + AROSHA-sidekääre + pressoterapia",
-    "labelEn": "Paketti: Endospheres-terapia 45 min + AROSHA-sidekääre + pressoterapia",
-    "labelRu": "Paketti: Endospheres-terapia 45 min + AROSHA-sidekääre + pressoterapia",
+    "labelEn": "Package: Endospheres therapy 45 min + AROSHA wrap + pressotherapy",
+    "labelRu": "Пакет: Endospheres 45 мин + обёртывание AROSHA + прессотерапия",
     "dragLabel": "HOI Hoitop",
+    "dragLabels": {
+      "fi": "HOI Hoitop",
+      "en": "Endo package",
+      "ru": "Эндо пакет"
+    },
     "defaultDurationMin": 45,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -211,9 +306,14 @@
   {
     "key": "timma-61abbe147988de48",
     "labelFi": "Paketti: Endospheres-terapia koko vartalolle 75 min + AROSHA-sidekääre",
-    "labelEn": "Paketti: Endospheres-terapia koko vartalolle 75 min + AROSHA-sidekääre",
-    "labelRu": "Paketti: Endospheres-terapia koko vartalolle 75 min + AROSHA-sidekääre",
+    "labelEn": "Package: full-body Endospheres therapy 75 min + AROSHA wrap",
+    "labelRu": "Пакет: Endospheres для всего тела 75 мин + обёртывание AROSHA",
     "dragLabel": "DET Pakett",
+    "dragLabels": {
+      "fi": "DET Pakett",
+      "en": "Endo 75 pack",
+      "ru": "Эндо 75 пакет"
+    },
     "defaultDurationMin": 75,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -222,9 +322,14 @@
   {
     "key": "timma-b7f3786bf855d470",
     "labelFi": "Paketti: Endospheres-terapia koko vartalolle 60 min + Endospheres-kasvohoito + AROSHA-sidekääre",
-    "labelEn": "Paketti: Endospheres-terapia koko vartalolle 60 min + Endospheres-kasvohoito + AROSHA-sidekääre",
-    "labelRu": "Paketti: Endospheres-terapia koko vartalolle 60 min + Endospheres-kasvohoito + AROSHA-sidekääre",
+    "labelEn": "Package: full-body Endospheres therapy 60 min + Endospheres facial + AROSHA wrap",
+    "labelRu": "Пакет: Endospheres для всего тела 60 мин + уход для лица Endospheres + обёртывание AROSHA",
     "dragLabel": "HOI Pakett",
+    "dragLabels": {
+      "fi": "HOI Pakett",
+      "en": "Endo combo",
+      "ru": "Эндо комбо"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -233,9 +338,14 @@
   {
     "key": "timma-59e32d9c2f87a99a",
     "labelFi": "Endospheres-terapia 45 min",
-    "labelEn": "Endospheres-terapia 45 min",
-    "labelRu": "Endospheres-terapia 45 min",
+    "labelEn": "Endospheres therapy 45 min",
+    "labelRu": "Терапия Endospheres 45 мин",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo 45 min",
+      "ru": "Эндо 45 мин"
+    },
     "defaultDurationMin": 45,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -244,9 +354,14 @@
   {
     "key": "timma-96797d8a76bb825a",
     "labelFi": "Arosha-sidekäärehoito + pressoterapia",
-    "labelEn": "Arosha-sidekäärehoito + pressoterapia",
-    "labelRu": "Arosha-sidekäärehoito + pressoterapia",
+    "labelEn": "AROSHA body wrap + pressotherapy",
+    "labelRu": "Обёртывание AROSHA + прессотерапия",
     "dragLabel": "Lymfaterap",
+    "dragLabels": {
+      "fi": "Lymfaterap",
+      "en": "AROSHA wrap",
+      "ru": "AROSHA обёрт."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -256,8 +371,13 @@
     "key": "timma-e6ec2da63a3d7319",
     "labelFi": "Endospheres Therapy",
     "labelEn": "Endospheres Therapy",
-    "labelRu": "Endospheres Therapy",
+    "labelRu": "Терапия Endospheres",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endospheres",
+      "ru": "Endospheres"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -266,9 +386,14 @@
   {
     "key": "timma-f1168b893b6d96e7",
     "labelFi": "Endospheres-terapia 60 min",
-    "labelEn": "Endospheres-terapia 60 min",
-    "labelRu": "Endospheres-terapia 60 min",
+    "labelEn": "Endospheres therapy 60 min",
+    "labelRu": "Терапия Endospheres 60 мин",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo 60 min",
+      "ru": "Эндо 60 мин"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -277,9 +402,14 @@
   {
     "key": "timma-3fd1b78696d27c17",
     "labelFi": "Endospheres-terapia 75 min",
-    "labelEn": "Endospheres-terapia 75 min",
-    "labelRu": "Endospheres-terapia 75 min",
+    "labelEn": "Endospheres therapy 75 min",
+    "labelRu": "Терапия Endospheres 75 мин",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo 75 min",
+      "ru": "Эндо 75 мин"
+    },
     "defaultDurationMin": 75,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -288,9 +418,14 @@
   {
     "key": "timma-fbc92ab57f9e2b8a",
     "labelFi": "Kestopigmentointi: Kulmat Gradien Brows",
-    "labelEn": "Kestopigmentointi: Kulmat Gradien Brows",
-    "labelRu": "Kestopigmentointi: Kulmat Gradien Brows",
+    "labelEn": "Permanent makeup: Gradient Brows",
+    "labelRu": "Перманентный макияж: брови Gradient Brows",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU brows",
+      "ru": "ПМ брови"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -299,9 +434,14 @@
   {
     "key": "timma-6edaf5e27c8b2fb2",
     "labelFi": "Kestopigmentointi: Ylärajaus luonnollinen / ripsientyvitäyttö",
-    "labelEn": "Kestopigmentointi: Ylärajaus luonnollinen / ripsientyvitäyttö",
-    "labelRu": "Kestopigmentointi: Ylärajaus luonnollinen / ripsientyvitäyttö",
+    "labelEn": "Permanent makeup: natural upper eyeliner / lash enhancement",
+    "labelRu": "Перманентный макияж: естественная верхняя стрелка / межресничка",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU lash line",
+      "ru": "ПМ межресничка"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -310,9 +450,14 @@
   {
     "key": "timma-c79318eac59276b7",
     "labelFi": "Kestopigmentointi: Silmanrajaus / Eyeliner",
-    "labelEn": "Kestopigmentointi: Silmanrajaus / Eyeliner",
-    "labelRu": "Kestopigmentointi: Silmanrajaus / Eyeliner",
+    "labelEn": "Permanent makeup: eyeliner",
+    "labelRu": "Перманентный макияж: стрелка",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU eyeliner",
+      "ru": "ПМ стрелка"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -321,9 +466,14 @@
   {
     "key": "timma-e29a8cffb944891c",
     "labelFi": "Kestopigmentointi:Silmänrajaus varjostuksen kanssa Eyeshadow-tekniikalla",
-    "labelEn": "Kestopigmentointi:Silmänrajaus varjostuksen kanssa Eyeshadow-tekniikalla",
-    "labelRu": "Kestopigmentointi:Silmänrajaus varjostuksen kanssa Eyeshadow-tekniikalla",
+    "labelEn": "Permanent makeup: shaded eyeliner with Eyeshadow technique",
+    "labelRu": "Перманентный макияж: стрелка с растушёвкой в технике Eyeshadow",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU eyeshadow",
+      "ru": "ПМ растушёвка"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -332,9 +482,14 @@
   {
     "key": "timma-24f96057b033c55e",
     "labelFi": "Kestopigmentointi: Huulet Akvarellihuulet",
-    "labelEn": "Kestopigmentointi: Huulet Akvarellihuulet",
-    "labelRu": "Kestopigmentointi: Huulet Akvarellihuulet",
+    "labelEn": "Permanent makeup: watercolor lips",
+    "labelRu": "Перманентный макияж: акварельные губы",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU lips",
+      "ru": "ПМ губы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -343,9 +498,14 @@
   {
     "key": "timma-9588a60006c74085",
     "labelFi": "Kestopigmentointi: Vahvistus kulmat",
-    "labelEn": "Kestopigmentointi: Vahvistus kulmat",
-    "labelRu": "Kestopigmentointi: Vahvistus kulmat",
+    "labelEn": "Permanent makeup touch-up: brows",
+    "labelRu": "Коррекция перманентного макияжа бровей",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU brow touch",
+      "ru": "ПМ корр.бровей"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -354,9 +514,14 @@
   {
     "key": "timma-af443ae1bd71c7a9",
     "labelFi": "Kestopigmentointi: Vahvistus Eyeliner",
-    "labelEn": "Kestopigmentointi: Vahvistus Eyeliner",
-    "labelRu": "Kestopigmentointi: Vahvistus Eyeliner",
+    "labelEn": "Permanent makeup touch-up: eyeliner",
+    "labelRu": "Коррекция перманентного макияжа стрелок",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU eye touch",
+      "ru": "ПМ корр. глаз"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -365,9 +530,14 @@
   {
     "key": "timma-42e4e3baf9a084d4",
     "labelFi": "Kestopigmentointi: Vahvistus huulet",
-    "labelEn": "Kestopigmentointi: Vahvistus huulet",
-    "labelRu": "Kestopigmentointi: Vahvistus huulet",
+    "labelEn": "Permanent makeup touch-up: lips",
+    "labelRu": "Коррекция перманентного макияжа губ",
     "dragLabel": "Kestopigme",
+    "dragLabels": {
+      "fi": "Kestopigme",
+      "en": "PMU lip touch",
+      "ru": "ПМ корр. губ"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -376,9 +546,14 @@
   {
     "key": "timma-9470736ab7ce6a4c",
     "labelFi": "Konsultointi kestopigmentointia",
-    "labelEn": "Konsultointi kestopigmentointia",
-    "labelRu": "Konsultointi kestopigmentointia",
+    "labelEn": "Permanent makeup consultation",
+    "labelRu": "Консультация по перманентному макияжу",
     "dragLabel": "Konsultoin",
+    "dragLabels": {
+      "fi": "Konsultoin",
+      "en": "PMU consult",
+      "ru": "ПМ консультац."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -387,9 +562,14 @@
   {
     "key": "timma-3c5ccdd9517a2079",
     "labelFi": "Endosphères Therapy hieronta koko vartalo 60 min",
-    "labelEn": "Endosphères Therapy hieronta koko vartalo 60 min",
-    "labelRu": "Endosphères Therapy hieronta koko vartalo 60 min",
+    "labelEn": "Full-body Endospheres Therapy massage 60 min",
+    "labelRu": "Массаж Endospheres для всего тела 60 мин",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo body 60",
+      "ru": "Эндо тело 60"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -398,9 +578,14 @@
   {
     "key": "timma-b9e0131ed1de8ba7",
     "labelFi": "Endosphères Therapy hieronta Selluliittihoito 45min",
-    "labelEn": "Endosphères Therapy hieronta Selluliittihoito 45min",
-    "labelRu": "Endosphères Therapy hieronta Selluliittihoito 45min",
+    "labelEn": "Endospheres Therapy cellulite massage 45 min",
+    "labelRu": "Антицеллюлитный массаж Endospheres 45 мин",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo cell 45",
+      "ru": "Эндо целл. 45"
+    },
     "defaultDurationMin": 45,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -409,9 +594,14 @@
   {
     "key": "timma-f86ea52cf77be0a4",
     "labelFi": "Endosphères Therapy hieronta 30 min",
-    "labelEn": "Endosphères Therapy hieronta 30 min",
-    "labelRu": "Endosphères Therapy hieronta 30 min",
+    "labelEn": "Endospheres Therapy massage 30 min",
+    "labelRu": "Массаж Endospheres 30 мин",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo 30 min",
+      "ru": "Эндо 30 мин"
+    },
     "defaultDurationMin": 30,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -420,9 +610,14 @@
   {
     "key": "timma-4111692dee256bdd",
     "labelFi": "Pressoterapia",
-    "labelEn": "Pressoterapia",
-    "labelRu": "Pressoterapia",
+    "labelEn": "Pressotherapy",
+    "labelRu": "Прессотерапия",
     "dragLabel": "Pressotera",
+    "dragLabels": {
+      "fi": "Pressotera",
+      "en": "Pressotherapy",
+      "ru": "Прессотерапия"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -431,9 +626,14 @@
   {
     "key": "timma-66f60c10f7d1f09a",
     "labelFi": "Arosha-vartalokääre",
-    "labelEn": "Arosha-vartalokääre",
-    "labelRu": "Arosha-vartalokääre",
+    "labelEn": "AROSHA body wrap",
+    "labelRu": "Обёртывание AROSHA",
     "dragLabel": "Arosha-var",
+    "dragLabels": {
+      "fi": "Arosha-var",
+      "en": "AROSHA wrap",
+      "ru": "AROSHA обёрт."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -442,9 +642,14 @@
   {
     "key": "timma-53b2386d4ddd23b8",
     "labelFi": "Endosphères Therapy hieronta miehille 30 min",
-    "labelEn": "Endosphères Therapy hieronta miehille 30 min",
-    "labelRu": "Endosphères Therapy hieronta miehille 30 min",
+    "labelEn": "Endospheres Therapy massage for men 30 min",
+    "labelRu": "Массаж Endospheres для мужчин 30 мин",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Men Endo 30",
+      "ru": "Муж. Эндо 30"
+    },
     "defaultDurationMin": 30,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -453,9 +658,14 @@
   {
     "key": "timma-48afeb4d1e40b0b6",
     "labelFi": "Endosphères Therapy hieronta koko vartalolle 75min",
-    "labelEn": "Endosphères Therapy hieronta koko vartalolle 75min",
-    "labelRu": "Endosphères Therapy hieronta koko vartalolle 75min",
+    "labelEn": "Full-body Endospheres Therapy massage 75 min",
+    "labelRu": "Массаж Endospheres для всего тела 75 мин",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo body 75",
+      "ru": "Эндо тело 75"
+    },
     "defaultDurationMin": 75,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -464,9 +674,14 @@
   {
     "key": "timma-c6d1709e065937a1",
     "labelFi": "Ylähuuli",
-    "labelEn": "Ylähuuli",
-    "labelRu": "Ylähuuli",
+    "labelEn": "Upper lip",
+    "labelRu": "Верхняя губа",
     "dragLabel": "Ylähuuli",
+    "dragLabels": {
+      "fi": "Ylähuuli",
+      "en": "Upper lip",
+      "ru": "Верхняя губа"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -475,9 +690,14 @@
   {
     "key": "timma-bb3d958fdd7fb45b",
     "labelFi": "Leuka",
-    "labelEn": "Leuka",
-    "labelRu": "Leuka",
+    "labelEn": "Chin",
+    "labelRu": "Подбородок",
     "dragLabel": "Leuka",
+    "dragLabels": {
+      "fi": "Leuka",
+      "en": "Chin",
+      "ru": "Подбородок"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -486,9 +706,14 @@
   {
     "key": "timma-e3a1e8845c135cbe",
     "labelFi": "Ylähuuli + leuka",
-    "labelEn": "Ylähuuli + leuka",
-    "labelRu": "Ylähuuli + leuka",
+    "labelEn": "Upper lip + chin",
+    "labelRu": "Верхняя губа + подбородок",
     "dragLabel": "Ylähuuli +",
+    "dragLabels": {
+      "fi": "Ylähuuli +",
+      "en": "Lip + chin",
+      "ru": "Губа + подбор."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -497,9 +722,14 @@
   {
     "key": "timma-56d8ef6c57fd267a",
     "labelFi": "Bakenbardit",
-    "labelEn": "Bakenbardit",
-    "labelRu": "Bakenbardit",
+    "labelEn": "Sideburns",
+    "labelRu": "Бакенбарды",
     "dragLabel": "Bakenbardi",
+    "dragLabels": {
+      "fi": "Bakenbardi",
+      "en": "Sideburns",
+      "ru": "Бакенбарды"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -508,9 +738,14 @@
   {
     "key": "timma-16c0ee553ea67585",
     "labelFi": "Posket",
-    "labelEn": "Posket",
-    "labelRu": "Posket",
+    "labelEn": "Cheeks",
+    "labelRu": "Щёки",
     "dragLabel": "Posket",
+    "dragLabels": {
+      "fi": "Posket",
+      "en": "Cheeks",
+      "ru": "Щёки"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -519,9 +754,14 @@
   {
     "key": "timma-a26e3dbd6be4ba34",
     "labelFi": "Koko kasvot",
-    "labelEn": "Koko kasvot",
-    "labelRu": "Koko kasvot",
+    "labelEn": "Full face",
+    "labelRu": "Всё лицо",
     "dragLabel": "Koko kasvo",
+    "dragLabels": {
+      "fi": "Koko kasvo",
+      "en": "Full face",
+      "ru": "Всё лицо"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -530,9 +770,14 @@
   {
     "key": "timma-f2b4b58c829f118a",
     "labelFi": "Otsa",
-    "labelEn": "Otsa",
-    "labelRu": "Otsa",
+    "labelEn": "Forehead",
+    "labelRu": "Лоб",
     "dragLabel": "Otsa",
+    "dragLabels": {
+      "fi": "Otsa",
+      "en": "Forehead",
+      "ru": "Лоб"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -541,9 +786,14 @@
   {
     "key": "timma-1f59f106d2d28134",
     "labelFi": "Kädet – yläosa",
-    "labelEn": "Kädet – yläosa",
-    "labelRu": "Kädet – yläosa",
+    "labelEn": "Upper arms",
+    "labelRu": "Верхняя часть рук",
     "dragLabel": "Kädet – yl",
+    "dragLabels": {
+      "fi": "Kädet – yl",
+      "en": "Upper arms",
+      "ru": "Руки сверху"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -552,9 +802,14 @@
   {
     "key": "timma-078d4ae715de9a4e",
     "labelFi": "Kaula edestä",
-    "labelEn": "Kaula edestä",
-    "labelRu": "Kaula edestä",
+    "labelEn": "Front of neck",
+    "labelRu": "Передняя часть шеи",
     "dragLabel": "Kaula edes",
+    "dragLabels": {
+      "fi": "Kaula edes",
+      "en": "Front neck",
+      "ru": "Шея спереди"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -563,9 +818,14 @@
   {
     "key": "timma-2fe5ffb30406795e",
     "labelFi": "Kaula takaa",
-    "labelEn": "Kaula takaa",
-    "labelRu": "Kaula takaa",
+    "labelEn": "Back of neck",
+    "labelRu": "Задняя часть шеи",
     "dragLabel": "Kaula taka",
+    "dragLabels": {
+      "fi": "Kaula taka",
+      "en": "Back neck",
+      "ru": "Шея сзади"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -574,9 +834,14 @@
   {
     "key": "timma-2674a0a11ae857a8",
     "labelFi": "Rinta",
-    "labelEn": "Rinta",
-    "labelRu": "Rinta",
+    "labelEn": "Chest",
+    "labelRu": "Грудь",
     "dragLabel": "Rinta",
+    "dragLabels": {
+      "fi": "Rinta",
+      "en": "Chest",
+      "ru": "Грудь"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -585,9 +850,14 @@
   {
     "key": "timma-2b553fbcded36545",
     "labelFi": "Rinta (mies)",
-    "labelEn": "Rinta (mies)",
-    "labelRu": "Rinta (mies)",
+    "labelEn": "Chest (men)",
+    "labelRu": "Грудь (мужчины)",
     "dragLabel": "MIE Rinta",
+    "dragLabels": {
+      "fi": "MIE Rinta",
+      "en": "Men chest",
+      "ru": "Муж. грудь"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -596,9 +866,14 @@
   {
     "key": "timma-ea57608c3bf22155",
     "labelFi": "Pehkeet",
-    "labelEn": "Pehkeet",
-    "labelRu": "Pehkeet",
+    "labelEn": "Calves",
+    "labelRu": "Икры",
     "dragLabel": "Pehkeet",
+    "dragLabels": {
+      "fi": "Pehkeet",
+      "en": "Calves",
+      "ru": "Икры"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -607,9 +882,14 @@
   {
     "key": "timma-9a06bcde4815f0d0",
     "labelFi": "Selkä",
-    "labelEn": "Selkä",
-    "labelRu": "Selkä",
+    "labelEn": "Back",
+    "labelRu": "Спина",
     "dragLabel": "Selkä",
+    "dragLabels": {
+      "fi": "Selkä",
+      "en": "Back",
+      "ru": "Спина"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -618,9 +898,14 @@
   {
     "key": "timma-30e06518497caf9c",
     "labelFi": "Selkä (mies)",
-    "labelEn": "Selkä (mies)",
-    "labelRu": "Selkä (mies)",
+    "labelEn": "Back (men)",
+    "labelRu": "Спина (мужчины)",
     "dragLabel": "MIE Selkä",
+    "dragLabels": {
+      "fi": "MIE Selkä",
+      "en": "Men back",
+      "ru": "Муж. спина"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -629,9 +914,14 @@
   {
     "key": "timma-43c1a068816b86eb",
     "labelFi": "Kainalot",
-    "labelEn": "Kainalot",
-    "labelRu": "Kainalot",
+    "labelEn": "Underarms",
+    "labelRu": "Подмышки",
     "dragLabel": "Kainalot",
+    "dragLabels": {
+      "fi": "Kainalot",
+      "en": "Underarms",
+      "ru": "Подмышки"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -640,9 +930,14 @@
   {
     "key": "timma-22e63111874fe495",
     "labelFi": "Bikinilinja",
-    "labelEn": "Bikinilinja",
-    "labelRu": "Bikinilinja",
+    "labelEn": "Bikini line",
+    "labelRu": "Линия бикини",
     "dragLabel": "Bikinilinj",
+    "dragLabels": {
+      "fi": "Bikinilinj",
+      "en": "Bikini line",
+      "ru": "Линия бикини"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -651,9 +946,14 @@
   {
     "key": "timma-3744e8978cc35ab7",
     "labelFi": "Syvä bikinialue",
-    "labelEn": "Syvä bikinialue",
-    "labelRu": "Syvä bikinialue",
+    "labelEn": "Deep bikini",
+    "labelRu": "Глубокое бикини",
     "dragLabel": "Syvä bikin",
+    "dragLabels": {
+      "fi": "Syvä bikin",
+      "en": "Deep bikini",
+      "ru": "Глуб. бикини"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -663,8 +963,13 @@
     "key": "timma-05268eadc9578e65",
     "labelFi": "Areola",
     "labelEn": "Areola",
-    "labelRu": "Areola",
+    "labelRu": "Ареола",
     "dragLabel": "Areola",
+    "dragLabels": {
+      "fi": "Areola",
+      "en": "Areola",
+      "ru": "Ареола"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -673,9 +978,14 @@
   {
     "key": "timma-43473d9c933881c3",
     "labelFi": "Brasilialainen bikini",
-    "labelEn": "Brasilialainen bikini",
-    "labelRu": "Brasilialainen bikini",
+    "labelEn": "Brazilian bikini",
+    "labelRu": "Бразильское бикини",
     "dragLabel": "Brasiliala",
+    "dragLabels": {
+      "fi": "Brasiliala",
+      "en": "Brazilian",
+      "ru": "Браз. бикини"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -684,9 +994,14 @@
   {
     "key": "timma-b21e087c9bca0439",
     "labelFi": "Kaula edestä (mies)",
-    "labelEn": "Kaula edestä (mies)",
-    "labelRu": "Kaula edestä (mies)",
+    "labelEn": "Front of neck (men)",
+    "labelRu": "Передняя часть шеи (мужчины)",
     "dragLabel": "Miehen Kau",
+    "dragLabels": {
+      "fi": "Miehen Kau",
+      "en": "Men front neck",
+      "ru": "Муж. шея пер."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -695,9 +1010,14 @@
   {
     "key": "timma-b11be2e625c23092",
     "labelFi": "Kaula takaa (mies)",
-    "labelEn": "Kaula takaa (mies)",
-    "labelRu": "Kaula takaa (mies)",
+    "labelEn": "Back of neck (men)",
+    "labelRu": "Задняя часть шеи (мужчины)",
     "dragLabel": "MIE Kaula",
+    "dragLabels": {
+      "fi": "MIE Kaula",
+      "en": "Men back neck",
+      "ru": "Муж. шея зад."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -706,9 +1026,14 @@
   {
     "key": "timma-ec2c5bf3bc2a2e77",
     "labelFi": "Jalat kokonaan",
-    "labelEn": "Jalat kokonaan",
-    "labelRu": "Jalat kokonaan",
+    "labelEn": "Full legs",
+    "labelRu": "Ноги полностью",
     "dragLabel": "Jalat koko",
+    "dragLabels": {
+      "fi": "Jalat koko",
+      "en": "Full legs",
+      "ru": "Ноги полностью"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -717,9 +1042,14 @@
   {
     "key": "timma-928838a3b88b2201",
     "labelFi": "Reidet",
-    "labelEn": "Reidet",
-    "labelRu": "Reidet",
+    "labelEn": "Thighs",
+    "labelRu": "Бёдра",
     "dragLabel": "Reidet",
+    "dragLabels": {
+      "fi": "Reidet",
+      "en": "Thighs",
+      "ru": "Бёдра"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -728,9 +1058,14 @@
   {
     "key": "timma-abd065a2e82c0789",
     "labelFi": "Sääret + polvet",
-    "labelEn": "Sääret + polvet",
-    "labelRu": "Sääret + polvet",
+    "labelEn": "Lower legs + knees",
+    "labelRu": "Голени + колени",
     "dragLabel": "Sääret + p",
+    "dragLabels": {
+      "fi": "Sääret + p",
+      "en": "Legs + knees",
+      "ru": "Голени+колени"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -739,9 +1074,14 @@
   {
     "key": "timma-6916292927b223a0",
     "labelFi": "Kainalot + bikinilinja",
-    "labelEn": "Kainalot + bikinilinja",
-    "labelRu": "Kainalot + bikinilinja",
+    "labelEn": "Underarms + bikini line",
+    "labelRu": "Подмышки + линия бикини",
     "dragLabel": "Kainalot +",
+    "dragLabels": {
+      "fi": "Kainalot +",
+      "en": "Underarm+bik",
+      "ru": "Подмыш.+бикини"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -750,9 +1090,14 @@
   {
     "key": "timma-5684f24945eb600c",
     "labelFi": "Kainalot + brasilialainen bikini",
-    "labelEn": "Kainalot + brasilialainen bikini",
-    "labelRu": "Kainalot + brasilialainen bikini",
+    "labelEn": "Underarms + Brazilian bikini",
+    "labelRu": "Подмышки + бразильское бикини",
     "dragLabel": "Kainalot +",
+    "dragLabels": {
+      "fi": "Kainalot +",
+      "en": "Underarm+Bra",
+      "ru": "Подм.+бразил."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -761,9 +1106,14 @@
   {
     "key": "timma-eda61db33149cb48",
     "labelFi": "Brasilialainen bikini + jalat kokonaan",
-    "labelEn": "Brasilialainen bikini + jalat kokonaan",
-    "labelRu": "Brasilialainen bikini + jalat kokonaan",
+    "labelEn": "Brazilian bikini + full legs",
+    "labelRu": "Бразильское бикини + ноги полностью",
     "dragLabel": "Brasiliala",
+    "dragLabels": {
+      "fi": "Brasiliala",
+      "en": "Brazil+legs",
+      "ru": "Бразил.+ноги"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -772,9 +1122,14 @@
   {
     "key": "timma-da308dde0608d205",
     "labelFi": "Kainalot + brasilialainen bikini + jalat kokonaan",
-    "labelEn": "Kainalot + brasilialainen bikini + jalat kokonaan",
-    "labelRu": "Kainalot + brasilialainen bikini + jalat kokonaan",
+    "labelEn": "Underarms + Brazilian bikini + full legs",
+    "labelRu": "Подмышки + бразильское бикини + ноги полностью",
     "dragLabel": "Kainalot +",
+    "dragLabels": {
+      "fi": "Kainalot +",
+      "en": "UA+Brazil+legs",
+      "ru": "Подм+браз+ноги"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -783,9 +1138,14 @@
   {
     "key": "timma-1e2c549bb2071f5a",
     "labelFi": "Koko keho",
-    "labelEn": "Koko keho",
-    "labelRu": "Koko keho",
+    "labelEn": "Full body",
+    "labelRu": "Всё тело",
     "dragLabel": "Koko keho",
+    "dragLabels": {
+      "fi": "Koko keho",
+      "en": "Full body",
+      "ru": "Всё тело"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -794,9 +1154,14 @@
   {
     "key": "timma-39f2bb028eac459e",
     "labelFi": "Kädet – alaosa",
-    "labelEn": "Kädet – alaosa",
-    "labelRu": "Kädet – alaosa",
+    "labelEn": "Lower arms",
+    "labelRu": "Нижняя часть рук",
     "dragLabel": "Kädet – al",
+    "dragLabels": {
+      "fi": "Kädet – al",
+      "en": "Lower arms",
+      "ru": "Руки снизу"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -805,9 +1170,14 @@
   {
     "key": "timma-2fe54db1159448f6",
     "labelFi": "Kädet – kokonaan",
-    "labelEn": "Kädet – kokonaan",
-    "labelRu": "Kädet – kokonaan",
+    "labelEn": "Full arms",
+    "labelRu": "Руки полностью",
     "dragLabel": "Kädet – ko",
+    "dragLabels": {
+      "fi": "Kädet – ko",
+      "en": "Full arms",
+      "ru": "Руки полностью"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -816,9 +1186,14 @@
   {
     "key": "timma-4d199e803b8a2f4e",
     "labelFi": "Vatsa",
-    "labelEn": "Vatsa",
-    "labelRu": "Vatsa",
+    "labelEn": "Abdomen",
+    "labelRu": "Живот",
     "dragLabel": "Vatsa",
+    "dragLabels": {
+      "fi": "Vatsa",
+      "en": "Abdomen",
+      "ru": "Живот"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -827,9 +1202,14 @@
   {
     "key": "timma-aafe9b8352ff27b9",
     "labelFi": "Vatsalinja",
-    "labelEn": "Vatsalinja",
-    "labelRu": "Vatsalinja",
+    "labelEn": "Abdominal line",
+    "labelRu": "Линия живота",
     "dragLabel": "Vatsalinja",
+    "dragLabels": {
+      "fi": "Vatsalinja",
+      "en": "Abdomen line",
+      "ru": "Линия живота"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -838,9 +1218,14 @@
   {
     "key": "timma-fc94b5ba5627fc25",
     "labelFi": "Pakarat",
-    "labelEn": "Pakarat",
-    "labelRu": "Pakarat",
+    "labelEn": "Buttocks",
+    "labelRu": "Ягодицы",
     "dragLabel": "Pakarat",
+    "dragLabels": {
+      "fi": "Pakarat",
+      "en": "Buttocks",
+      "ru": "Ягодицы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -849,9 +1234,14 @@
   {
     "key": "timma-1c4f77109f2d1235",
     "labelFi": "Vatsa (mies)",
-    "labelEn": "Vatsa (mies)",
-    "labelRu": "Vatsa (mies)",
+    "labelEn": "Abdomen (men)",
+    "labelRu": "Живот (мужчины)",
     "dragLabel": "MIE Vatsa",
+    "dragLabels": {
+      "fi": "MIE Vatsa",
+      "en": "Men abdomen",
+      "ru": "Муж. живот"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -860,9 +1250,14 @@
   {
     "key": "timma-a7bfd1e14d2abc25",
     "labelFi": "Päänahan ja hiusten tietokoneellinen analyysi",
-    "labelEn": "Päänahan ja hiusten tietokoneellinen analyysi",
-    "labelRu": "Päänahan ja hiusten tietokoneellinen analyysi",
+    "labelEn": "Computerized scalp and hair analysis",
+    "labelRu": "Компьютерная диагностика кожи головы и волос",
     "dragLabel": "Päänahan j",
+    "dragLabels": {
+      "fi": "Päänahan j",
+      "en": "Hair analysis",
+      "ru": "Диагн. волос"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -871,9 +1266,14 @@
   {
     "key": "timma-4e88cfef85997642",
     "labelFi": "Päänahan mesoterapia",
-    "labelEn": "Päänahan mesoterapia",
-    "labelRu": "Päänahan mesoterapia",
+    "labelEn": "Scalp mesotherapy",
+    "labelRu": "Мезотерапия кожи головы",
     "dragLabel": "Päänahan m",
+    "dragLabels": {
+      "fi": "Päänahan m",
+      "en": "Scalp meso",
+      "ru": "Мезо головы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -882,9 +1282,14 @@
   {
     "key": "timma-c6c428ceedbd36f9",
     "labelFi": "Päänahan kuorinta",
-    "labelEn": "Päänahan kuorinta",
-    "labelRu": "Päänahan kuorinta",
+    "labelEn": "Scalp peeling",
+    "labelRu": "Пилинг кожи головы",
     "dragLabel": "Päänahan k",
+    "dragLabels": {
+      "fi": "Päänahan k",
+      "en": "Scalp peel",
+      "ru": "Пилинг головы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -893,9 +1298,14 @@
   {
     "key": "timma-5e49c2054dded113",
     "labelFi": "LED-valohoito päänahalle",
-    "labelEn": "LED-valohoito päänahalle",
-    "labelRu": "LED-valohoito päänahalle",
+    "labelEn": "LED light therapy for the scalp",
+    "labelRu": "LED-терапия для кожи головы",
     "dragLabel": "LED-valoho",
+    "dragLabels": {
+      "fi": "LED-valoho",
+      "en": "Scalp LED",
+      "ru": "LED для головы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -904,9 +1314,14 @@
   {
     "key": "timma-e187c34ae1f644be",
     "labelFi": "Hiusten filler-hoito",
-    "labelEn": "Hiusten filler-hoito",
-    "labelRu": "Hiusten filler-hoito",
+    "labelEn": "Hair filler treatment",
+    "labelRu": "Филлер-терапия для волос",
     "dragLabel": "Hiusten fi",
+    "dragLabels": {
+      "fi": "Hiusten fi",
+      "en": "Hair filler",
+      "ru": "Филлер волос"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -915,9 +1330,14 @@
   {
     "key": "timma-4d359f493e7a6547",
     "labelFi": "BioRePeel-kuorintahoito",
-    "labelEn": "BioRePeel-kuorintahoito",
-    "labelRu": "BioRePeel-kuorintahoito",
+    "labelEn": "BioRePeel peeling treatment",
+    "labelRu": "Пилинг BioRePeel",
     "dragLabel": "BioRePeel-",
+    "dragLabels": {
+      "fi": "BioRePeel-",
+      "en": "BioRePeel",
+      "ru": "BioRePeel"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -926,9 +1346,14 @@
   {
     "key": "timma-bf2a052010994d54",
     "labelFi": "Endosphères Therapy hieronta 75 min 12 kerta",
-    "labelEn": "Endosphères Therapy hieronta 75 min 12 kerta",
-    "labelRu": "Endosphères Therapy hieronta 75 min 12 kerta",
+    "labelEn": "Endospheres Therapy massage 75 min, 12 sessions",
+    "labelRu": "Массаж Endospheres 75 мин, 12 сеансов",
     "dragLabel": "Hoitopaket",
+    "dragLabels": {
+      "fi": "Hoitopaket",
+      "en": "Endo75 ×12",
+      "ru": "Эндо75 ×12"
+    },
     "defaultDurationMin": 75,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -937,9 +1362,14 @@
   {
     "key": "timma-87b20764f767022e",
     "labelFi": "Endosphères Therapy hieronta 75 min 6 kerta",
-    "labelEn": "Endosphères Therapy hieronta 75 min 6 kerta",
-    "labelRu": "Endosphères Therapy hieronta 75 min 6 kerta",
+    "labelEn": "Endospheres Therapy massage 75 min, 6 sessions",
+    "labelRu": "Массаж Endospheres 75 мин, 6 сеансов",
     "dragLabel": "EXP Koko v",
+    "dragLabels": {
+      "fi": "EXP Koko v",
+      "en": "Endo75 ×6",
+      "ru": "Эндо75 ×6"
+    },
     "defaultDurationMin": 75,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -948,9 +1378,14 @@
   {
     "key": "timma-e0f64e01f37262ef",
     "labelFi": "Endosphères Therapy hieronta 60 min 12 kerta",
-    "labelEn": "Endosphères Therapy hieronta 60 min 12 kerta",
-    "labelRu": "Endosphères Therapy hieronta 60 min 12 kerta",
+    "labelEn": "Endospheres Therapy massage 60 min, 12 sessions",
+    "labelRu": "Массаж Endospheres 60 мин, 12 сеансов",
     "dragLabel": "EXP Koko v",
+    "dragLabels": {
+      "fi": "EXP Koko v",
+      "en": "Endo60 ×12",
+      "ru": "Эндо60 ×12"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -959,9 +1394,14 @@
   {
     "key": "timma-94317a04831f9120",
     "labelFi": "Endosphères Therapy hieronta 60 min 6 kerta",
-    "labelEn": "Endosphères Therapy hieronta 60 min 6 kerta",
-    "labelRu": "Endosphères Therapy hieronta 60 min 6 kerta",
+    "labelEn": "Endospheres Therapy massage 60 min, 6 sessions",
+    "labelRu": "Массаж Endospheres 60 мин, 6 сеансов",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo60 ×6",
+      "ru": "Эндо60 ×6"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -970,9 +1410,14 @@
   {
     "key": "timma-00a77d1b3969d3dd",
     "labelFi": "Endosphères Therapy hieronta 45 min 12 kerta",
-    "labelEn": "Endosphères Therapy hieronta 45 min 12 kerta",
-    "labelRu": "Endosphères Therapy hieronta 45 min 12 kerta",
+    "labelEn": "Endospheres Therapy massage 45 min, 12 sessions",
+    "labelRu": "Массаж Endospheres 45 мин, 12 сеансов",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo45 ×12",
+      "ru": "Эндо45 ×12"
+    },
     "defaultDurationMin": 45,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -981,9 +1426,14 @@
   {
     "key": "timma-a38f59e314bc3ac5",
     "labelFi": "Endosphères Therapy hieronta 45 min 6 kerta",
-    "labelEn": "Endosphères Therapy hieronta 45 min 6 kerta",
-    "labelRu": "Endosphères Therapy hieronta 45 min 6 kerta",
+    "labelEn": "Endospheres Therapy massage 45 min, 6 sessions",
+    "labelRu": "Массаж Endospheres 45 мин, 6 сеансов",
     "dragLabel": "Endosphere",
+    "dragLabels": {
+      "fi": "Endosphere",
+      "en": "Endo45 ×6",
+      "ru": "Эндо45 ×6"
+    },
     "defaultDurationMin": 45,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -992,9 +1442,14 @@
   {
     "key": "timma-b882f082f46fed4c",
     "labelFi": "Endosphères Therapy hieronta 30 min 6 kerta",
-    "labelEn": "Endosphères Therapy hieronta 30 min 6 kerta",
-    "labelRu": "Endosphères Therapy hieronta 30 min 6 kerta",
+    "labelEn": "Endospheres Therapy massage 30 min, 6 sessions",
+    "labelRu": "Массаж Endospheres 30 мин, 6 сеансов",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo30 ×6",
+      "ru": "Эндо30 ×6"
+    },
     "defaultDurationMin": 30,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1003,9 +1458,14 @@
   {
     "key": "timma-108667889a8db1af",
     "labelFi": "Endosphères Therapy hieronta 30 min 12 kerta",
-    "labelEn": "Endosphères Therapy hieronta 30 min 12 kerta",
-    "labelRu": "Endosphères Therapy hieronta 30 min 12 kerta",
+    "labelEn": "Endospheres Therapy massage 30 min, 12 sessions",
+    "labelRu": "Массаж Endospheres 30 мин, 12 сеансов",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo30 ×12",
+      "ru": "Эндо30 ×12"
+    },
     "defaultDurationMin": 30,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1014,9 +1474,14 @@
   {
     "key": "timma-3b81d7eb9932d4c7",
     "labelFi": "Endosphères Therapy kasvolle 6 kerta",
-    "labelEn": "Endosphères Therapy kasvolle 6 kerta",
-    "labelRu": "Endosphères Therapy kasvolle 6 kerta",
+    "labelEn": "Endospheres Therapy facial, 6 sessions",
+    "labelRu": "Endospheres для лица, 6 сеансов",
     "dragLabel": "Endosphère",
+    "dragLabels": {
+      "fi": "Endosphère",
+      "en": "Endo face ×6",
+      "ru": "Эндо лицо ×6"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1025,9 +1490,14 @@
   {
     "key": "timma-8844624bcec23e9c",
     "labelFi": "Fraktio-mesoterapia 5 kerta",
-    "labelEn": "Fraktio-mesoterapia 5 kerta",
-    "labelRu": "Fraktio-mesoterapia 5 kerta",
+    "labelEn": "Fractional mesotherapy, 5 sessions",
+    "labelRu": "Фракционная мезотерапия, 5 сеансов",
     "dragLabel": "Fraktio-me",
+    "dragLabels": {
+      "fi": "Fraktio-me",
+      "en": "Frac meso ×5",
+      "ru": "Фракц.мезо ×5"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1036,9 +1506,14 @@
   {
     "key": "timma-fd148cdefb8224d3",
     "labelFi": "Lipolyytti vartalolle (yksi alue)",
-    "labelEn": "Lipolyytti vartalolle (yksi alue)",
-    "labelRu": "Lipolyytti vartalolle (yksi alue)",
+    "labelEn": "Body lipolytic treatment (one area)",
+    "labelRu": "Липолитик для тела (одна зона)",
     "dragLabel": "YKS Lipoly",
+    "dragLabels": {
+      "fi": "YKS Lipoly",
+      "en": "Body lipolytic",
+      "ru": "Липолитик тела"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1047,9 +1522,14 @@
   {
     "key": "timma-f3ebc6dc7c4acf05",
     "labelFi": "Lipolyysi kasvoille: kaksoisleuan ja kasvojen alaosan muotoilu",
-    "labelEn": "Lipolyysi kasvoille: kaksoisleuan ja kasvojen alaosan muotoilu",
-    "labelRu": "Lipolyysi kasvoille: kaksoisleuan ja kasvojen alaosan muotoilu",
+    "labelEn": "Facial lipolysis: double-chin and lower-face contouring",
+    "labelRu": "Липолиз лица: коррекция второго подбородка и нижней трети лица",
     "dragLabel": "Lipolyysi",
+    "dragLabels": {
+      "fi": "Lipolyysi",
+      "en": "Face lipolysis",
+      "ru": "Липолиз лица"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1058,9 +1538,14 @@
   {
     "key": "timma-287b30b96c720b1e",
     "labelFi": "Täyteainehoito",
-    "labelEn": "Täyteainehoito",
-    "labelRu": "Täyteainehoito",
+    "labelEn": "Dermal filler treatment",
+    "labelRu": "Контурная пластика филлерами",
     "dragLabel": "Täyteaineh",
+    "dragLabels": {
+      "fi": "Täyteaineh",
+      "en": "Filler",
+      "ru": "Филлер"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1069,9 +1554,14 @@
   {
     "key": "timma-6bc1a8b56f6e199f",
     "labelFi": "Biorevitalisaatio",
-    "labelEn": "Biorevitalisaatio",
-    "labelRu": "Biorevitalisaatio",
+    "labelEn": "Biorevitalization",
+    "labelRu": "Биоревитализация",
     "dragLabel": "Biorevital",
+    "dragLabels": {
+      "fi": "Biorevital",
+      "en": "Biorevital",
+      "ru": "Биоревитал."
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1080,9 +1570,14 @@
   {
     "key": "timma-5c1528cf7aac64e7",
     "labelFi": "Kasvojen muotoilu",
-    "labelEn": "Kasvojen muotoilu",
-    "labelRu": "Kasvojen muotoilu",
+    "labelEn": "Facial contouring",
+    "labelRu": "Контурирование лица",
     "dragLabel": "Kasvojen m",
+    "dragLabels": {
+      "fi": "Kasvojen m",
+      "en": "Face contour",
+      "ru": "Контур лица"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1091,9 +1586,14 @@
   {
     "key": "timma-fcc3c64817a5c194",
     "labelFi": "Lankakohotus",
-    "labelEn": "Lankakohotus",
-    "labelRu": "Lankakohotus",
+    "labelEn": "Thread lift",
+    "labelRu": "Нитевой лифтинг",
     "dragLabel": "Lankakohot",
+    "dragLabels": {
+      "fi": "Lankakohot",
+      "en": "Thread lift",
+      "ru": "Нити"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1102,9 +1602,14 @@
   {
     "key": "timma-de72e390cb1d006f",
     "labelFi": "RRS-biorevitalisaatio — “5 nuoruuspistettä”",
-    "labelEn": "RRS-biorevitalisaatio — “5 nuoruuspistettä”",
-    "labelRu": "RRS-biorevitalisaatio — “5 nuoruuspistettä”",
+    "labelEn": "RRS biorevitalization — “5 youth points”",
+    "labelRu": "RRS-биоревитализация — «5 точек молодости»",
     "dragLabel": "RRS-biorev",
+    "dragLabels": {
+      "fi": "RRS-biorev",
+      "en": "RRS 5 points",
+      "ru": "RRS 5 точек"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1113,9 +1618,14 @@
   {
     "key": "timma-ae537e8af7acf9f4",
     "labelFi": "Huulten muotoilu hyaluronihappotäyteaineella — 1 ml",
-    "labelEn": "Huulten muotoilu hyaluronihappotäyteaineella — 1 ml",
-    "labelRu": "Huulten muotoilu hyaluronihappotäyteaineella — 1 ml",
+    "labelEn": "Lip contouring with hyaluronic-acid filler — 1 ml",
+    "labelRu": "Контурирование губ филлером гиалуроновой кислоты — 1 мл",
     "dragLabel": "Huulten mu",
+    "dragLabels": {
+      "fi": "Huulten mu",
+      "en": "Lip filler 1ml",
+      "ru": "Губы 1 мл"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1124,9 +1634,14 @@
   {
     "key": "timma-bdb444995d7063f9",
     "labelFi": "Lankakohotus",
-    "labelEn": "Lankakohotus",
-    "labelRu": "Lankakohotus",
+    "labelEn": "Thread lift",
+    "labelRu": "Нитевой лифтинг",
     "dragLabel": "Lankakohot",
+    "dragLabels": {
+      "fi": "Lankakohot",
+      "en": "Thread lift",
+      "ru": "Нити"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1135,9 +1650,14 @@
   {
     "key": "timma-ca7f9b79fbd1617d",
     "labelFi": "Mesoten Aqualight (”Dolphin Skin”)",
-    "labelEn": "Mesoten Aqualight (”Dolphin Skin”)",
-    "labelRu": "Mesoten Aqualight (”Dolphin Skin”)",
+    "labelEn": "Mesoten Aqualight (“Dolphin Skin”)",
+    "labelRu": "Mesoten Aqualight («Dolphin Skin»)",
     "dragLabel": "”DO Mesote",
+    "dragLabels": {
+      "fi": "”DO Mesote",
+      "en": "Aqualight",
+      "ru": "Aqualight"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1146,9 +1666,14 @@
   {
     "key": "timma-4c51025262b562cd",
     "labelFi": "Koko kasvot",
-    "labelEn": "Koko kasvot",
-    "labelRu": "Koko kasvot",
+    "labelEn": "Full face",
+    "labelRu": "Всё лицо",
     "dragLabel": "Koko kasvo",
+    "dragLabels": {
+      "fi": "Koko kasvo",
+      "en": "Full face",
+      "ru": "Всё лицо"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1157,9 +1682,14 @@
   {
     "key": "timma-b00d10d2430affdd",
     "labelFi": "Otsa",
-    "labelEn": "Otsa",
-    "labelRu": "Otsa",
+    "labelEn": "Forehead",
+    "labelRu": "Лоб",
     "dragLabel": "Otsa",
+    "dragLabels": {
+      "fi": "Otsa",
+      "en": "Forehead",
+      "ru": "Лоб"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1168,9 +1698,14 @@
   {
     "key": "timma-94e677d9e197a06b",
     "labelFi": "Silmien ympäristö",
-    "labelEn": "Silmien ympäristö",
-    "labelRu": "Silmien ympäristö",
+    "labelEn": "Eye area",
+    "labelRu": "Область вокруг глаз",
     "dragLabel": "Silmien ym",
+    "dragLabels": {
+      "fi": "Silmien ym",
+      "en": "Eye area",
+      "ru": "Вокруг глаз"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1179,9 +1714,14 @@
   {
     "key": "timma-95571d0cada794f6",
     "labelFi": "Posket",
-    "labelEn": "Posket",
-    "labelRu": "Posket",
+    "labelEn": "Cheeks",
+    "labelRu": "Щёки",
     "dragLabel": "Posket",
+    "dragLabels": {
+      "fi": "Posket",
+      "en": "Cheeks",
+      "ru": "Щёки"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1190,9 +1730,14 @@
   {
     "key": "timma-1865660ca5f8814b",
     "labelFi": "Kasvot + kaula",
-    "labelEn": "Kasvot + kaula",
-    "labelRu": "Kasvot + kaula",
+    "labelEn": "Face + neck",
+    "labelRu": "Лицо + шея",
     "dragLabel": "Kasvot + k",
+    "dragLabels": {
+      "fi": "Kasvot + k",
+      "en": "Face + neck",
+      "ru": "Лицо + шея"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1201,9 +1746,14 @@
   {
     "key": "timma-a4b91ae157333060",
     "labelFi": "Leuka ja kasvojen ovaali",
-    "labelEn": "Leuka ja kasvojen ovaali",
-    "labelRu": "Leuka ja kasvojen ovaali",
+    "labelEn": "Chin and facial oval",
+    "labelRu": "Подбородок и овал лица",
     "dragLabel": "Leuka ja k",
+    "dragLabels": {
+      "fi": "Leuka ja k",
+      "en": "Chin + oval",
+      "ru": "Подбор.+овал"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1212,9 +1762,14 @@
   {
     "key": "timma-d8d1cd102fc57796",
     "labelFi": "Kaula",
-    "labelEn": "Kaula",
-    "labelRu": "Kaula",
+    "labelEn": "Neck",
+    "labelRu": "Шея",
     "dragLabel": "Kaula",
+    "dragLabels": {
+      "fi": "Kaula",
+      "en": "Neck",
+      "ru": "Шея"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1223,9 +1778,14 @@
   {
     "key": "timma-d46b381161acb568",
     "labelFi": "Dekoltee",
-    "labelEn": "Dekoltee",
-    "labelRu": "Dekoltee",
+    "labelEn": "Décolletage",
+    "labelRu": "Декольте",
     "dragLabel": "Dekoltee",
+    "dragLabels": {
+      "fi": "Dekoltee",
+      "en": "Décolletage",
+      "ru": "Декольте"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1234,9 +1794,14 @@
   {
     "key": "timma-a57094b8064e9744",
     "labelFi": "Vatsa",
-    "labelEn": "Vatsa",
-    "labelRu": "Vatsa",
+    "labelEn": "Abdomen",
+    "labelRu": "Живот",
     "dragLabel": "Vatsa",
+    "dragLabels": {
+      "fi": "Vatsa",
+      "en": "Abdomen",
+      "ru": "Живот"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1245,9 +1810,14 @@
   {
     "key": "timma-6c9c1597ed7a2292",
     "labelFi": "Reidet",
-    "labelEn": "Reidet",
-    "labelRu": "Reidet",
+    "labelEn": "Thighs",
+    "labelRu": "Бёдра",
     "dragLabel": "Reidet",
+    "dragLabels": {
+      "fi": "Reidet",
+      "en": "Thighs",
+      "ru": "Бёдра"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1256,9 +1826,14 @@
   {
     "key": "timma-291dc61806dc8318",
     "labelFi": "Polvet",
-    "labelEn": "Polvet",
-    "labelRu": "Polvet",
+    "labelEn": "Knees",
+    "labelRu": "Колени",
     "dragLabel": "Polvet",
+    "dragLabels": {
+      "fi": "Polvet",
+      "en": "Knees",
+      "ru": "Колени"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1267,9 +1842,14 @@
   {
     "key": "timma-d1857aa332234e34",
     "labelFi": "Pakarat",
-    "labelEn": "Pakarat",
-    "labelRu": "Pakarat",
+    "labelEn": "Buttocks",
+    "labelRu": "Ягодицы",
     "dragLabel": "Pakarat",
+    "dragLabels": {
+      "fi": "Pakarat",
+      "en": "Buttocks",
+      "ru": "Ягодицы"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1278,9 +1858,14 @@
   {
     "key": "timma-365080812ce775df",
     "labelFi": "Kädet (sisäosa, olkapäät)",
-    "labelEn": "Kädet (sisäosa, olkapäät)",
-    "labelRu": "Kädet (sisäosa, olkapäät)",
+    "labelEn": "Arms (inner arms, shoulders)",
+    "labelRu": "Руки (внутренняя поверхность, плечи)",
     "dragLabel": "SIS Kädet",
+    "dragLabels": {
+      "fi": "SIS Kädet",
+      "en": "Inner arms",
+      "ru": "Внутр. рук"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1289,9 +1874,14 @@
   {
     "key": "timma-931b388251e062e1",
     "labelFi": "Kasvot + kaula + dekoltee",
-    "labelEn": "Kasvot + kaula + dekoltee",
-    "labelRu": "Kasvot + kaula + dekoltee",
+    "labelEn": "Face + neck + décolletage",
+    "labelRu": "Лицо + шея + декольте",
     "dragLabel": "Kasvot + k",
+    "dragLabels": {
+      "fi": "Kasvot + k",
+      "en": "Face+neck+dec",
+      "ru": "Лицо+шея+дек"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,
@@ -1300,9 +1890,14 @@
   {
     "key": "timma-e6d0ce32e52a20c5",
     "labelFi": "Vatsa + reidet + pakarat",
-    "labelEn": "Vatsa + reidet + pakarat",
-    "labelRu": "Vatsa + reidet + pakarat",
+    "labelEn": "Abdomen + thighs + buttocks",
+    "labelRu": "Живот + бёдра + ягодицы",
     "dragLabel": "Vatsa + re",
+    "dragLabels": {
+      "fi": "Vatsa + re",
+      "en": "Abs+thighs+but",
+      "ru": "Жив+бед+ягод"
+    },
     "defaultDurationMin": 60,
     "color": "#C7C2B8",
     "defaultEnabled": false,

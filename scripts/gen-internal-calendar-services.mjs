@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(root, "internal-services.txt");
+const translationsPath = resolve(
+  root,
+  "content/internal-calendar-services.i18n.json",
+);
 const outputPath = resolve(
   root,
   "content/generated/internal-calendar-services.json",
@@ -14,8 +18,6 @@ const preserved = new Map([
     "Ruokatauko\u0000Ruokatauko",
     {
       key: "lunch",
-      labelEn: "Lunch break",
-      labelRu: "Обеденный перерыв",
       color: "#D8C5A8",
       defaultEnabled: true,
     },
@@ -24,8 +26,6 @@ const preserved = new Map([
     "Henkilökohtainen meno\u0000Henkilökoh",
     {
       key: "personal",
-      labelEn: "Personal time",
-      labelRu: "Личное время",
       color: "#CBB8A6",
       defaultEnabled: true,
     },
@@ -34,8 +34,6 @@ const preserved = new Map([
     "Työmeno\u0000Työmeno",
     {
       key: "errand",
-      labelEn: "Work errand",
-      labelRu: "Рабочее поручение",
       color: "#B7C7BD",
       defaultEnabled: true,
     },
@@ -44,8 +42,6 @@ const preserved = new Map([
     "Sairasloma\u0000Sairasloma",
     {
       key: "sick",
-      labelEn: "Sick leave",
-      labelRu: "Больничный",
       color: "#D6AAA0",
       defaultEnabled: true,
     },
@@ -54,8 +50,6 @@ const preserved = new Map([
     "Loma\u0000Loma",
     {
       key: "vacation",
-      labelEn: "Vacation",
-      labelRu: "Отпуск",
       color: "#B8C5D1",
       defaultEnabled: false,
     },
@@ -67,7 +61,11 @@ function durationFromName(name) {
   return match ? Number(match[1]) : 60;
 }
 
-const source = await readFile(sourcePath, "utf8");
+const [source, translationsSource] = await Promise.all([
+  readFile(sourcePath, "utf8"),
+  readFile(translationsPath, "utf8"),
+]);
+const translations = JSON.parse(translationsSource);
 const lines = source.replace(/^\uFEFF/, "").split(/\r?\n/);
 const dataLines = lines.slice(4).filter((line, index, all) => {
   return index < all.length - 1 || line.trim();
@@ -101,13 +99,32 @@ for (let index = 0; index < dataLines.length; index += 2) {
       .update(`${identity}\u0000${occurrence}`)
       .digest("hex")
       .slice(0, 16)}`;
+  const translation = translations[key];
+  if (!translation) {
+    throw new Error(`Missing English/Russian translation for ${key}.`);
+  }
+  for (const field of ["labelEn", "labelRu", "dragLabelEn", "dragLabelRu"]) {
+    if (typeof translation[field] !== "string" || !translation[field].trim()) {
+      throw new Error(`Missing ${field} for ${key}.`);
+    }
+  }
+  for (const field of ["dragLabelEn", "dragLabelRu"]) {
+    if (Array.from(translation[field].trim()).length > 14) {
+      throw new Error(`${field} exceeds 14 characters for ${key}.`);
+    }
+  }
 
   catalog.push({
     key,
     labelFi,
-    labelEn: known?.labelEn ?? labelFi,
-    labelRu: known?.labelRu ?? labelFi,
+    labelEn: translation.labelEn.trim(),
+    labelRu: translation.labelRu.trim(),
     dragLabel,
+    dragLabels: {
+      fi: dragLabel,
+      en: translation.dragLabelEn.trim(),
+      ru: translation.dragLabelRu.trim(),
+    },
     defaultDurationMin: durationFromName(labelFi),
     color: known?.color ?? "#C7C2B8",
     defaultEnabled: known?.defaultEnabled ?? false,
@@ -118,6 +135,16 @@ for (let index = 0; index < dataLines.length; index += 2) {
 if (catalog.length !== 119) {
   throw new Error(
     `Expected 119 internal calendar services, received ${catalog.length}.`,
+  );
+}
+
+const generatedKeys = new Set(catalog.map((service) => service.key));
+const extraTranslations = Object.keys(translations).filter(
+  (key) => !generatedKeys.has(key),
+);
+if (extraTranslations.length) {
+  throw new Error(
+    `Translations contain unknown catalog keys: ${extraTranslations.join(", ")}.`,
   );
 }
 

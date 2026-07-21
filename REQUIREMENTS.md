@@ -94,9 +94,12 @@ tooltiped Add workday and Remove workday actions.
 
 `CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
 duration, Mone-compatible color, active state, and display order. Generate the complete Finnish
-catalog and drag aliases from `internal-services.txt`; retain the first four internal entries as
-the default shortcuts, leave all remaining entries unselected, and allow at most 24 locally
-selected shortcuts. Admins alone manage
+catalog and Finnish drag aliases unchanged from `internal-services.txt`, with complete committed
+English and Russian translations and independently editable per-locale drag aliases of at most 14
+characters. The dialog copy, service rows, shortcut rail, drag preview, controls, tooltips, and
+accessible names follow the active locale. Retain the first four internal entries as the default
+shortcuts, leave all remaining entries unselected, and allow at most 24 locally selected
+shortcuts. Admins alone manage
 templates. Active templates may be dragged or selected then placed at a 15-minute position inside
 an hourly row. Dragging shows a floating preview and highlights the hovered future vacant target. The Booking info
 modal contains date/start/end, a primary item, ordered additional items, target employee, at most

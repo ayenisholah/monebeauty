@@ -17,12 +17,32 @@ test("internal palette defaults match the approved Finnish shortcuts", () => {
   assert.deepEqual(
     palette
       .slice(0, 4)
-      .map(({ key, alias, enabled }) => ({ key, alias, enabled })),
+      .map(({ key, aliases, enabled }) => ({ key, aliases, enabled })),
     [
-      { key: "lunch", alias: "Ruokatauko", enabled: true },
-      { key: "personal", alias: "Henkilökoh", enabled: true },
-      { key: "errand", alias: "Työmeno", enabled: true },
-      { key: "sick", alias: "Sairasloma", enabled: true },
+      {
+        key: "lunch",
+        aliases: { fi: "Ruokatauko", en: "Lunch break", ru: "Обед" },
+        enabled: true,
+      },
+      {
+        key: "personal",
+        aliases: {
+          fi: "Henkilökoh",
+          en: "Personal time",
+          ru: "Личное время",
+        },
+        enabled: true,
+      },
+      {
+        key: "errand",
+        aliases: { fi: "Työmeno", en: "Work errand", ru: "Поручение" },
+        enabled: true,
+      },
+      {
+        key: "sick",
+        aliases: { fi: "Sairasloma", en: "Sick leave", ru: "Больничный" },
+        enabled: true,
+      },
     ],
   );
   assert.equal(palette.length, 119);
@@ -37,9 +57,11 @@ test("palette order, visibility, and 14-character aliases normalize safely", () 
     { key: "unknown", alias: "Ignored", enabled: true },
   ]);
   assert.equal(palette[0].key, "vacation");
-  assert.equal(palette[0].alias, "Pitkä lomajaks");
+  assert.equal(palette[0].aliases.fi, "Pitkä lomajaks");
+  assert.equal(palette[0].aliases.en, "Vacation");
+  assert.equal(palette[0].aliases.ru, "Отпуск");
   assert.equal(palette[0].enabled, false);
-  assert.equal(palette[1].alias, "Ruokatauko");
+  assert.equal(palette[1].aliases.fi, "Ruokatauko");
   assert.equal(truncateCalendarAlias("123456789012345"), "12345678901234");
   assert.equal(palette.length, 119);
 });
@@ -67,10 +89,58 @@ test("the generated catalog exactly preserves all Finnish source rows", () => {
     119,
   );
   assert.ok(
-    INTERNAL_CALENDAR_SERVICES.every(
-      (service) => Array.from(service.dragLabel).length <= 14,
+    INTERNAL_CALENDAR_SERVICES.every((service) =>
+      Object.values(service.dragLabels).every(
+        (alias) => Array.from(alias).length <= 14,
+      ),
     ),
   );
+});
+
+test("the generated catalog has complete English and Russian translations", () => {
+  const translations = JSON.parse(
+    readFileSync("content/internal-calendar-services.i18n.json", "utf8"),
+  ) as Record<
+    string,
+    {
+      labelEn: string;
+      labelRu: string;
+      dragLabelEn: string;
+      dragLabelRu: string;
+    }
+  >;
+  assert.deepEqual(
+    Object.keys(translations).sort(),
+    INTERNAL_CALENDAR_SERVICES.map((service) => service.key).sort(),
+  );
+  assert.ok(
+    INTERNAL_CALENDAR_SERVICES.every(
+      (service) =>
+        service.labelEn.trim() &&
+        service.labelRu.trim() &&
+        service.dragLabels.en.trim() &&
+        service.dragLabels.ru.trim(),
+    ),
+  );
+});
+
+test("palette aliases are independently editable in each locale", () => {
+  const palette = normalizeInternalPalette([
+    {
+      key: "lunch",
+      aliases: {
+        fi: "Oma tauko",
+        en: "My break",
+        ru: "Мой перерыв",
+      },
+      enabled: true,
+    },
+  ]);
+  assert.deepEqual(palette[0].aliases, {
+    fi: "Oma tauko",
+    en: "My break",
+    ru: "Мой перерыв",
+  });
 });
 
 test("palette normalization caps selected services at the Timma limit", () => {
