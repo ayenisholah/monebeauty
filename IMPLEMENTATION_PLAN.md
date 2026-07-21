@@ -71,6 +71,9 @@
   locks; apply them to public and internal appointment creation and rescheduling paths.
 - Cover recurrence, snapping, durations, localization, limits, RBAC, concurrency, availability,
   automatic practitioner roster population, responsive interaction, lint, typecheck, and build.
+- Replace the granular Open / closed times modal with localized, tooltiped Add/Remove workday
+  controls. Persist exact per-date availability overrides, protect active appointments, retain
+  weekly hours, and use magnifying-glass icons plus accessible tooltips for calendar zoom.
 
 ## Timma employee roster and palette fidelity (owner-approved, 2026-07-21)
 
@@ -87,7 +90,7 @@
 - Remove nested Day/Week vertical scrolling, keep every Month date navigable, and add accessible
   vertical quarter-hour selection locked to the starting date/employee. Render the selection as
   one continuous borderless-interior block and open Create appointment immediately with the
-  dragged duration; keep internal blocks and availability on their dedicated controls.
+  dragged duration; keep internal blocks and per-date workday controls available in the toolbar.
 - Aggregate public availability across the ordered qualified roster and allocate the first
   conflict-free employee/resource atomically without exposing employee identity publicly.
 

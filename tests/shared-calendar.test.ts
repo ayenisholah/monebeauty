@@ -6,6 +6,7 @@ import {
   applyAvailabilityRange,
   generateStaffSlots,
   openSlotRange,
+  workdaySlots,
   workingRangeForDate,
 } from "../lib/staff-schedule";
 
@@ -17,6 +18,10 @@ const moveApi = readFileSync(
 );
 const createApi = readFileSync(
   "app/api/calendar/appointments/route.ts",
+  "utf8",
+);
+const staffScheduleApi = readFileSync(
+  "app/api/staff/schedule/route.ts",
   "utf8",
 );
 const appointmentForm = readFileSync(
@@ -256,11 +261,32 @@ test("month dates remain navigable without availability or events", () => {
   assert.match(monthView, /onClick=\{\(\) => onOpenDay\(date\)\}/);
 });
 
-test("staff can edit open and closed times only through own availability", () => {
-  assert.match(calendar, /openAvailabilityEditor/);
-  assert.match(calendar, /saveAvailability/);
-  assert.match(calendar, /\["open", "closed"\]/);
+test("workday controls replace quarter-slot availability editing", () => {
+  assert.match(calendar, /MagnifyingGlassMinus/);
+  assert.match(calendar, /MagnifyingGlassPlus/);
+  assert.match(calendar, /role="tooltip"/);
+  assert.match(calendar, /openWorkdayEditor\("add"\)/);
+  assert.match(calendar, /openWorkdayEditor\("remove"\)/);
+  assert.match(calendar, /disableClosedDays=\{false\}/);
+  assert.doesNotMatch(calendar, /openAvailabilityEditor/);
+  assert.doesNotMatch(calendar, /Open \/ closed times/);
   assert.match(calendarApi, /canEditOwnAvailability/);
+  assert.match(staffScheduleApi, /action === "add_workday"/);
+  assert.match(staffScheduleApi, /action === "remove_workday"/);
+  assert.match(staffScheduleApi, /appointments_conflict/);
+  assert.match(staffScheduleApi, /lockReservationKeys/);
+  assert.match(staffScheduleApi, /workday_mutation_denied/);
+  assert.match(staffScheduleApi, /workday_added/);
+  assert.match(staffScheduleApi, /workday_removed/);
+});
+
+test("workday slots replace one date with exact quarter-hour availability", () => {
+  const slots = workdaySlots("2026-07-23", 9 * 60, 17 * 60);
+  assert.equal(slots.length, 32);
+  assert.equal(slots[0]?.start, "2026-07-23T09:00:00.000Z");
+  assert.equal(slots.at(-1)?.end, "2026-07-23T17:00:00.000Z");
+  assert.ok(slots.every((slot) => slot.status === "open"));
+  assert.deepEqual(workdaySlots("2026-07-23", 541, 17 * 60), []);
 });
 
 test("database rejects employee, room, and device overlaps", () => {

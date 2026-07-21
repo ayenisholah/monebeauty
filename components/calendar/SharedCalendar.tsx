@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -17,10 +24,14 @@ import {
   CaretLeft,
   CaretRight,
   GearSix,
+  MagnifyingGlassMinus,
+  MagnifyingGlassPlus,
+  Minus,
   Plus,
 } from "@phosphor-icons/react";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { cn } from "@/lib/cn";
 import {
   availabilityCovers,
@@ -51,6 +62,7 @@ import {
   type CalendarRangeCell,
   type CalendarRangeSelection,
 } from "@/lib/calendar-range-selection";
+import { clinicTodayYmd } from "@/lib/clinic-date";
 
 type View = "day" | "week" | "month";
 const VIEW_STORAGE_KEYS = {
@@ -123,6 +135,13 @@ type AppointmentDetail = {
 const ZOOM_HEIGHTS = { compact: 36, default: 48, expanded: 68 } as const;
 const TIME_GRID_EDGE_PADDING = 12;
 type Zoom = keyof typeof ZOOM_HEIGHTS;
+type WorkdayEditor = {
+  mode: "add" | "remove";
+  practitionerId: string;
+  date: string;
+  startMinute: number;
+  endMinute: number;
+};
 
 const copy = {
   en: {
@@ -135,11 +154,17 @@ const copy = {
     refresh: "Refresh",
     setup: "Calendar setup",
     hours: "Working hours",
-    availability: "Open / closed times",
-    saveAvailability: "Save availability",
-    open: "Open",
-    closed: "Closed",
-    booked: "Booked",
+    addWorkday: "Add workday",
+    removeWorkday: "Remove workday",
+    add: "Add",
+    remove: "Remove",
+    date: "Date",
+    workdayHours: "Working hours",
+    workdayAdded: "Workday added.",
+    workdayRemoved: "Workday removed.",
+    workdayConflict:
+      "Move or cancel the employee's appointments before changing this workday.",
+    workdayInvalid: "The workday could not be saved. Check the date and hours.",
     applyHours: "Apply hours",
     startHour: "Start",
     endHour: "End",
@@ -175,11 +200,18 @@ const copy = {
     refresh: "Päivitä",
     setup: "Kalenterin asetukset",
     hours: "Työajat",
-    availability: "Avoimet / suljetut ajat",
-    saveAvailability: "Tallenna saatavuus",
-    open: "Avoin",
-    closed: "Suljettu",
-    booked: "Varattu",
+    addWorkday: "Lisää työpäivä",
+    removeWorkday: "Poista työpäivä",
+    add: "Lisää",
+    remove: "Poista",
+    date: "Päivä",
+    workdayHours: "Työaika",
+    workdayAdded: "Työpäivä lisätty.",
+    workdayRemoved: "Työpäivä poistettu.",
+    workdayConflict:
+      "Siirrä tai peru työntekijän ajanvaraukset ennen työpäivän muuttamista.",
+    workdayInvalid:
+      "Työpäivää ei voitu tallentaa. Tarkista päivä ja työaika.",
     applyHours: "Käytä työaikoja",
     startHour: "Alkaa",
     endHour: "Päättyy",
@@ -215,11 +247,18 @@ const copy = {
     refresh: "Обновить",
     setup: "Настройки календаря",
     hours: "Рабочее время",
-    availability: "Открытые / закрытые часы",
-    saveAvailability: "Сохранить доступность",
-    open: "Открыто",
-    closed: "Закрыто",
-    booked: "Занято",
+    addWorkday: "Добавить рабочий день",
+    removeWorkday: "Удалить рабочий день",
+    add: "Добавить",
+    remove: "Удалить",
+    date: "Дата",
+    workdayHours: "Рабочее время",
+    workdayAdded: "Рабочий день добавлен.",
+    workdayRemoved: "Рабочий день удалён.",
+    workdayConflict:
+      "Перенесите или отмените записи сотрудника перед изменением рабочего дня.",
+    workdayInvalid:
+      "Не удалось сохранить рабочий день. Проверьте дату и время.",
     applyHours: "Применить часы",
     startHour: "Начало",
     endHour: "Конец",
@@ -343,10 +382,9 @@ export function SharedCalendar({
     deviceId: string;
   } | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
-  const [availabilityOpen, setAvailabilityOpen] = useState(false);
-  const [availabilityPractitionerId, setAvailabilityPractitionerId] =
-    useState("");
-  const [availabilitySlots, setAvailabilitySlots] = useState<Slot[]>([]);
+  const [workdayEditor, setWorkdayEditor] =
+    useState<WorkdayEditor | null>(null);
+  const [workdaySaving, setWorkdaySaving] = useState(false);
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [managing, setManaging] = useState<{
     start: string;
@@ -775,47 +813,62 @@ export function SharedCalendar({
     await load();
   }
 
-  function openAvailabilityEditor() {
+  function openWorkdayEditor(mode: "add" | "remove") {
     if (!data) return;
     const practitionerId = data.canEditAllAvailability
       ? (selected[0] ?? data.practitioners[0]?.id ?? "")
       : (data.ownPractitionerId ?? "");
     if (!practitionerId) return;
-    const existing = data.availabilities.find(
-      (item) => item.date === date && item.practitionerId === practitionerId,
+    const practitioner = data.practitioners.find(
+      (item) => item.id === practitionerId,
     );
-    const slots = existing?.slots.length
-      ? existing.slots
-      : Array.from({ length: 36 }, (_, index) => {
-          const minutes = 10 * 60 + index * 15;
-          const next = minutes + 15;
-          return {
-            start: `${date}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00.000Z`,
-            end: `${date}T${pad(Math.floor(next / 60))}:${pad(next % 60)}:00.000Z`,
-            status: "open",
-          };
-        });
-    setAvailabilityPractitionerId(practitionerId);
-    setAvailabilitySlots(slots);
-    setAvailabilityOpen(true);
+    const saved = practitioner?.workingHours
+      ? parseWorkingHours(practitioner.workingHours)
+      : { startHour: 9, endHour: 17 };
+    setWorkdayEditor({
+      mode,
+      practitionerId,
+      date: date < clinicTodayYmd() ? clinicTodayYmd() : date,
+      startMinute: saved.startHour * 60,
+      endMinute: saved.endHour * 60,
+    });
   }
 
-  async function saveAvailability() {
+  async function saveWorkday() {
+    if (!workdayEditor) return;
+    setWorkdaySaving(true);
+    setMessage(null);
     const response = await fetch("/api/staff/schedule", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        date,
-        practitionerId: availabilityPractitionerId,
-        slots: availabilitySlots,
+        action:
+          workdayEditor.mode === "add" ? "add_workday" : "remove_workday",
+        practitionerId: workdayEditor.practitionerId,
+        date: workdayEditor.date,
+        ...(workdayEditor.mode === "add"
+          ? {
+              startMinute: workdayEditor.startMinute,
+              endMinute: workdayEditor.endMinute,
+            }
+          : {}),
       }),
     });
+    setWorkdaySaving(false);
     if (!response.ok) {
-      setMessage(t.conflict);
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      setMessage(
+        payload?.error === "appointments_conflict"
+          ? t.workdayConflict
+          : t.workdayInvalid,
+      );
       return;
     }
-    setAvailabilityOpen(false);
-    setMessage(t.saved);
+    const mode = workdayEditor.mode;
+    setWorkdayEditor(null);
+    setMessage(mode === "add" ? t.workdayAdded : t.workdayRemoved);
     await load();
   }
 
@@ -911,24 +964,20 @@ export function SharedCalendar({
           >
             <ArrowClockwise size={18} />
           </button>
-          <button
-            type="button"
+          <TooltipIconButton
+            label={t.zoomOut}
             onClick={() => changeZoom(-1)}
             disabled={zoom === "compact"}
-            className={iconButtonCls}
-            aria-label={t.zoomOut}
           >
-            −
-          </button>
-          <button
-            type="button"
+            <MagnifyingGlassMinus size={19} weight="thin" />
+          </TooltipIconButton>
+          <TooltipIconButton
+            label={t.zoomIn}
             onClick={() => changeZoom(1)}
             disabled={zoom === "expanded"}
-            className={iconButtonCls}
-            aria-label={t.zoomIn}
           >
-            +
-          </button>
+            <MagnifyingGlassPlus size={19} weight="thin" />
+          </TooltipIconButton>
           {data?.canManageAppointments ? (
             <button
               type="button"
@@ -941,13 +990,18 @@ export function SharedCalendar({
           ) : null}
           {data?.canEditAllAvailability || data?.canEditOwnAvailability ? (
             <>
-              <button
-                type="button"
-                onClick={openAvailabilityEditor}
-                className={buttonCls}
+              <TooltipIconButton
+                label={t.addWorkday}
+                onClick={() => openWorkdayEditor("add")}
               >
-                {t.availability}
-              </button>
+                <Plus size={18} weight="thin" />
+              </TooltipIconButton>
+              <TooltipIconButton
+                label={t.removeWorkday}
+                onClick={() => openWorkdayEditor("remove")}
+              >
+                <Minus size={18} weight="thin" />
+              </TooltipIconButton>
               <button
                 type="button"
                 onClick={() => {
@@ -1338,84 +1392,132 @@ export function SharedCalendar({
           </div>
         </div>
       ) : null}
-      {availabilityOpen && data ? (
+      {workdayEditor && data ? (
         <div
           className="fixed inset-0 z-[105] flex items-end justify-center bg-ink/35 p-[12px] sm:items-center"
           role="presentation"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target && !workdaySaving)
+              setWorkdayEditor(null);
+          }}
         >
           <div
             role="dialog"
             aria-modal="true"
-            className="max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-[10px] border border-line-card bg-card p-[clamp(18px,3vw,28px)] shadow-card"
+            aria-labelledby="workday-editor-title"
+            className="w-full max-w-[520px] rounded-[10px] border border-line-card bg-card p-[clamp(18px,3vw,28px)] shadow-card"
           >
-            <h2 className="font-display text-[30px] font-medium">
-              {t.availability}
+            <h2
+              id="workday-editor-title"
+              className="font-display text-[30px] font-medium"
+            >
+              {workdayEditor.mode === "add"
+                ? t.addWorkday
+                : t.removeWorkday}
             </h2>
-            <p className="mt-1 font-sans text-sm text-muted">{date}</p>
-            <div className="mt-4 grid gap-2">
-              {availabilitySlots.map((slot, index) => {
-                const slotStart = new Date(slot.start);
-                const slotEnd = new Date(slot.end);
-                const booked = data.appointments.some(
-                  (appointment) =>
-                    appointment.practitionerId === availabilityPractitionerId &&
-                    appointment.status !== "CANCELLED" &&
-                    new Date(appointment.start) < slotEnd &&
-                    new Date(appointment.end) > slotStart,
-                );
-                return (
-                  <div
-                    key={slot.start}
-                    className="grid grid-cols-[1fr_auto] items-center gap-3 rounded border border-line-card bg-page p-2"
-                  >
-                    <span className="font-sans text-sm">
-                      {fmtTime.format(slotStart)}–{fmtTime.format(slotEnd)}
-                      {booked ? ` · ${t.booked}` : ""}
+            <div className="mt-[18px] grid gap-[14px]">
+              <Field label={t.employee}>
+                <ThemedSelect
+                  value={workdayEditor.practitionerId}
+                  disabled={!data.canEditAllAvailability}
+                  onValueChange={(practitionerId) => {
+                    const practitioner = data.practitioners.find(
+                      (item) => item.id === practitionerId,
+                    );
+                    const saved = practitioner?.workingHours
+                      ? parseWorkingHours(practitioner.workingHours)
+                      : { startHour: 9, endHour: 17 };
+                    setWorkdayEditor({
+                      ...workdayEditor,
+                      practitionerId,
+                      startMinute: saved.startHour * 60,
+                      endMinute: saved.endHour * 60,
+                    });
+                  }}
+                  options={data.practitioners
+                    .filter(
+                      (item) =>
+                        data.canEditAllAvailability ||
+                        item.id === data.ownPractitionerId,
+                    )
+                    .map((item) => ({ value: item.id, label: item.name }))}
+                />
+              </Field>
+              <Field label={t.date}>
+                <DatePicker
+                  locale={locale}
+                  value={workdayEditor.date}
+                  onValueChange={(nextDate) =>
+                    setWorkdayEditor({ ...workdayEditor, date: nextDate })
+                  }
+                  ariaLabel={t.date}
+                  min={clinicTodayYmd()}
+                  disableClosedDays={false}
+                />
+              </Field>
+              {workdayEditor.mode === "add" ? (
+                <Field label={t.workdayHours}>
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <TimePicker
+                      value={String(workdayEditor.startMinute)}
+                      onValueChange={(value) => {
+                        const startMinute = Number(value);
+                        setWorkdayEditor({
+                          ...workdayEditor,
+                          startMinute,
+                          endMinute: Math.min(
+                            24 * 60,
+                            Math.max(
+                              workdayEditor.endMinute,
+                              startMinute + 15,
+                            ),
+                          ),
+                        });
+                      }}
+                      options={workdayTimeOptions(0, 24 * 60 - 15)}
+                      ariaLabel={t.startHour}
+                    />
+                    <span aria-hidden className="text-muted">
+                      –
                     </span>
-                    <div className="flex gap-1">
-                      {(["open", "closed"] as const).map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          disabled={booked}
-                          onClick={() =>
-                            setAvailabilitySlots((current) =>
-                              current.map((item, itemIndex) =>
-                                itemIndex === index
-                                  ? { ...item, status }
-                                  : item,
-                              ),
-                            )
-                          }
-                          className={cn(
-                            buttonCls,
-                            slot.status === status &&
-                              "border-accent bg-btn-fill text-ink",
-                            booked && "cursor-not-allowed opacity-45",
-                          )}
-                        >
-                          {t[status]}
-                        </button>
-                      ))}
-                    </div>
+                    <TimePicker
+                      value={String(workdayEditor.endMinute)}
+                      onValueChange={(value) =>
+                        setWorkdayEditor({
+                          ...workdayEditor,
+                          endMinute: Number(value),
+                        })
+                      }
+                      options={workdayTimeOptions(
+                        workdayEditor.startMinute + 15,
+                        24 * 60,
+                      )}
+                      ariaLabel={t.endHour}
+                    />
                   </div>
-                );
-              })}
+                </Field>
+              ) : null}
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setAvailabilityOpen(false)}
+                disabled={workdaySaving}
+                onClick={() => setWorkdayEditor(null)}
                 className={buttonCls}
               >
                 {t.cancel}
               </button>
               <button
                 type="button"
-                onClick={() => void saveAvailability()}
-                className={primaryButtonCls}
+                disabled={workdaySaving}
+                onClick={() => void saveWorkday()}
+                className={cn(
+                  primaryButtonCls,
+                  workdayEditor.mode === "remove" &&
+                    "border-[#b64d56] bg-[#b64d56]",
+                )}
               >
-                {t.saveAvailability}
+                {workdayEditor.mode === "add" ? t.add : t.remove}
               </button>
             </div>
           </div>
@@ -2357,6 +2459,60 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+function workdayTimeOptions(fromMinute: number, throughMinute: number) {
+  const first = Math.ceil(fromMinute / 15) * 15;
+  const last = Math.floor(throughMinute / 15) * 15;
+  if (first > last) return [];
+  return Array.from(
+    { length: Math.floor((last - first) / 15) + 1 },
+    (_, index) => {
+      const minute = first + index * 15;
+      return {
+        value: String(minute),
+        label:
+          minute === 24 * 60
+            ? "24:00"
+            : `${pad(Math.floor(minute / 60))}:${pad(minute % 60)}`,
+      };
+    },
+  );
+}
+
+function TooltipIconButton({
+  label,
+  onClick,
+  disabled = false,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  const tooltipId = useId();
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={label}
+        aria-describedby={tooltipId}
+        className={cn(iconButtonCls, "disabled:cursor-not-allowed disabled:opacity-35")}
+      >
+        {children}
+      </button>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className="pointer-events-none absolute top-[calc(100%+7px)] left-1/2 z-[150] -translate-x-1/2 rounded-[4px] bg-ink px-2 py-1 font-sans text-[11px] whitespace-nowrap text-page opacity-0 shadow-card transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        {label}
+      </span>
+    </span>
   );
 }
 

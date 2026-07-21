@@ -212,6 +212,20 @@ export function applyAvailabilityRange(
     });
 }
 
+export function workdaySlots(
+  dateStr: string,
+  startMinute: number,
+  endMinute: number,
+): StaffSlot[] {
+  return applyAvailabilityRange(
+    [],
+    dateStr,
+    startMinute,
+    endMinute,
+    "open",
+  );
+}
+
 export function availabilityCovers(rawSlots: unknown, start: Date, end: Date) {
   const intervals = normalizeSlots(rawSlots)
     .filter((slot) => slot.status === "open")

@@ -88,7 +88,9 @@ Every month date is navigable, including empty future dates. Empty day/week quar
 support vertical selection locked to the starting date/employee column. Selected cells render as
 one continuous shaded range without internal borders and immediately open Create appointment on
 release, using the complete selected duration. Internal blocks and availability remain available
-through their dedicated drag/drop and toolbar controls.
+through their dedicated drag/drop and toolbar controls. The toolbar uses magnifying-glass zoom
+icons with localized hover/focus tooltips and replaces quarter-slot Open / closed times with
+tooltiped Add workday and Remove workday actions.
 
 `CalendarBlockTemplate` is distinct from clinical `Service` and stores EN/FI/RU labels, default
 duration, Mone-compatible color, active state, and display order. Generate the complete Finnish
@@ -124,7 +126,11 @@ Working-time visibility (owner-approved, 2026-07-19): normalized
 latest open-time union; closed gaps are not selectable. Date pickers keep unavailable dates in
 place but disable them, and scheduling time pickers contain only valid open starts. The authorized
 working-hours editor alone may select the full day so hours can be expanded. Existing appointments
-outside current availability remain visible in a separate out-of-hours exception row.
+outside current availability remain visible in a separate out-of-hours exception row. Add workday
+replaces one employee/date override with an exact 15-minute-aligned open range; Remove workday
+persists an empty override without changing recurring weekly hours. Admins may select any active
+employee while staff remain restricted to their linked employee. Past dates and changes that
+would place active appointments outside the resulting workday are rejected and audited.
 
 The verified client account is a localized dashboard with overview, appointments, orders, saved
 addresses, and profile sections. Verified email is visible and read-only; name and phone are

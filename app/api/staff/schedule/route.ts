@@ -12,8 +12,11 @@ import {
   normalizeWorkingHours,
   parseWorkingHours,
   slotsWithBookedStatus,
+  workdaySlots,
   ymdFromDate,
 } from "@/lib/staff-schedule";
+import { clinicTodayYmd } from "@/lib/clinic-date";
+import { lockReservationKeys } from "@/lib/calendar-blocks";
 
 function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
@@ -201,6 +204,9 @@ export async function PATCH(req: NextRequest) {
   if (!payload) return bad("invalid_json");
 
   const action = String(payload.action ?? "");
+  if (action === "add_workday" || action === "remove_workday") {
+    return mutateWorkday(req, user, payload, action);
+  }
   const startMinute = Number(payload.startMinute);
   const endMinute = Number(payload.endMinute);
   const rawTargets = Array.isArray(payload.targets) ? payload.targets : [];
@@ -330,6 +336,109 @@ export async function PATCH(req: NextRequest) {
     },
   );
   return NextResponse.json({ changed: targets.length, action });
+}
+
+async function mutateWorkday(
+  req: NextRequest,
+  user: AuthUser,
+  payload: Record<string, unknown>,
+  action: "add_workday" | "remove_workday",
+) {
+  const dateStr = String(payload.date ?? "");
+  const date = dateFromYmd(dateStr);
+  if (!date || dateStr < clinicTodayYmd()) return bad("invalid_date");
+  const practitionerId = await resolvePractitionerId(
+    user,
+    payload.practitionerId,
+  );
+  if (!practitionerId) return forbidden();
+  if (
+    user.role === "STAFF" &&
+    payload.practitionerId &&
+    String(payload.practitionerId) !== practitionerId
+  ) {
+    await auditForUser(
+      user,
+      "workday_mutation_denied",
+      "Availability",
+      null,
+      { outcome: "DENIED", request: req },
+    );
+    return forbidden();
+  }
+
+  const practitioner = await prisma.practitioner.findFirst({
+    where: { id: practitionerId, active: true },
+    select: { id: true },
+  });
+  if (!practitioner) return bad("invalid_employee");
+
+  let startMinute = 0;
+  let endMinute = 0;
+  let slots: ReturnType<typeof workdaySlots> = [];
+  if (action === "add_workday") {
+    startMinute = Number(payload.startMinute);
+    endMinute = Number(payload.endMinute);
+    slots = workdaySlots(dateStr, startMinute, endMinute);
+    if (!slots.length) return bad("invalid_range");
+  }
+
+  const dayEnd = new Date(date.getTime() + 24 * 60 * 60_000);
+  const rangeStart = new Date(date);
+  const rangeEnd = new Date(date);
+  rangeStart.setUTCMinutes(startMinute);
+  rangeEnd.setUTCMinutes(endMinute);
+  const saved = await prisma.$transaction(async (tx) => {
+    await lockReservationKeys(tx, {
+      start: date,
+      end: dayEnd,
+      practitionerIds: [practitionerId],
+    });
+    const conflictingAppointment = await tx.appointment.findFirst({
+      where: {
+        practitionerId,
+        status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] },
+        start: { lt: dayEnd },
+        end: { gt: date },
+        ...(action === "add_workday"
+          ? { OR: [{ start: { lt: rangeStart } }, { end: { gt: rangeEnd } }] }
+          : {}),
+      },
+      select: { id: true },
+    });
+    if (conflictingAppointment) throw new Error("appointments_conflict");
+    return tx.availability.upsert({
+      where: { practitionerId_date: { practitionerId, date } },
+      update: { slots },
+      create: { practitionerId, date, slots },
+      select: { id: true, date: true, slots: true },
+    });
+  }).catch((error: unknown) => {
+    if (error instanceof Error && error.message === "appointments_conflict")
+      return null;
+    throw error;
+  });
+  if (!saved) return bad("appointments_conflict");
+  await auditForUser(
+    user,
+    action === "add_workday" ? "workday_added" : "workday_removed",
+    "Availability",
+    saved.id,
+    {
+      request: req,
+      metadata: {
+        practitionerId,
+        date: dateStr,
+        ...(action === "add_workday" ? { startMinute, endMinute } : {}),
+      },
+    },
+  );
+  return NextResponse.json({
+    action,
+    practitionerId,
+    date: dateStr,
+    slots: normalizeSlots(saved.slots),
+  });
 }
 
 export async function PUT(req: NextRequest) {

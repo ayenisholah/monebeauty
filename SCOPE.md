@@ -78,6 +78,14 @@ blocks do not rewrite canonical working hours or `Availability.slots`. Active pr
 continue to populate the calendar automatically in display order; login access and calendar
 visibility remain separate controls.
 
+Per-date workdays (owner-approved, 2026-07-21): the shared-calendar toolbar removes granular
+Open / closed times and provides tooltiped Add workday and Remove workday actions. Add replaces
+one employee/date availability override with an exact 15-minute range; Remove stores an empty
+override while leaving canonical weekly hours unchanged. Staff can change only their linked
+employee and admins can select any active employee. Past dates and changes that would leave an
+active appointment outside the resulting workday are rejected. Zoom uses localized, tooltiped
+magnifying-glass minus/plus icons.
+
 Expanded client account, saved details, and booking communications (owner-approved,
 2026-07-19): `/oma-tili` is a localized account dashboard for verified identity details,
 appointments and change requests, website orders, saved Finland delivery addresses, and profile
