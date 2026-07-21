@@ -5,6 +5,7 @@ import {
   adjustFinalItemDuration,
   endFromSequentialItems,
   expandCalendarRecurrence,
+  lockReservationKeys,
   snapToCalendarQuarter,
 } from "../lib/calendar-blocks";
 
@@ -67,6 +68,31 @@ test("recurrence is weekday-selective, inclusive, and limited", () => {
   );
 });
 
+test("reservation keys use non-returning advisory lock queries", async () => {
+  const lockedKeys: string[] = [];
+  const tx = {
+    $executeRaw: async (_strings: TemplateStringsArray, key: string) => {
+      lockedKeys.push(key);
+      return 1;
+    },
+  };
+
+  await lockReservationKeys(tx as never, {
+    start: new Date("2026-07-22T10:00:00Z"),
+    end: new Date("2026-07-22T11:00:00Z"),
+    practitionerIds: ["practitioner-2", "practitioner-1"],
+    roomId: "room-1",
+    deviceId: "device-1",
+  });
+
+  assert.deepEqual(lockedKeys, [
+    "device:device-1:2026-07-22",
+    "employee:practitioner-1:2026-07-22",
+    "employee:practitioner-2:2026-07-22",
+    "room:room-1:2026-07-22",
+  ]);
+});
+
 test("schema, seeds, APIs, RBAC, and advisory locks preserve internal reservations", () => {
   const schema = readFileSync("prisma/schema.prisma", "utf8");
   const seed = readFileSync("prisma/seed.ts", "utf8");
@@ -102,7 +128,7 @@ test("schema, seeds, APIs, RBAC, and advisory locks preserve internal reservatio
   assert.match(create, /TransactionIsolationLevel\.Serializable/);
   assert.match(update, /scope === "future"/);
   assert.match(update, /status: "CANCELLED"/);
-  assert.match(scheduling, /pg_advisory_xact_lock/);
+  assert.match(scheduling, /\$executeRaw`SELECT pg_advisory_xact_lock/);
   assert.match(scheduling, /calendarBlock\.findFirst/);
   assert.match(booking, /calendarBlock\.findMany/);
 });

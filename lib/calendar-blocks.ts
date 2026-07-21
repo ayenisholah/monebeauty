@@ -91,7 +91,7 @@ function dayKeys(input: ReservationInput) {
 
 export async function lockReservationKeys(tx: Transaction, input: ReservationInput) {
   for (const key of dayKeys(input)) {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
   }
 }
 
