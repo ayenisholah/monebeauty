@@ -120,6 +120,13 @@ Themed controls (owner-approved, 2026-07-18): all dropdowns, calendars, and time
 custom Mone Beauty controls. Compact fields use popovers and the booking calendar remains
 inline; no native form select/date/time UI is exposed.
 
+Admin visual system (owner-approved, 2026-07-21): admin login, navigation, dashboards, editors,
+tables, calendars, forms, and modals use admin-only Inter typography with complete FI/EN/RU
+glyph coverage. Operational icons use the existing Phosphor library at regular weight, with bold
+reserved for active or selected states, consistent sizing, 44 px targets, localized accessible
+labels, and hover/focus tooltips where the icon meaning is not visible. The public luxury
+Cormorant/Jost typography and public marketing icon treatment remain unchanged.
+
 Working-time-only calendars and pickers (owner-approved, 2026-07-19): weekly employee working
 hours are persisted as the canonical schedule, with per-date availability as the override. Shared
 day/week calendars show only the selected employees' open-time union. Unavailable dates remain

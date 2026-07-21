@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cormorant, jost } from "@/lib/fonts";
+import { cormorant, inter, jost } from "@/lib/fonts";
 import "../../../globals.css";
 
 export const metadata: Metadata = {
@@ -18,9 +18,11 @@ export default async function LocalizedAdminLayout({
   const { locale } = await params;
   if (locale !== "en" && locale !== "ru") notFound();
   return (
-    <html lang={locale} className={`${cormorant.variable} ${jost.variable} h-full`}>
-      <body className="min-h-full bg-page text-ink">{children}</body>
+    <html
+      lang={locale}
+      className={`${cormorant.variable} ${jost.variable} ${inter.variable} h-full`}
+    >
+      <body className="admin-app min-h-full bg-page text-ink">{children}</body>
     </html>
   );
 }
-

@@ -106,7 +106,7 @@ export function TimePicker({
         <span className={cn("truncate", !selected && "text-muted")}>
           {selected?.label ?? placeholder}
         </span>
-        <Clock size={17} weight="thin" />
+        <Clock size={18} weight="regular" />
       </button>
       {open ? (
         <div className="absolute top-[calc(100%+6px)] left-0 z-[90] w-[min(320px,calc(100vw-32px))] rounded-[7px] border border-line-card bg-card shadow-[var(--shadow-card)]">

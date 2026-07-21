@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, FloppyDisk } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, FloppyDisk, X } from "@phosphor-icons/react";
 import {
   normalizeInternalPalette,
   truncateCalendarAlias,
   type InternalPalettePreference,
 } from "@/lib/calendar-preferences";
 import { INTERNAL_PALETTE_MAX_SELECTED } from "@/lib/internal-calendar-services";
+import { AdminIconButton } from "@/components/admin/AdminIconButton";
 
 type Template = {
   key: string;
@@ -115,15 +116,14 @@ export function InternalServicePaletteEditor({
           >
             {t.title}
           </h2>
-          <button
+          <AdminIconButton
             ref={closeRef}
-            type="button"
             onClick={onClose}
-            className="size-11 rounded border border-transparent text-xl hover:border-line-btn"
-            aria-label={t.close}
+            className="border border-transparent hover:border-line-btn"
+            label={t.close}
           >
-            ×
-          </button>
+            <X size={20} weight="regular" aria-hidden="true" />
+          </AdminIconButton>
         </div>
         <div className="p-[18px]">
           <p className="rounded-[5px] border border-[#d8e6e8] bg-[#eff7f8] px-[18px] py-[14px] font-sans text-[13px] text-body">
@@ -131,7 +131,7 @@ export function InternalServicePaletteEditor({
           </p>
           <div className="mt-[16px] overflow-x-auto rounded-[6px] border border-line-card">
             <div className="min-w-[680px]">
-              <div className="grid grid-cols-[36px_minmax(240px,1fr)_190px_104px] items-center border-b border-line-card px-[10px] py-[11px] font-sans text-[12px] font-medium text-ink">
+              <div className="grid grid-cols-[36px_minmax(240px,1fr)_190px_142px] items-center border-b border-line-card px-[10px] py-[11px] font-sans text-[12px] font-medium text-ink">
                 <span />
                 <span>{t.service}</span>
                 <span>{t.alias}</span>
@@ -144,7 +144,7 @@ export function InternalServicePaletteEditor({
                 return (
                   <div
                     key={item.key}
-                    className="grid grid-cols-[36px_minmax(240px,1fr)_190px_104px] items-center border-b border-line-hair px-[10px] py-[9px] last:border-b-0"
+                    className="grid grid-cols-[36px_minmax(240px,1fr)_190px_142px] items-center border-b border-line-hair px-[10px] py-[9px] last:border-b-0"
                   >
                     <input
                       type="checkbox"
@@ -192,34 +192,31 @@ export function InternalServicePaletteEditor({
                       className="min-h-[40px] rounded-[4px] border border-line-btn bg-page px-[11px] font-sans text-[13px]"
                     />
                     <div className="flex justify-end gap-[5px]">
-                      <button
-                        type="button"
+                      <AdminIconButton
                         onClick={() => move(index, -1)}
                         disabled={index === 0}
-                        className="size-9 rounded border border-line-btn disabled:opacity-30"
-                        aria-label={t.moveUp}
+                        className="border border-line-btn"
+                        label={t.moveUp}
                       >
-                        <ArrowUp size={15} />
-                      </button>
-                      <button
-                        type="button"
+                        <ArrowUp size={18} weight="regular" />
+                      </AdminIconButton>
+                      <AdminIconButton
                         onClick={() => move(index, 1)}
                         disabled={index === draft.length - 1}
-                        className="size-9 rounded border border-line-btn disabled:opacity-30"
-                        aria-label={t.moveDown}
+                        className="border border-line-btn"
+                        label={t.moveDown}
                       >
-                        <ArrowDown size={15} />
-                      </button>
-                      <button
-                        type="button"
+                        <ArrowDown size={18} weight="regular" />
+                      </AdminIconButton>
+                      <AdminIconButton
                         onClick={() =>
                           onChange(normalizeInternalPalette(draft, catalog))
                         }
-                        className="size-9 rounded border border-line-btn"
-                        aria-label={t.save}
+                        className="border border-line-btn"
+                        label={t.save}
                       >
-                        <FloppyDisk size={15} />
-                      </button>
+                        <FloppyDisk size={18} weight="regular" />
+                      </AdminIconButton>
                     </div>
                   </div>
                 );

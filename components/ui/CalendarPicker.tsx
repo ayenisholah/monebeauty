@@ -91,7 +91,7 @@ export function CalendarGrid({
           disabled={!canPrevious}
           onClick={() => setView(previousMonth)}
           aria-label="Previous month"
-          className="grid h-[40px] w-[40px] place-items-center rounded-[6px] text-ink hover:bg-btn-fill disabled:cursor-not-allowed disabled:opacity-30"
+          className="grid size-11 place-items-center rounded-[6px] text-ink hover:bg-btn-fill focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-30"
         >
           <CaretLeft size={16} weight="bold" />
         </button>
@@ -103,7 +103,7 @@ export function CalendarGrid({
           disabled={!canNext}
           onClick={() => setView(nextMonth)}
           aria-label="Next month"
-          className="grid h-[40px] w-[40px] place-items-center rounded-[6px] text-ink hover:bg-btn-fill disabled:cursor-not-allowed disabled:opacity-30"
+          className="grid size-11 place-items-center rounded-[6px] text-ink hover:bg-btn-fill focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-30"
         >
           <CaretRight size={16} weight="bold" />
         </button>
@@ -239,16 +239,16 @@ export function DatePicker({
           <span className={cn("truncate", !selectedDate && "text-muted")}>
             {label}
           </span>
-          <CalendarBlank size={17} weight="thin" className="shrink-0" />
+          <CalendarBlank size={18} weight="regular" className="shrink-0" />
         </button>
         {clearable && selectedValue ? (
           <button
             type="button"
             aria-label="Clear date"
             onClick={() => select("")}
-            className="grid w-[40px] place-items-center border-l border-line-hair text-muted hover:text-ink"
+            className="grid w-11 place-items-center border-l border-line-hair text-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
-            <X size={14} weight="thin" />
+            <X size={16} weight="regular" />
           </button>
         ) : null}
       </div>

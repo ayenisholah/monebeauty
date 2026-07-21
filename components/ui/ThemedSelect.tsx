@@ -210,7 +210,7 @@ export function ThemedSelect({
         </span>
         <CaretDown
           size={15}
-          weight="thin"
+          weight="regular"
           className={cn("shrink-0 transition-transform", open && "rotate-180")}
         />
       </button>
@@ -231,7 +231,11 @@ export function ThemedSelect({
               ref={searchRef}
               className="flex items-center gap-[8px] border-b border-line-hair px-[11px]"
             >
-              <MagnifyingGlass size={15} weight="thin" className="text-muted" />
+              <MagnifyingGlass
+                size={16}
+                weight="regular"
+                className="text-muted"
+              />
               <input
                 autoFocus
                 value={query}

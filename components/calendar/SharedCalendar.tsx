@@ -915,7 +915,7 @@ export function SharedCalendar({
             className="inline-flex min-h-[44px] items-center gap-[8px] rounded-[4px] border border-line-btn bg-card px-[14px] font-sans text-[12px] tracking-[.08em] uppercase"
           >
             {t.setup}
-            <GearSix size={18} weight="thin" />
+            <GearSix size={18} weight="regular" />
           </Link>
         ) : null}
       </div>
@@ -982,14 +982,14 @@ export function SharedCalendar({
             onClick={() => changeZoom(-1)}
             disabled={zoom === "compact"}
           >
-            <MagnifyingGlassMinus size={19} weight="thin" />
+            <MagnifyingGlassMinus size={19} weight="regular" />
           </TooltipIconButton>
           <TooltipIconButton
             label={t.zoomIn}
             onClick={() => changeZoom(1)}
             disabled={zoom === "expanded"}
           >
-            <MagnifyingGlassPlus size={19} weight="thin" />
+            <MagnifyingGlassPlus size={19} weight="regular" />
           </TooltipIconButton>
           {data?.canManageAppointments ? (
             <button
@@ -998,7 +998,7 @@ export function SharedCalendar({
               className={primaryButtonCls}
             >
               {t.create}
-              <Plus size={17} weight="thin" />
+              <Plus size={18} weight="regular" />
             </button>
           ) : null}
           {data?.canEditAllAvailability || data?.canEditOwnAvailability ? (
@@ -1007,13 +1007,13 @@ export function SharedCalendar({
                 label={t.addWorkday}
                 onClick={() => openWorkdayEditor("add")}
               >
-                <Plus size={18} weight="thin" />
+                <Plus size={18} weight="regular" />
               </TooltipIconButton>
               <TooltipIconButton
                 label={t.removeWorkday}
                 onClick={() => openWorkdayEditor("remove")}
               >
-                <Minus size={18} weight="thin" />
+                <Minus size={18} weight="regular" />
               </TooltipIconButton>
               <button
                 type="button"
@@ -2544,4 +2544,4 @@ const primaryButtonCls = cn(
   "border-accent bg-accent text-page hover:brightness-95",
 );
 const iconButtonCls =
-  "inline-flex size-[40px] items-center justify-center rounded-[4px] border border-line-btn bg-card text-ink hover:bg-btn-fill";
+  "inline-flex size-11 items-center justify-center rounded-[4px] border border-line-btn bg-card text-ink hover:bg-btn-fill focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none";

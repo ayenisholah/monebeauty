@@ -145,6 +145,44 @@ html {
 body:has(.home-reference) > footer {
   display: none;
 }
+
+/* Admin and operational surfaces deliberately use a restrained enterprise
+   hierarchy while the public clinic experience keeps the luxury type system. */
+.admin-app {
+  --font-display: var(--font-admin);
+  --font-sans: var(--font-admin);
+  font-family: var(--font-admin), system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.admin-app :where(time, [data-numeric], input[type="number"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-app h1 {
+  font-size: clamp(2.125rem, 3.4vw, 2.625rem);
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.admin-app h2 {
+  font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.admin-app h3 {
+  font-size: clamp(1.125rem, 1.7vw, 1.375rem);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.admin-app :where(button, [role="button"]) {
+  letter-spacing: 0.01em;
+}
 .home-reference {
   --g: 22px;
   color: var(--color-body);

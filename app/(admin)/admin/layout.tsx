@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cormorant, jost } from "@/lib/fonts";
+import { cormorant, inter, jost } from "@/lib/fonts";
 import "../../globals.css";
 
 export const metadata: Metadata = {
@@ -7,11 +7,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function FinnishAdminLayout({ children }: { children: React.ReactNode }) {
+export default function FinnishAdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="fi" className={`${cormorant.variable} ${jost.variable} h-full`}>
-      <body className="min-h-full bg-page text-ink">{children}</body>
+    <html
+      lang="fi"
+      className={`${cormorant.variable} ${jost.variable} ${inter.variable} h-full`}
+    >
+      <body className="admin-app min-h-full bg-page text-ink">{children}</body>
     </html>
   );
 }
-

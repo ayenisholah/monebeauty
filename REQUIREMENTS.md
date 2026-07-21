@@ -314,6 +314,19 @@ agreement" + socials); chat FAB; SEO `<head>` (title, meta, OG, hreflang, JSON-L
 
 ## 5. Design system requirements
 
+Admin and operational interfaces use an isolated Inter type system with Latin, extended Latin,
+Cyrillic, and extended Cyrillic coverage. Page titles are 34–42 px semibold, section and modal
+titles 22–28 px semibold, navigation/body copy 14–15 px regular or medium, and labels/actions
+12–13 px medium or semibold with restrained tracking. Operational metadata may use 11–12 px and
+dates, times, prices, and counts use tabular numerals. Public Cormorant/Jost typography is not
+changed.
+
+Admin-facing icons remain tree-shaken Phosphor vectors but use regular weight by default and bold
+only for active/selected states. Navigation icons are 20–22 px, toolbar/actions 18–20 px, field
+adornments 16–18 px, and status/empty-state icons 24–28 px. Icon-only controls provide a localized
+accessible name, visible keyboard focus, a minimum 44 px target, and a hover/focus tooltip when
+their purpose is otherwise hidden. Text glyphs must not substitute for available control icons.
+
 Reproduce `01-design-system.md` **exactly**, expressed as design tokens — never hand-repeat
 hex values across components.
 

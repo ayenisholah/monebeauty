@@ -1,4 +1,4 @@
-import { Cormorant_Garamond, Jost } from "next/font/google";
+import { Cormorant_Garamond, Inter, Jost } from "next/font/google";
 
 // Display / serif — wordmark, all headlines, technology names.
 export const cormorant = Cormorant_Garamond({
@@ -16,6 +16,14 @@ export const jost = Jost({
   subsets: ["latin", "latin-ext"],
   weight: ["300", "400", "500", "600"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+// Admin / operational UI — neutral, highly legible, and consistent in FI/EN/RU.
+export const inter = Inter({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-admin",
   display: "swap",
 });
 

@@ -851,14 +851,18 @@ function ClientCombobox({
         </span>
         <CaretDown
           size={15}
-          weight="thin"
+          weight="regular"
           className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open ? (
         <div className="absolute top-[calc(100%+6px)] left-0 z-[120] w-full min-w-[300px] overflow-hidden rounded-[7px] border border-line-card bg-card shadow-card">
           <label className="flex items-center gap-2 border-b border-line-hair px-3">
-            <MagnifyingGlass size={16} weight="thin" className="text-muted" />
+            <MagnifyingGlass
+              size={17}
+              weight="regular"
+              className="text-muted"
+            />
             <input
               autoFocus
               type="search"

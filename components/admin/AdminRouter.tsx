@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
+import { ArrowRight } from "@phosphor-icons/react/ssr";
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import type { Locale as DbLocale, Prisma } from "@prisma/client";
@@ -2080,7 +2081,7 @@ function EntityLink({
       {archived ? (
         <Status archived copy={copy} />
       ) : (
-        <span aria-hidden="true">→</span>
+        <ArrowRight size={18} weight="regular" aria-hidden="true" />
       )}
     </Link>
   );

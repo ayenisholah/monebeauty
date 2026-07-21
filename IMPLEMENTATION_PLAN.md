@@ -98,6 +98,17 @@
 - Aggregate public availability across the ordered qualified roster and allocate the first
   conflict-free employee/resource atomically without exposing employee identity publicly.
 
+## Professional admin visual system (owner-approved, 2026-07-21)
+
+- Isolate admin login and operational screens on Inter with complete FI/EN/RU coverage, a compact
+  semibold heading hierarchy, restrained labels/actions, and tabular operational data while
+  preserving the public Cormorant/Jost system.
+- Standardize admin and shared operational controls on Phosphor Regular icons, bold active states,
+  consistent size tiers, 44 px icon buttons, localized labels/tooltips, and no text-glyph control
+  substitutes.
+- Verify sidebar states, dashboards, CRUD modules, logs, calendar/setup, appointment forms, and
+  modals across mobile/desktop and all three locales.
+
 ## Client account and integration observability expansion (owner-approved, 2026-07-19)
 
 - Redesign `/oma-tili` into overview, appointments, orders, addresses, and profile views; expose

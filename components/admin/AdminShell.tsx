@@ -32,6 +32,7 @@ import {
   ADMIN_SIDEBAR_COOKIE_MAX_AGE,
 } from "@/lib/admin-sidebar";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import { AdminIconButton } from "@/components/admin/AdminIconButton";
 
 type Labels = {
   appName: string;
@@ -154,30 +155,27 @@ export function AdminShell({
         >
           {labels.appName}
         </Link>
-        <button
-          type="button"
+        <AdminIconButton
           onClick={() => setSidebarCollapsed(!collapsed)}
           aria-expanded={!collapsed}
           aria-controls={drawerId}
-          aria-label={collapsed ? labels.expandSidebar : labels.collapseSidebar}
-          title={collapsed ? labels.expandSidebar : labels.collapseSidebar}
-          className="hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-[4px] hover:bg-btn-fill focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none [@media(min-width:900px)]:inline-flex"
+          label={collapsed ? labels.expandSidebar : labels.collapseSidebar}
+          containerClassName="hidden [@media(min-width:900px)]:inline-flex"
         >
           <SidebarSimple
             size={22}
-            weight="thin"
+            weight="regular"
             aria-hidden="true"
             className={`transition-transform duration-200 motion-reduce:transition-none ${collapsed ? "rotate-180" : ""}`}
           />
-        </button>
-        <button
-          type="button"
+        </AdminIconButton>
+        <AdminIconButton
           onClick={() => setOpen(false)}
-          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[4px] hover:bg-btn-fill [@media(min-width:900px)]:hidden"
-          aria-label={labels.close}
+          label={labels.close}
+          containerClassName="[@media(min-width:900px)]:hidden"
         >
-          <X size={22} weight="thin" />
-        </button>
+          <X size={22} weight="regular" />
+        </AdminIconButton>
       </div>
       <nav className="flex-1 overflow-y-auto px-[12px] py-[16px]">
         {nav.map(({ module, icon: Icon }) => {
@@ -197,8 +195,8 @@ export function AdminShell({
               className={`mb-[4px] flex min-h-[44px] items-center gap-[12px] rounded-[6px] px-[12px] font-sans text-[14px] transition-[color,background-color,padding] ${collapsed ? "[@media(min-width:900px)]:justify-center [@media(min-width:900px)]:gap-0 [@media(min-width:900px)]:px-0" : ""} ${active ? "bg-btn-fill text-ink" : "text-body hover:bg-page hover:text-ink"}`}
             >
               <Icon
-                size={20}
-                weight="thin"
+                size={21}
+                weight={active ? "bold" : "regular"}
                 aria-hidden="true"
                 className="shrink-0"
               />
@@ -217,7 +215,7 @@ export function AdminShell({
         <div
           className={`mb-[12px] flex items-center gap-[10px] ${collapsed ? "[@media(min-width:900px)]:hidden" : ""}`}
         >
-          <UserCircle size={26} weight="thin" aria-hidden="true" />
+          <UserCircle size={26} weight="regular" aria-hidden="true" />
           <div className="min-w-0 font-sans">
             <div className="truncate text-[14px] text-ink">
               {user.name || labels.appName}
@@ -248,7 +246,7 @@ export function AdminShell({
             title={collapsed ? labels.logout : undefined}
             className={`flex min-h-[44px] w-full items-center gap-[10px] rounded-[4px] px-[10px] font-sans text-[14px] text-body hover:bg-btn-fill hover:text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${collapsed ? "[@media(min-width:900px)]:justify-center [@media(min-width:900px)]:gap-0 [@media(min-width:900px)]:px-0" : ""}`}
           >
-            <SignOut size={20} weight="thin" aria-hidden="true" />
+            <SignOut size={20} weight="regular" aria-hidden="true" />
             <span
               className={
                 collapsed ? "[@media(min-width:900px)]:sr-only" : undefined
@@ -265,17 +263,15 @@ export function AdminShell({
   return (
     <div className="min-h-screen bg-page text-ink">
       <header className="sticky top-0 z-[50] flex min-h-[64px] items-center border-b border-line-header bg-card/95 px-[16px] backdrop-blur [@media(min-width:900px)]:hidden">
-        <button
+        <AdminIconButton
           ref={triggerRef}
-          type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls={drawerId}
-          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[4px] hover:bg-btn-fill"
-          aria-label={labels.menu}
+          label={labels.menu}
         >
-          <List size={23} weight="thin" />
-        </button>
+          <List size={23} weight="regular" />
+        </AdminIconButton>
         <span className="ml-[10px] font-display text-[22px] font-medium">
           {labels.appName}
         </span>
