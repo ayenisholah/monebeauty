@@ -6,17 +6,25 @@ import { getFirstActivePractitionerId } from "@/lib/booking";
 import type { AuthUser } from "@/lib/auth";
 import {
   applyAvailabilityRange,
+  availabilityCovers,
   dateFromYmd,
   generateStaffSlots,
   normalizeSlots,
   normalizeWorkingHours,
   parseWorkingHours,
+  scheduleStorageValue,
   slotsWithBookedStatus,
   workdaySlots,
   ymdFromDate,
 } from "@/lib/staff-schedule";
 import { clinicTodayYmd } from "@/lib/clinic-date";
 import { lockReservationKeys } from "@/lib/calendar-blocks";
+import {
+  clinicDateBounds,
+  clinicDateFromInstant,
+  clinicDateTimeToInstant,
+  minuteLabel,
+} from "@/lib/clinic-time";
 
 function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
@@ -110,7 +118,8 @@ export async function GET(req: NextRequest) {
         : {}),
       practitionerId,
       status: { not: "CANCELLED" },
-      start: { gte: date, lt: new Date(date.getTime() + 24 * 60 * 60000) },
+      start: { lt: clinicDateBounds(requestedDate)!.end },
+      end: { gt: clinicDateBounds(requestedDate)!.start },
     },
     orderBy: { start: "asc" },
     include: {
@@ -357,13 +366,10 @@ async function mutateWorkday(
     payload.practitionerId &&
     String(payload.practitionerId) !== practitionerId
   ) {
-    await auditForUser(
-      user,
-      "workday_mutation_denied",
-      "Availability",
-      null,
-      { outcome: "DENIED", request: req },
-    );
+    await auditForUser(user, "workday_mutation_denied", "Availability", null, {
+      outcome: "DENIED",
+      request: req,
+    });
     return forbidden();
   }
 
@@ -383,41 +389,44 @@ async function mutateWorkday(
     if (!slots.length) return bad("invalid_range");
   }
 
-  const dayEnd = new Date(date.getTime() + 24 * 60 * 60_000);
-  const rangeStart = new Date(date);
-  const rangeEnd = new Date(date);
-  rangeStart.setUTCMinutes(startMinute);
-  rangeEnd.setUTCMinutes(endMinute);
-  const saved = await prisma.$transaction(async (tx) => {
-    await lockReservationKeys(tx, {
-      start: date,
-      end: dayEnd,
-      practitionerIds: [practitionerId],
+  const bounds = clinicDateBounds(dateStr)!;
+  const dayEnd = bounds.end;
+  const rangeStart =
+    clinicDateTimeToInstant(dateStr, minuteLabel(startMinute)) ?? bounds.start;
+  const rangeEnd =
+    clinicDateTimeToInstant(dateStr, minuteLabel(endMinute)) ?? bounds.end;
+  const saved = await prisma
+    .$transaction(async (tx) => {
+      await lockReservationKeys(tx, {
+        start: bounds.start,
+        end: dayEnd,
+        practitionerIds: [practitionerId],
+      });
+      const conflictingAppointment = await tx.appointment.findFirst({
+        where: {
+          practitionerId,
+          status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] },
+          start: { lt: dayEnd },
+          end: { gt: date },
+          ...(action === "add_workday"
+            ? { OR: [{ start: { lt: rangeStart } }, { end: { gt: rangeEnd } }] }
+            : {}),
+        },
+        select: { id: true },
+      });
+      if (conflictingAppointment) throw new Error("appointments_conflict");
+      return tx.availability.upsert({
+        where: { practitionerId_date: { practitionerId, date } },
+        update: { slots },
+        create: { practitionerId, date, slots },
+        select: { id: true, date: true, slots: true },
+      });
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.message === "appointments_conflict")
+        return null;
+      throw error;
     });
-    const conflictingAppointment = await tx.appointment.findFirst({
-      where: {
-        practitionerId,
-        status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] },
-        start: { lt: dayEnd },
-        end: { gt: date },
-        ...(action === "add_workday"
-          ? { OR: [{ start: { lt: rangeStart } }, { end: { gt: rangeEnd } }] }
-          : {}),
-      },
-      select: { id: true },
-    });
-    if (conflictingAppointment) throw new Error("appointments_conflict");
-    return tx.availability.upsert({
-      where: { practitionerId_date: { practitionerId, date } },
-      update: { slots },
-      create: { practitionerId, date, slots },
-      select: { id: true, date: true, slots: true },
-    });
-  }).catch((error: unknown) => {
-    if (error instanceof Error && error.message === "appointments_conflict")
-      return null;
-    throw error;
-  });
   if (!saved) return bad("appointments_conflict");
   await auditForUser(
     user,
@@ -477,6 +486,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const hours = normalizeWorkingHours({
+    intervals: payload.intervals,
     openDays: Array.isArray(payload.openDays)
       ? payload.openDays.map(Number)
       : undefined,
@@ -485,10 +495,40 @@ export async function PUT(req: NextRequest) {
     stepMin: Number(payload.stepMin),
   });
 
+  const lastDate = new Date(start);
+  lastDate.setUTCDate(lastDate.getUTCDate() + daysAhead);
+  const fromBounds = clinicDateBounds(fromDate)!;
+  const toBounds = clinicDateBounds(ymdFromDate(lastDate))!;
+  const futureAppointments = await prisma.appointment.findMany({
+    where: {
+      practitionerId,
+      status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] },
+      start: { gte: fromBounds.start, lt: toBounds.end },
+    },
+    select: { id: true, start: true, end: true },
+  });
+  const affected = futureAppointments.filter((appointment) => {
+    const appointmentDate = clinicDateFromInstant(appointment.start);
+    return !availabilityCovers(
+      generateStaffSlots(appointmentDate, hours),
+      appointment.start,
+      appointment.end,
+    );
+  });
+  if (affected.length)
+    return NextResponse.json(
+      {
+        error: "appointments_conflict",
+        affected: affected.length,
+        appointmentIds: affected.slice(0, 20).map((item) => item.id),
+      },
+      { status: 409 },
+    );
+
   const writes: Prisma.PrismaPromise<unknown>[] = [
     prisma.practitioner.update({
       where: { id: practitionerId },
-      data: { workingHours: hours },
+      data: { workingHours: scheduleStorageValue(hours) },
     }),
   ];
   for (let i = 0; i <= daysAhead; i++) {

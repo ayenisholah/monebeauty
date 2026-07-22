@@ -1,4 +1,10 @@
 import { Prisma } from "@prisma/client";
+import {
+  clinicDateFromInstant,
+  clinicDateTimeToInstant,
+  clinicTimeFromInstant,
+  clinicWeekday,
+} from "@/lib/clinic-time";
 
 export const CALENDAR_BLOCK_SNAP_MIN = 15;
 export const CALENDAR_BLOCK_MAX_OCCURRENCES = 500;
@@ -16,11 +22,16 @@ export function snapToCalendarQuarter(value: Date) {
   return snapped;
 }
 
-export function sequentialDurationMinutes(items: Pick<BlockItemInput, "durationMin">[]) {
+export function sequentialDurationMinutes(
+  items: Pick<BlockItemInput, "durationMin">[],
+) {
   return items.reduce((total, item) => total + item.durationMin, 0);
 }
 
-export function endFromSequentialItems(start: Date, items: Pick<BlockItemInput, "durationMin">[]) {
+export function endFromSequentialItems(
+  start: Date,
+  items: Pick<BlockItemInput, "durationMin">[],
+) {
   return new Date(start.getTime() + sequentialDurationMinutes(items) * 60_000);
 }
 
@@ -33,7 +44,10 @@ export function adjustFinalItemDuration(
   const total = Math.round((end.getTime() - start.getTime()) / 60_000);
   const preceding = sequentialDurationMinutes(items.slice(0, -1));
   const finalDuration = total - preceding;
-  if (finalDuration < CALENDAR_BLOCK_SNAP_MIN || finalDuration % CALENDAR_BLOCK_SNAP_MIN)
+  if (
+    finalDuration < CALENDAR_BLOCK_SNAP_MIN ||
+    finalDuration % CALENDAR_BLOCK_SNAP_MIN
+  )
     throw new Error("invalid_duration");
   return items.map((item, index) =>
     index === items.length - 1 ? { ...item, durationMin: finalDuration } : item,
@@ -48,19 +62,26 @@ export function expandCalendarRecurrence(input: {
 }) {
   const limit = input.limit ?? CALENDAR_BLOCK_MAX_OCCURRENCES;
   if (!input.endDate || !input.weekdays?.length) return [new Date(input.start)];
-  const lastAllowed = new Date(input.start);
+  const startDate = clinicDateFromInstant(input.start);
+  const endDate = clinicDateFromInstant(input.endDate);
+  const time = clinicTimeFromInstant(input.start);
+  const lastAllowed = new Date(`${startDate}T00:00:00Z`);
   lastAllowed.setUTCFullYear(lastAllowed.getUTCFullYear() + 1);
-  lastAllowed.setUTCHours(23, 59, 59, 999);
-  if (input.endDate < input.start || input.endDate > lastAllowed)
+  const lastAllowedDate = lastAllowed.toISOString().slice(0, 10);
+  if (endDate < startDate || endDate > lastAllowedDate)
     throw new Error("invalid_recurrence_range");
   const weekdays = new Set(input.weekdays);
   if ([...weekdays].some((day) => !Number.isInteger(day) || day < 0 || day > 6))
     throw new Error("invalid_weekday");
   const results: Date[] = [];
-  const cursor = new Date(input.start);
-  while (cursor <= input.endDate) {
-    if (weekdays.has(cursor.getUTCDay())) {
-      results.push(new Date(cursor));
+  const cursor = new Date(`${startDate}T00:00:00Z`);
+  while (cursor.toISOString().slice(0, 10) <= endDate) {
+    const date = cursor.toISOString().slice(0, 10);
+    const weekday = clinicWeekday(date);
+    if (weekday !== null && weekdays.has(weekday)) {
+      const occurrence = clinicDateTimeToInstant(date, time);
+      if (!occurrence) throw new Error("invalid_recurrence_time");
+      results.push(occurrence);
       if (results.length > limit) throw new Error("occurrence_limit");
     }
     cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -81,7 +102,7 @@ export type ReservationInput = {
 };
 
 function dayKeys(input: ReservationInput) {
-  const day = input.start.toISOString().slice(0, 10);
+  const day = clinicDateFromInstant(input.start);
   return [
     ...input.practitionerIds.map((id) => `employee:${id}:${day}`),
     ...(input.roomId ? [`room:${input.roomId}:${day}`] : []),
@@ -89,16 +110,24 @@ function dayKeys(input: ReservationInput) {
   ].sort();
 }
 
-export async function lockReservationKeys(tx: Transaction, input: ReservationInput) {
+export async function lockReservationKeys(
+  tx: Transaction,
+  input: ReservationInput,
+) {
   for (const key of dayKeys(input)) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
   }
 }
 
-export async function findReservationConflict(tx: Transaction, input: ReservationInput) {
+export async function findReservationConflict(
+  tx: Transaction,
+  input: ReservationInput,
+) {
   const appointment = await tx.appointment.findFirst({
     where: {
-      ...(input.excludeAppointmentId ? { id: { not: input.excludeAppointmentId } } : {}),
+      ...(input.excludeAppointmentId
+        ? { id: { not: input.excludeAppointmentId } }
+        : {}),
       status: { not: "CANCELLED" },
       start: { lt: input.end },
       end: { gt: input.start },
@@ -126,7 +155,11 @@ export async function findReservationConflict(tx: Transaction, input: Reservatio
       start: { lt: input.end },
       end: { gt: input.start },
       OR: [
-        { participants: { some: { practitionerId: { in: input.practitionerIds } } } },
+        {
+          participants: {
+            some: { practitionerId: { in: input.practitionerIds } },
+          },
+        },
         ...(input.roomId ? [{ roomId: input.roomId }] : []),
         ...(input.deviceId ? [{ deviceId: input.deviceId }] : []),
       ],
@@ -150,7 +183,10 @@ export async function findReservationConflict(tx: Transaction, input: Reservatio
   return { kind: "block" as const, id: block.id, resource };
 }
 
-export async function lockAndFindReservationConflict(tx: Transaction, input: ReservationInput) {
+export async function lockAndFindReservationConflict(
+  tx: Transaction,
+  input: ReservationInput,
+) {
   await lockReservationKeys(tx, input);
   return findReservationConflict(tx, input);
 }

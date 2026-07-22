@@ -11,6 +11,10 @@ import {
   snapToCalendarQuarter,
 } from "@/lib/calendar-blocks";
 import { dateFromYmd } from "@/lib/staff-schedule";
+import {
+  clinicDateTimeToInstant,
+  clinicTimeFromInstant,
+} from "@/lib/clinic-time";
 
 function bad(error: string, status = 400, detail?: unknown) {
   return NextResponse.json({ error, detail }, { status });
@@ -149,13 +153,10 @@ export async function POST(req: NextRequest) {
   const durationMs = end.getTime() - start.getTime();
   const reservations = targets.length
     ? targets.map((target) => {
-        const occurrenceStart = new Date(start);
-        const targetDate = dateFromYmd(target.date)!;
-        occurrenceStart.setUTCFullYear(
-          targetDate.getUTCFullYear(),
-          targetDate.getUTCMonth(),
-          targetDate.getUTCDate(),
-        );
+        const occurrenceStart = clinicDateTimeToInstant(
+          target.date,
+          clinicTimeFromInstant(start),
+        )!;
         return {
           start: occurrenceStart,
           end: new Date(occurrenceStart.getTime() + durationMs),

@@ -7,6 +7,7 @@ import { currentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { staffHref } from "@/lib/account-routing";
 import { staffLogoutAction } from "@/lib/staff-account-actions";
+import { EmployeeConfiguration } from "@/components/staff/EmployeeConfiguration";
 
 export async function generateMetadata({
   params,
@@ -55,6 +56,12 @@ export default async function StaffPage({
         </div>
         <div className="mt-[clamp(28px,4vw,48px)]">
           <SharedCalendar locale={appLocale} />
+        </div>
+        <div className="mt-[clamp(36px,6vw,72px)]">
+          <EmployeeConfiguration
+            locale={appLocale}
+            endpoint="/api/staff/configuration"
+          />
         </div>
       </Container>
     </section>

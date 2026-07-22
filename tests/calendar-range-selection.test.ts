@@ -43,7 +43,7 @@ test("calendar range targets group exact employees by date", () => {
 test("calendar range starts remain quarter-hour exact", () => {
   assert.equal(
     calendarRangeStart("2026-07-21", 10 * 60 + 45),
-    "2026-07-21T10:45:00.000Z",
+    "2026-07-21T07:45:00.000Z",
   );
   assert.equal(calendarRangeStart("bad", 600), null);
   assert.equal(calendarRangeStart("2026-07-21", 607), null);

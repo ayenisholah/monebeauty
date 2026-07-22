@@ -9,6 +9,7 @@ import {
   workdaySlots,
   workingRangeForDate,
 } from "../lib/staff-schedule";
+import { clinicTimeFromInstant } from "../lib/clinic-time";
 
 const calendar = readFileSync("components/calendar/SharedCalendar.tsx", "utf8");
 const calendarApi = readFileSync("app/api/calendar/route.ts", "utf8");
@@ -99,7 +100,7 @@ test("availability range updates preserve other quarters", () => {
   assert.deepEqual(
     changed
       .filter((slot) => slot.status === "closed")
-      .map((slot) => slot.start.slice(11, 16)),
+      .map((slot) => clinicTimeFromInstant(new Date(slot.start))),
     ["10:30", "10:45", "11:00"],
   );
   assert.equal(
@@ -119,18 +120,18 @@ test("working-hour helpers expose only configured dates and open slot bounds", (
   assert.deepEqual(
     openSlotRange([
       {
-        start: "2026-07-20T10:30:00.000Z",
-        end: "2026-07-20T11:00:00.000Z",
+        start: "2026-07-20T07:30:00.000Z",
+        end: "2026-07-20T08:00:00.000Z",
         status: "open",
       },
       {
-        start: "2026-07-20T17:00:00.000Z",
-        end: "2026-07-20T17:30:00.000Z",
+        start: "2026-07-20T14:00:00.000Z",
+        end: "2026-07-20T14:30:00.000Z",
         status: "open",
       },
       {
-        start: "2026-07-20T09:00:00.000Z",
-        end: "2026-07-20T09:30:00.000Z",
+        start: "2026-07-20T06:00:00.000Z",
+        end: "2026-07-20T06:30:00.000Z",
         status: "closed",
       },
     ]),
@@ -220,7 +221,8 @@ test("calendar permissions restrict staff operations to their linked employee", 
   assert.match(moveApi, /appointment\.practitionerId !== ownPractitionerId/);
   assert.match(moveApi, /practitionerId !== ownPractitionerId/);
   assert.match(createApi, /practitionerId !== ownPractitionerId/);
-  assert.match(moveApi, /qualified\.has\(practitionerId\)/);
+  assert.match(moveApi, /service\.capabilities\.find/);
+  assert.match(moveApi, /invalid_capability/);
 });
 
 test("staff can create confirmed appointments from a button or selected range", () => {
@@ -300,8 +302,8 @@ test("workday controls replace quarter-slot availability editing", () => {
 test("workday slots replace one date with exact quarter-hour availability", () => {
   const slots = workdaySlots("2026-07-23", 9 * 60, 17 * 60);
   assert.equal(slots.length, 32);
-  assert.equal(slots[0]?.start, "2026-07-23T09:00:00.000Z");
-  assert.equal(slots.at(-1)?.end, "2026-07-23T17:00:00.000Z");
+  assert.equal(slots[0]?.start, "2026-07-23T06:00:00.000Z");
+  assert.equal(slots.at(-1)?.end, "2026-07-23T14:00:00.000Z");
   assert.ok(slots.every((slot) => slot.status === "open"));
   assert.deepEqual(workdaySlots("2026-07-23", 541, 17 * 60), []);
 });

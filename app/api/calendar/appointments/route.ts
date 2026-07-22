@@ -15,6 +15,10 @@ import { accountHref } from "@/lib/account-routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { routing, type Locale } from "@/i18n/routing";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
+import {
+  clinicDateFromInstant,
+  clinicTimeFromInstant,
+} from "@/lib/clinic-time";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,7 +55,17 @@ export async function GET(req: NextRequest) {
           take: 1,
           select: { h1: true, whatItIs: true },
         },
-        practitioners: { where: { active: true }, select: { id: true } },
+        capabilities: {
+          where: { practitioner: { active: true }, room: { active: true } },
+          select: {
+            practitionerId: true,
+            roomId: true,
+            devices: {
+              where: { device: { active: true } },
+              select: { deviceId: true },
+            },
+          },
+        },
         rooms: { where: { active: true }, select: { id: true } },
         devices: { where: { active: true }, select: { id: true } },
       },
@@ -103,15 +117,23 @@ export async function GET(req: NextRequest) {
       durationMin: service.durationMin,
       requiresDevice: service.requiresDevice,
       qualifiedPractitionerIds: Array.from(
+        new Set(service.capabilities.map((item) => item.practitionerId)),
+      ),
+      roomIds: Array.from(
+        new Set(service.capabilities.map((item) => item.roomId)),
+      ),
+      deviceIds: Array.from(
         new Set(
-          [
-            service.primaryPractitionerId,
-            ...service.practitioners.map((item) => item.id),
-          ].filter((id): id is string => Boolean(id)),
+          service.capabilities.flatMap((item) =>
+            item.devices.map((link) => link.deviceId),
+          ),
         ),
       ),
-      roomIds: service.rooms.map((item) => item.id),
-      deviceIds: service.devices.map((item) => item.id),
+      capabilities: service.capabilities.map((item) => ({
+        practitionerId: item.practitionerId,
+        roomId: item.roomId,
+        deviceIds: item.devices.map((link) => link.deviceId),
+      })),
       procedures: parseProcedures(service.contents[0]?.whatItIs ?? "").map(
         (procedure, index) => ({
           index: index + 1,
@@ -147,7 +169,7 @@ export async function POST(req: NextRequest) {
   const start = new Date(String(payload.start ?? ""));
   if (Number.isNaN(start.getTime())) return bad("invalid_time");
   if (start.getTime() <= Date.now()) return bad("start_in_past");
-  if (start.getUTCMinutes() % 15 !== 0 || start.getUTCSeconds() !== 0)
+  if (Number(clinicTimeFromInstant(start).slice(3)) % 15 !== 0)
     return bad("invalid_time");
 
   const service = await prisma.service.findFirst({
@@ -163,7 +185,17 @@ export async function POST(req: NextRequest) {
         take: 1,
         select: { whatItIs: true },
       },
-      practitioners: { where: { active: true }, select: { id: true } },
+      capabilities: {
+        where: { practitioner: { active: true }, room: { active: true } },
+        select: {
+          practitionerId: true,
+          roomId: true,
+          devices: {
+            where: { device: { active: true } },
+            select: { deviceId: true },
+          },
+        },
+      },
       rooms: { where: { active: true }, select: { id: true } },
       devices: { where: { active: true }, select: { id: true } },
     },
@@ -173,20 +205,17 @@ export async function POST(req: NextRequest) {
   const practitionerId = String(payload.practitionerId ?? "");
   if (user.role === "STAFF" && practitionerId !== ownPractitionerId)
     return bad("forbidden_employee", 403);
-  const qualified = new Set(
-    [
-      service.primaryPractitionerId,
-      ...service.practitioners.map((item) => item.id),
-    ].filter((id): id is string => Boolean(id)),
-  );
-  if (!qualified.has(practitionerId)) return bad("invalid_employee", 409);
   const roomId = String(payload.roomId ?? "");
-  if (!service.rooms.some((room) => room.id === roomId))
-    return bad("invalid_room", 409);
   const deviceId = String(payload.deviceId ?? "") || null;
+  const capability = service.capabilities.find(
+    (item) =>
+      item.practitionerId === practitionerId &&
+      item.roomId === roomId &&
+      (deviceId === null ||
+        item.devices.some((link) => link.deviceId === deviceId)),
+  );
+  if (!capability) return bad("invalid_capability", 409);
   if (service.requiresDevice && !deviceId) return bad("device_required", 409);
-  if (deviceId && !service.devices.some((device) => device.id === deviceId))
-    return bad("invalid_device", 409);
 
   const procedureRequested =
     payload.procedureIndex !== undefined && payload.procedureIndex !== null;
@@ -209,13 +238,24 @@ export async function POST(req: NextRequest) {
   )
     return bad("invalid_duration");
   const end = new Date(start.getTime() + requestedDuration * 60_000);
-  const date = new Date(`${start.toISOString().slice(0, 10)}T00:00:00.000Z`);
-  const availability = await prisma.availability.findUnique({
-    where: { practitionerId_date: { practitionerId, date } },
-    select: { slots: true },
-  });
+  const dateStr = clinicDateFromInstant(start);
+  const date = new Date(`${dateStr}T00:00:00.000Z`);
+  const [availability, selectedPractitioner] = await Promise.all([
+    prisma.availability.findUnique({
+      where: { practitionerId_date: { practitionerId, date } },
+      select: { slots: true },
+    }),
+    prisma.practitioner.findUnique({
+      where: { id: practitionerId },
+      select: { workingHours: true },
+    }),
+  ]);
   const coverage =
-    availability?.slots ?? generateStaffSlots(start.toISOString().slice(0, 10));
+    availability?.slots ??
+    generateStaffSlots(
+      dateStr,
+      parseWorkingHours(selectedPractitioner?.workingHours),
+    );
   if (!availabilityCovers(coverage, start, end))
     return bad("outside_availability", 409);
 

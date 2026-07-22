@@ -10,6 +10,14 @@ const staffAccounts = readFileSync(
   "components/admin/StaffAccounts.tsx",
   "utf8",
 );
+const staffAccountActions = readFileSync(
+  "components/admin/StaffAccountActions.tsx",
+  "utf8",
+);
+const employeeConfiguration = readFileSync(
+  "components/staff/EmployeeConfiguration.tsx",
+  "utf8",
+);
 const passwordField = readFileSync(
   "components/admin/AdminPasswordField.tsx",
   "utf8",
@@ -82,16 +90,46 @@ test("staff creation owns its calendar profile and temporary password policy", (
   assert.doesNotMatch(staffAccounts, /minLength=\{12\}/);
 });
 
-test("staff account controls are complete, visible, and admin-only", () => {
+test("staff accounts use the localized admin table and retain complete admin controls", () => {
   assert.match(staffAccounts, /All staff accounts/);
-  assert.match(staffAccounts, /resetStaffPasswordAction/);
-  assert.match(staffAccounts, /revokeStaffSessionsAction/);
-  assert.match(staffAccounts, /setStaffStatusAction/);
-  assert.match(staffAccounts, /<DeleteStaffAccount/);
+  assert.match(staffAccounts, /<table/);
+  assert.match(staffAccounts, /min-w-\[980px\]/);
+  assert.match(staffAccounts, /overflow-x-auto/);
+  assert.match(staffAccounts, /sticky top-0/);
+  assert.match(staffAccounts, /Professional title/);
+  assert.match(staffAccounts, /Ammattinimike/);
+  assert.match(staffAccounts, /Должность/);
+  assert.match(staffAccounts, /Configure employee/);
+  assert.doesNotMatch(staffAccounts, /GearSix/);
+  assert.match(
+    staffAccounts,
+    /aria-label=\{`\$\{t\.configure\}: \$\{item\.name \?\? item\.email\}`\}/,
+  );
+  assert.match(staffAccounts, /after:absolute after:inset-0/);
+  assert.match(staffAccounts, /relative z-\[2\] p-3/);
+  assert.match(
+    staffAccounts,
+    /orderBy: \[\{ status: "asc" \}, \{ name: "asc" \}\]/,
+  );
+  assert.match(staffAccounts, /adminHref\(locale, "staff", item\.id\)/);
+  assert.match(staffAccountActions, /resetStaffPasswordAction/);
+  assert.match(staffAccountActions, /revokeStaffSessionsAction/);
+  assert.match(staffAccountActions, /setStaffStatusAction/);
+  assert.match(staffAccountActions, /deleteStaffAccountAction/);
+  assert.match(staffAccountActions, /role="menu"/);
+  assert.match(staffAccountActions, /aria-haspopup="menu"/);
+  assert.match(staffAccountActions, /event\.key === "Escape"/);
+  assert.match(staffAccountActions, /document\.addEventListener\("mousedown"/);
+  assert.match(staffAccountActions, /focusTrigger\(\)/);
+  assert.match(staffAccountActions, /min-h-11 min-w-11/);
   assert.match(passwordField, /visible \? "text" : "password"/);
   assert.match(passwordField, /<EyeSlash/);
   assert.match(passwordField, /aria-pressed=\{visible\}/);
   assert.match(deleteControl, /confirmation\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(
+    staffAccountActions,
+    /confirmation\.trim\(\)\.toLowerCase\(\) !== email\.toLowerCase\(\)/,
+  );
   assert.match(staffActions, /deleteStaffAccountAction/);
   assert.match(
     staffActions,
@@ -99,6 +137,28 @@ test("staff account controls are complete, visible, and admin-only", () => {
   );
   assert.match(staffActions, /where: \{ id, role: "STAFF" \}/);
   assert.match(staffActions, /retainedCalendarHistory: true/);
+});
+
+test("staff details use an employee header and visible access and security actions", () => {
+  assert.match(staffAccounts, /← \{t\.backToStaff\}/);
+  assert.match(staffAccounts, /selected\.name \?\? selected\.email/);
+  assert.match(staffAccounts, /\{!id \? \(/);
+  assert.doesNotMatch(staffAccounts, /<article/);
+  assert.match(staffAccounts, /securityContent=/);
+  assert.match(staffAccounts, /variant="panel"/);
+  assert.match(staffAccounts, /returnTo=\{detailReturnTo\}/);
+  assert.match(staffAccounts, /deleteReturnTo=\{returnTo\}/);
+  assert.match(employeeConfiguration, /Access & security/);
+  assert.match(employeeConfiguration, /Käyttöoikeudet ja turvallisuus/);
+  assert.match(employeeConfiguration, /Доступ и безопасность/);
+  assert.ok(
+    employeeConfiguration.indexOf("admin && securityContent") <
+      employeeConfiguration.indexOf("{t.profile}"),
+  );
+  assert.match(staffAccountActions, /variant\?: "menu" \| "panel"/);
+  assert.match(staffAccountActions, /variant === "panel"/);
+  assert.match(staffAccountActions, /dialogTriggerRef/);
+  assert.match(staffAccountActions, /name="returnTo" value=\{deleteReturnTo\}/);
 });
 
 test("staff operations retain own-availability and audited-sensitive-access boundaries", () => {

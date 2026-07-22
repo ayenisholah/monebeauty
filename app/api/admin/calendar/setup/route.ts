@@ -1,10 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-function bad(error: string) {
-  return NextResponse.json({ error }, { status: 400 });
+function bad(error: string, status = 400, detail?: unknown) {
+  return NextResponse.json({ error, detail }, { status });
 }
+
+const activeAppointmentWhere = {
+  start: { gte: new Date() },
+  status: { in: ["BOOKED", "CONFIRMED", "RESCHEDULED"] },
+} satisfies Prisma.AppointmentWhereInput;
 
 async function admin() {
   return requireApiUser(["ADMIN"]);
@@ -13,62 +19,52 @@ async function admin() {
 export async function GET() {
   if (!(await admin()))
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  const [practitioners, rooms, devices, services, staffUsers, templates] =
-    await Promise.all([
-      prisma.practitioner.findMany({
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        include: { staff: { select: { userId: true } } },
-      }),
-      prisma.room.findMany({
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-      }),
-      prisma.device.findMany({
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-      }),
-      prisma.service.findMany({
-        where: { archivedAt: null },
-        orderBy: [{ order: "asc" }, { slug: "asc" }],
-        include: {
-          contents: {
-            where: { locale: "fi" },
-            select: { h1: true },
-            take: 1,
+  const [rooms, devices, services, templates] = await Promise.all([
+    prisma.room.findMany({
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    }),
+    prisma.device.findMany({
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    }),
+    prisma.service.findMany({
+      where: { archivedAt: null },
+      orderBy: [{ order: "asc" }, { slug: "asc" }],
+      include: {
+        contents: {
+          where: { locale: "fi" },
+          select: { h1: true },
+          take: 1,
+        },
+          capabilities: {
+            select: { id: true, devices: { select: { deviceId: true } } },
           },
-          practitioners: { select: { id: true } },
-          rooms: { select: { id: true } },
-          devices: { select: { id: true } },
-        },
-      }),
-      prisma.user.findMany({
-        where: { role: "STAFF" },
-        orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          staff: { select: { practitionerId: true } },
-        },
-      }),
-      prisma.calendarBlockTemplate.findMany({
-        orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
-      }),
-    ]);
+        rooms: { select: { id: true } },
+        devices: { select: { id: true } },
+      },
+    }),
+    prisma.calendarBlockTemplate.findMany({
+      orderBy: [{ displayOrder: "asc" }, { key: "asc" }],
+    }),
+  ]);
   return NextResponse.json({
-    practitioners,
     rooms,
     devices,
-    staffUsers,
     templates,
     services: services.map((service) => ({
       id: service.id,
       slug: service.slug,
       name: service.contents[0]?.h1 ?? service.slug,
       bookable: service.bookable,
-      primaryPractitionerId: service.primaryPractitionerId,
-      qualifiedPractitionerIds: service.practitioners.map((item) => item.id),
       roomIds: service.rooms.map((item) => item.id),
       deviceIds: service.devices.map((item) => item.id),
       requiresDevice: service.requiresDevice,
+      schedulingReady:
+        service.capabilities.some(
+          (capability) =>
+            !service.requiresDevice || capability.devices.length > 0,
+        ) &&
+        service.rooms.length > 0 &&
+        (!service.requiresDevice || service.devices.length > 0),
     })),
   });
 }
@@ -85,50 +81,48 @@ export async function POST(req: NextRequest) {
 
   if (action === "saveBlockTemplate") {
     const id = String(payload.id ?? "");
-    const labelFi = String(payload.labelFi ?? "").trim().slice(0, 80);
-    const labelEn = String(payload.labelEn ?? "").trim().slice(0, 80);
-    const labelRu = String(payload.labelRu ?? "").trim().slice(0, 80);
+    const labelFi = String(payload.labelFi ?? "")
+      .trim()
+      .slice(0, 80);
+    const labelEn = String(payload.labelEn ?? "")
+      .trim()
+      .slice(0, 80);
+    const labelRu = String(payload.labelRu ?? "")
+      .trim()
+      .slice(0, 80);
     const color = String(payload.color ?? "#B89B72");
     const defaultDurationMin = Number(payload.defaultDurationMin);
-    if (!id || !labelFi || !labelEn || !labelRu || !/^#[0-9A-F]{6}$/i.test(color) || !Number.isInteger(defaultDurationMin) || defaultDurationMin < 15 || defaultDurationMin > 1440 || defaultDurationMin % 15)
+    if (
+      !id ||
+      !labelFi ||
+      !labelEn ||
+      !labelRu ||
+      !/^#[0-9A-F]{6}$/i.test(color) ||
+      !Number.isInteger(defaultDurationMin) ||
+      defaultDurationMin < 15 ||
+      defaultDurationMin > 1440 ||
+      defaultDurationMin % 15
+    )
       return bad("invalid_template");
     const row = await prisma.calendarBlockTemplate.update({
       where: { id },
-      data: { labelFi, labelEn, labelRu, color, defaultDurationMin, active: payload.active !== false, displayOrder: Math.round(Number(payload.displayOrder) || 0) },
+      data: {
+        labelFi,
+        labelEn,
+        labelRu,
+        color,
+        defaultDurationMin,
+        active: payload.active !== false,
+        displayOrder: Math.round(Number(payload.displayOrder) || 0),
+      },
     });
-    await prisma.auditLog.create({ data: { actor: user.email, actorUserId: user.id, actorRole: user.role, action: "calendar_block_template_updated", entity: "CalendarBlockTemplate", entityId: row.id } });
-    return NextResponse.json({ id: row.id });
-  }
-
-  if (action === "savePractitioner") {
-    const id = String(payload.id ?? "");
-    const name = String(payload.name ?? "").trim();
-    const role = String(payload.role ?? "").trim();
-    const calendarColor = String(payload.calendarColor ?? "#B89B72");
-    if (!name || !role || !/^#[0-9A-F]{6}$/i.test(calendarColor))
-      return bad("invalid_practitioner");
-    const data = {
-      name,
-      role,
-      calendarColor,
-      displayOrder: Math.round(Number(payload.displayOrder) || 0),
-      active: payload.active !== false,
-    };
-    if (!id) return bad("employee_accounts_only");
-    const row = await prisma.practitioner.update({ where: { id }, data });
-    const userId = String(payload.userId ?? "");
-    if (userId) {
-      await prisma.staffUser.upsert({
-        where: { userId },
-        update: { practitionerId: row.id },
-        create: { userId, practitionerId: row.id, daysOff: [] },
-      });
-    }
     await prisma.auditLog.create({
       data: {
         actor: user.email,
-        action: "calendar_employee_updated",
-        entity: "Practitioner",
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "calendar_block_template_updated",
+        entity: "CalendarBlockTemplate",
         entityId: row.id,
       },
     });
@@ -139,6 +133,15 @@ export async function POST(req: NextRequest) {
     const id = String(payload.id ?? "");
     const name = String(payload.name ?? "").trim();
     if (!name) return bad("name_required");
+    if (id && payload.active === false) {
+      const affected = await prisma.appointment.count({
+        where: {
+          ...activeAppointmentWhere,
+          ...(action === "saveRoom" ? { roomId: id } : { deviceId: id }),
+        },
+      });
+      if (affected) return bad("future_appointments", 409, { affected });
+    }
     const data = {
       name,
       displayOrder: Math.round(Number(payload.displayOrder) || 0),
@@ -167,23 +170,66 @@ export async function POST(req: NextRequest) {
 
   if (action === "configureService") {
     const serviceId = String(payload.serviceId ?? "");
-    const primaryPractitionerId =
-      String(payload.primaryPractitionerId ?? "") || null;
     const ids = (key: string) =>
       Array.isArray(payload[key])
         ? (payload[key] as unknown[]).map(String).filter(Boolean)
         : [];
-    const qualified = ids("qualifiedPractitionerIds");
-    if (primaryPractitionerId && !qualified.includes(primaryPractitionerId))
-      qualified.unshift(primaryPractitionerId);
+    const roomIds = ids("roomIds");
+    const deviceIds = ids("deviceIds");
+    const [validRooms, validDevices, future, capabilities] = await Promise.all([
+      prisma.room.count({ where: { id: { in: roomIds }, active: true } }),
+      prisma.device.count({
+        where: { id: { in: deviceIds }, active: true },
+      }),
+      prisma.appointment.findMany({
+        where: { ...activeAppointmentWhere, serviceId },
+        select: {
+          id: true,
+          practitionerId: true,
+          roomId: true,
+          deviceId: true,
+        },
+      }),
+      prisma.practitionerServiceCapability.findMany({
+        where: { serviceId },
+        select: {
+          roomId: true,
+          devices: { select: { deviceId: true } },
+        },
+      }),
+    ]);
+    if (
+      validRooms !== new Set(roomIds).size ||
+      validDevices !== new Set(deviceIds).size
+    )
+      return bad("invalid_resource");
+    const affected = future.filter(
+      (appointment) =>
+        !appointment.roomId ||
+        !roomIds.includes(appointment.roomId) ||
+        (appointment.deviceId !== null &&
+          !deviceIds.includes(appointment.deviceId)),
+    );
+    if (affected.length)
+      return bad("future_appointments", 409, {
+        affected: affected.length,
+        appointmentIds: affected.slice(0, 20).map((item) => item.id),
+      });
+    const invalidCapabilities = capabilities.filter(
+      (capability) =>
+        !roomIds.includes(capability.roomId) ||
+        capability.devices.some((link) => !deviceIds.includes(link.deviceId)),
+    );
+    if (invalidCapabilities.length)
+      return bad("employee_capabilities_use_resource", 409, {
+        affected: invalidCapabilities.length,
+      });
     const row = await prisma.service.update({
       where: { id: serviceId },
       data: {
-        primaryPractitionerId,
         requiresDevice: payload.requiresDevice === true,
-        practitioners: { set: qualified.map((id) => ({ id })) },
-        rooms: { set: ids("roomIds").map((id) => ({ id })) },
-        devices: { set: ids("deviceIds").map((id) => ({ id })) },
+        rooms: { set: roomIds.map((id) => ({ id })) },
+        devices: { set: deviceIds.map((id) => ({ id })) },
       },
       select: { id: true },
     });

@@ -172,7 +172,7 @@ test("staff selection stays own-only while admin selection restores valid ids", 
 test("calendar drop targets resolve exact quarter-hour starts", () => {
   assert.equal(
     calendarDropStart("2026-07-21", 10 * 60 + 45),
-    "2026-07-21T10:45:00.000Z",
+    "2026-07-21T07:45:00.000Z",
   );
   assert.equal(calendarDropStart("2026-07-21", 10 * 60 + 7), null);
   assert.equal(calendarDropStart("bad", 600), null);

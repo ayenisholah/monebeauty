@@ -6,11 +6,12 @@ import { prisma } from "@/lib/db";
 import { auditForUser, currentUser } from "@/lib/auth";
 import { accountHref } from "@/lib/account-routing";
 import { adminHref } from "@/lib/admin-routing";
-import { openSlots } from "@/lib/booking";
+import { openPublicSlotCandidates, openSlots } from "@/lib/booking";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 import { notifyAppointmentChange, sendEmail } from "@/lib/notifications";
 import { CONTACT } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
+import { clinicDateFromInstant } from "@/lib/clinic-time";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -74,7 +75,7 @@ export async function createAppointmentChangeRequestAction(formData: FormData) {
     if (!requestedStartRaw || Number.isNaN(Date.parse(requestedStartRaw)))
       redirect(`${accountHref(locale)}?error=invalid_time`);
     const slots = await openSlots({
-      dateStr: requestedStartRaw.slice(0, 10),
+      dateStr: clinicDateFromInstant(new Date(requestedStartRaw)),
       serviceKey: appointment.service.slug,
     });
     if (!slots.some((slot) => slot.start === requestedStartRaw))
@@ -140,23 +141,31 @@ export async function reviewAppointmentChangeRequestAction(formData: FormData) {
     if (!request.requestedStart || request.requestedStart <= new Date())
       redirect(`${adminHref(locale, "appointments")}?error=slot_taken`);
     const start = request.requestedStart.toISOString();
-    const slots = await openSlots({
-      dateStr: start.slice(0, 10),
-      serviceKey: request.appointment.service.slug,
-    });
-    const matching = slots.find((slot) => slot.start === start);
-    if (!matching)
-      redirect(`${adminHref(locale, "appointments")}?error=slot_taken`);
     updatedAppointment = await prisma.$transaction(async (tx) => {
-      const reservationConflict = await lockAndFindReservationConflict(tx, {
-        start: new Date(matching.start),
-        end: new Date(matching.end),
-        practitionerIds: [matching.practitionerId],
-        roomId: matching.roomId,
-        deviceId: matching.deviceId,
-        excludeAppointmentId: request.appointmentId,
-      });
-      if (reservationConflict) throw new Error("slot_taken");
+      const candidates = await openPublicSlotCandidates(
+        {
+          dateStr: clinicDateFromInstant(request.requestedStart!),
+          serviceKey: request.appointment.service.slug,
+          start,
+        },
+        tx,
+      );
+      let matching: (typeof candidates)[number] | null = null;
+      for (const candidate of candidates) {
+        const reservationConflict = await lockAndFindReservationConflict(tx, {
+          start: new Date(candidate.start),
+          end: new Date(candidate.end),
+          practitionerIds: [candidate.practitionerId],
+          roomId: candidate.roomId,
+          deviceId: candidate.deviceId,
+          excludeAppointmentId: request.appointmentId,
+        });
+        if (!reservationConflict) {
+          matching = candidate;
+          break;
+        }
+      }
+      if (!matching) throw new Error("slot_taken");
       const changed = await tx.appointmentChangeRequest.updateMany({
         where: { id, status: "PENDING" },
         data: {

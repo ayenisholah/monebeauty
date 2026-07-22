@@ -1,4 +1,26 @@
 Project Overview
+Employee-owned configuration and unified staff management (owner-directed, 2026-07-22):
+employees manage their own account name, login email/password, professional profile, calendar
+color, split-shift weekly schedule, date exceptions, qualified services, and service-specific
+room/device capabilities. Admin -> Staff is the single complete employee editor and retains
+account status, activation, display/allocation order, password reset, session revocation, audit,
+and credential deletion. Calendar Setup retains only global services, rooms, devices, and block
+templates. A versioned `PractitionerServiceCapability` is the sole source of qualification and
+resource allocation; edits are optimistic, immediate, audited, limited to each service's active
+resource pool, and rejected when they would invalidate an active future appointment. Staff never
+manage other employees, global inventory, activation, account status, or allocation priority.
+
+Complete resource-safe scheduling (owner-directed, 2026-07-22): public booking remains
+Service -> Time -> You and exposes a time only when a complete qualified employee, room, and
+required physical-device allocation covers the treatment. Admins configure every employee,
+weekly schedule, date exception, qualification, room, device, and service mapping; staff may
+change only their linked employee's recurring hours, date exceptions, internal blocks, and
+calendar preferences. Allocation is recalculated inside the locked transaction and exhausts
+alternative employees/rooms/devices before reporting a clash. Clinic wall times use
+`Europe/Helsinki` with DST-safe UTC persistence. Version one retains one employee, one service,
+one room, and zero/one device per appointment while the owner confirms whether simultaneous
+employees or sequential clinical treatments are ever required.
+
 Stripe website payments (owner-approved, 2026-07-19): product purchases use Stripe-hosted
 Checkout and webhook-authoritative payment state. The online catalog supports physical
 products, balance gift cards, and single-use prepaid treatment vouchers, with free clinic

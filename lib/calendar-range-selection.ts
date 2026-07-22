@@ -83,8 +83,8 @@ export function groupCalendarRangeTargets(targets: CalendarRangeColumn[]) {
 
 export function calendarRangeStart(date: string, minute: number) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || minute % 15 !== 0) return null;
-  const value = new Date(`${date}T00:00:00.000Z`);
-  if (Number.isNaN(value.getTime())) return null;
-  value.setUTCMinutes(minute);
-  return value.toISOString();
+  return (
+    clinicDateTimeToInstant(date, minuteLabel(minute))?.toISOString() ?? null
+  );
 }
+import { clinicDateTimeToInstant, minuteLabel } from "@/lib/clinic-time";

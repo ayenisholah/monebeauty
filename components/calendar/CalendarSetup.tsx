@@ -14,6 +14,7 @@ type Practitioner = {
   calendarColor: string;
   staff: { userId: string } | null;
 };
+
 type Resource = {
   id: string;
   name: string;
@@ -31,21 +32,28 @@ type Service = {
   slug: string;
   name: string;
   bookable: boolean;
-  primaryPractitionerId: string | null;
-  qualifiedPractitionerIds: string[];
   roomIds: string[];
   deviceIds: string[];
   requiresDevice: boolean;
+  schedulingReady: boolean;
 };
 type SetupPayload = {
-  practitioners: Practitioner[];
   rooms: Resource[];
   devices: Resource[];
-  staffUsers: StaffUser[];
   services: Service[];
   templates: BlockTemplate[];
 };
-type BlockTemplate = { id: string; key: string; labelFi: string; labelEn: string; labelRu: string; defaultDurationMin: number; color: string; active: boolean; displayOrder: number };
+type BlockTemplate = {
+  id: string;
+  key: string;
+  labelFi: string;
+  labelEn: string;
+  labelRu: string;
+  defaultDurationMin: number;
+  color: string;
+  active: boolean;
+  displayOrder: number;
+};
 
 const labels = {
   en: {
@@ -197,19 +205,18 @@ export function CalendarSetup({
         </p>
       ) : null}
 
-      <SetupSection title={t.employees}>
-        <div className="grid gap-[10px] xl:grid-cols-2">
-          {data.practitioners.map((item) => (
-            <PractitionerForm
-              key={item.id}
-              item={item}
-              users={data.staffUsers}
-              t={t}
-              save={save}
-            />
-          ))}
-        </div>
-      </SetupSection>
+      <p className="mt-[14px] font-sans text-[13px] text-body">
+        <Link
+          className="underline underline-offset-4"
+          href={calendarHref.replace(/\/kalenteri$/, "/henkilosto")}
+        >
+          {locale === "fi"
+            ? "Hallitse työntekijöitä ja ajanvarausoikeuksia Henkilöstö-sivulla"
+            : locale === "ru"
+              ? "Профили и права записи находятся в разделе Сотрудники"
+              : "Manage employee profiles and booking capabilities in Staff"}
+        </Link>
+      </p>
       <SetupSection title={t.internalServices}>
         <div className="grid gap-[10px] xl:grid-cols-2">
           {data.templates.map((template) => (
@@ -255,7 +262,6 @@ export function CalendarSetup({
               <ServiceForm
                 key={service.id}
                 service={service}
-                practitioners={data.practitioners.filter((item) => item.active)}
                 rooms={data.rooms.filter((item) => item.active)}
                 devices={data.devices.filter((item) => item.active)}
                 t={t}
@@ -268,7 +274,15 @@ export function CalendarSetup({
   );
 }
 
-function TemplateForm({ item, t, save }: { item: BlockTemplate; t: SetupLabels; save: (payload: Record<string, unknown>) => Promise<boolean> }) {
+function TemplateForm({
+  item,
+  t,
+  save,
+}: {
+  item: BlockTemplate;
+  t: SetupLabels;
+  save: (payload: Record<string, unknown>) => Promise<boolean>;
+}) {
   const [labelFi, setLabelFi] = useState(item.labelFi);
   const [labelEn, setLabelEn] = useState(item.labelEn);
   const [labelRu, setLabelRu] = useState(item.labelRu);
@@ -277,23 +291,91 @@ function TemplateForm({ item, t, save }: { item: BlockTemplate; t: SetupLabels; 
   const [order, setOrder] = useState(item.displayOrder);
   const [active, setActive] = useState(item.active);
   return (
-    <form className={card} onSubmit={(event) => { event.preventDefault(); void save({ action: "saveBlockTemplate", id: item.id, labelFi, labelEn, labelRu, defaultDurationMin: duration, color, displayOrder: order, active }); }}>
-      <p className="font-sans text-[11px] tracking-[.08em] text-muted uppercase">{item.key}</p>
+    <form
+      className={card}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save({
+          action: "saveBlockTemplate",
+          id: item.id,
+          labelFi,
+          labelEn,
+          labelRu,
+          defaultDurationMin: duration,
+          color,
+          displayOrder: order,
+          active,
+        });
+      }}
+    >
+      <p className="font-sans text-[11px] tracking-[.08em] text-muted uppercase">
+        {item.key}
+      </p>
       <div className="grid gap-[9px] sm:grid-cols-3">
-        <Field label="FI"><input className={input} value={labelFi} onChange={(event) => setLabelFi(event.target.value)} required /></Field>
-        <Field label="EN"><input className={input} value={labelEn} onChange={(event) => setLabelEn(event.target.value)} required /></Field>
-        <Field label="RU"><input className={input} value={labelRu} onChange={(event) => setLabelRu(event.target.value)} required /></Field>
+        <Field label="FI">
+          <input
+            className={input}
+            value={labelFi}
+            onChange={(event) => setLabelFi(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="EN">
+          <input
+            className={input}
+            value={labelEn}
+            onChange={(event) => setLabelEn(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="RU">
+          <input
+            className={input}
+            value={labelRu}
+            onChange={(event) => setLabelRu(event.target.value)}
+            required
+          />
+        </Field>
       </div>
       <div className="grid gap-[9px] sm:grid-cols-3">
-        <Field label={t.duration}><input className={input} type="number" min={15} max={1440} step={15} value={duration} onChange={(event) => setDuration(Number(event.target.value))} /></Field>
-        <Field label={t.color}><input className="h-[44px] w-full rounded border border-line-btn bg-page p-[3px]" type="color" value={color} onChange={(event) => setColor(event.target.value)} /></Field>
-        <Field label={t.order}><input className={input} type="number" value={order} onChange={(event) => setOrder(Number(event.target.value))} /></Field>
+        <Field label={t.duration}>
+          <input
+            className={input}
+            type="number"
+            min={15}
+            max={1440}
+            step={15}
+            value={duration}
+            onChange={(event) => setDuration(Number(event.target.value))}
+          />
+        </Field>
+        <Field label={t.color}>
+          <input
+            className="h-[44px] w-full rounded border border-line-btn bg-page p-[3px]"
+            type="color"
+            value={color}
+            onChange={(event) => setColor(event.target.value)}
+          />
+        </Field>
+        <Field label={t.order}>
+          <input
+            className={input}
+            type="number"
+            value={order}
+            onChange={(event) => setOrder(Number(event.target.value))}
+          />
+        </Field>
       </div>
-      <div className="mt-[10px] flex items-center justify-between"><Check checked={active} onChange={setActive} label={t.active} /><button className={primary}>{t.save}</button></div>
+      <div className="mt-[10px] flex items-center justify-between">
+        <Check checked={active} onChange={setActive} label={t.active} />
+        <button className={primary}>{t.save}</button>
+      </div>
     </form>
   );
 }
 
+// Retained temporarily for rollback compatibility; employee editing is no longer rendered here.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PractitionerForm({
   item,
   users,
@@ -455,23 +537,17 @@ function ResourceForm({
 
 function ServiceForm({
   service,
-  practitioners,
   rooms,
   devices,
   t,
   save,
 }: {
   service: Service;
-  practitioners: Practitioner[];
   rooms: Resource[];
   devices: Resource[];
   t: SetupLabels;
   save: (payload: Record<string, unknown>) => Promise<boolean>;
 }) {
-  const [primaryId, setPrimaryId] = useState(
-    service.primaryPractitionerId ?? "",
-  );
-  const [qualified, setQualified] = useState(service.qualifiedPractitionerIds);
   const [roomIds, setRoomIds] = useState(service.roomIds);
   const [deviceIds, setDeviceIds] = useState(service.deviceIds);
   const [requiresDevice, setRequiresDevice] = useState(service.requiresDevice);
@@ -492,8 +568,6 @@ function ServiceForm({
         void save({
           action: "configureService",
           serviceId: service.id,
-          primaryPractitionerId: primaryId,
-          qualifiedPractitionerIds: qualified,
           roomIds,
           deviceIds,
           requiresDevice,
@@ -502,30 +576,20 @@ function ServiceForm({
       className={card}
     >
       <h3 className="font-display text-[22px] font-medium">{service.name}</h3>
+      {!service.schedulingReady ? (
+        <p className="mt-1 rounded-[4px] border border-[#b64d56]/40 bg-[#b64d56]/10 px-2 py-1 font-sans text-[12px] text-[#8f3039]">
+          {
+            serviceSetupWarning[
+              t.title === "Calendar setup"
+                ? "en"
+                : t.title === "Kalenterin asetukset"
+                  ? "fi"
+                  : "ru"
+            ]
+          }
+        </p>
+      ) : null}
       <p className="font-sans text-[11px] text-muted">{service.slug}</p>
-      <Field label={t.primary}>
-        <ThemedSelect
-          value={primaryId}
-          onValueChange={(value) => {
-            setPrimaryId(value);
-            if (value && !qualified.includes(value))
-              setQualified([...qualified, value]);
-          }}
-          options={[
-            { value: "", label: "—" },
-            ...practitioners.map((item) => ({
-              value: item.id,
-              label: item.name,
-            })),
-          ]}
-        />
-      </Field>
-      <ChoiceGroup
-        label={t.qualified}
-        items={practitioners}
-        selected={qualified}
-        toggle={(id) => toggle(qualified, id, setQualified)}
-      />
       <ChoiceGroup
         label={t.allowedRooms}
         items={rooms}
@@ -637,3 +701,8 @@ const primary =
   "inline-flex min-h-[40px] items-center justify-center gap-[6px] rounded-[4px] bg-accent px-[14px] font-sans text-[11px] font-medium tracking-[.08em] text-page uppercase";
 const secondary =
   "inline-flex min-h-[40px] items-center justify-center gap-[6px] rounded-[4px] border border-line-btn bg-card px-[12px] font-sans text-[11px] uppercase";
+const serviceSetupWarning = {
+  en: "Scheduling incomplete",
+  fi: "Ajanvarausmääritys puuttuu",
+  ru: "Настройка записи не завершена",
+} as const;

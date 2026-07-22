@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DatePicker } from "@/components/ui/CalendarPicker";
 import { ThemedSelect } from "@/components/ui/ThemedSelect";
+import {
+  clinicDateFromInstant,
+  clinicDateTimeToInstant,
+  clinicTimeFromInstant,
+  clinicWeekday,
+} from "@/lib/clinic-time";
 
 export type CalendarBlockTemplate = {
   id: string;
@@ -123,13 +129,13 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 function ymd(value: Date) {
-  return `${value.getUTCFullYear()}-${pad(value.getUTCMonth() + 1)}-${pad(value.getUTCDate())}`;
+  return clinicDateFromInstant(value);
 }
 function hm(value: Date) {
-  return `${pad(value.getUTCHours())}:${pad(value.getUTCMinutes())}`;
+  return clinicTimeFromInstant(value);
 }
 function iso(date: string, time: string) {
-  return new Date(`${date}T${time}:00.000Z`);
+  return clinicDateTimeToInstant(date, time) ?? new Date(NaN);
 }
 const timeOptions = Array.from({ length: 96 }, (_, index) => {
   const minutes = index * 15;
@@ -208,7 +214,9 @@ export function CalendarBlockEditor({
   );
   const [notes, setNotes] = useState(block?.notes ?? "");
   const [repeat, setRepeat] = useState(false);
-  const [weekdays, setWeekdays] = useState<number[]>([initial.getUTCDay()]);
+  const [weekdays, setWeekdays] = useState<number[]>([
+    clinicWeekday(date) ?? 1,
+  ]);
   const [recurrenceEnd, setRecurrenceEnd] = useState(date);
   const [scope, setScope] = useState<"occurrence" | "future">("occurrence");
   const [error, setError] = useState<string | null>(null);

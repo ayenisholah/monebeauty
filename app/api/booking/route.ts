@@ -11,6 +11,7 @@ import { sendEmail } from "@/lib/notifications";
 import { accountHref } from "@/lib/account-routing";
 import { absoluteLocalizedUrl, siteUrl } from "@/lib/seo";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
+import { clinicDateFromInstant } from "@/lib/clinic-time";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -79,22 +80,22 @@ export async function POST(req: NextRequest) {
 
   const startDate = new Date(start);
   if (startDate.getTime() <= Date.now()) return bad("start_in_past");
-  const dateStr = start.slice(0, 10);
+  const dateStr = clinicDateFromInstant(startDate);
 
   try {
-    const candidates = await openPublicSlotCandidates({
-      dateStr,
-      serviceKey: service,
-      locale,
-      start,
-    });
-    if (!candidates.length) {
-      return NextResponse.json({ error: "slot_taken" }, { status: 409 });
-    }
-
     const serviceId = await getServiceId(svc.slug);
     const appointment = await prisma.$transaction(
       async (tx) => {
+        const candidates = await openPublicSlotCandidates(
+          {
+            dateStr,
+            serviceKey: service,
+            locale,
+            start,
+          },
+          tx,
+        );
+        if (!candidates.length) throw new Error("slot_taken");
         let matchingSlot: (typeof candidates)[number] | null = null;
         for (const candidate of candidates) {
           const clash = await lockAndFindReservationConflict(tx, {

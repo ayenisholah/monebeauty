@@ -38,7 +38,9 @@ import {
   openSlotRange,
   parseWorkingHours,
   workingRangeForDate,
+  type WeeklyIntervals,
 } from "@/lib/staff-schedule";
+import { WeeklyScheduleEditor } from "@/components/calendar/WeeklyScheduleEditor";
 import {
   AppointmentForm,
   type AppointmentDetail as ManageAppointmentDetail,
@@ -63,6 +65,11 @@ import {
   type CalendarRangeSelection,
 } from "@/lib/calendar-range-selection";
 import { clinicTodayYmd } from "@/lib/clinic-date";
+import {
+  CLINIC_TIME_ZONE,
+  clinicDateFromInstant,
+  clinicTimeFromInstant,
+} from "@/lib/clinic-time";
 
 type View = "day" | "week" | "month";
 const VIEW_STORAGE_KEYS = {
@@ -93,6 +100,11 @@ type Appointment = {
   qualifiedPractitionerIds: string[];
   allowedRoomIds: string[];
   allowedDeviceIds: string[];
+  capabilities: Array<{
+    practitionerId: string;
+    roomId: string;
+    deviceIds: string[];
+  }>;
   requiresDevice: boolean;
   editable: boolean;
 };
@@ -290,7 +302,12 @@ function pad(value: number) {
 }
 
 function ymd(date: Date) {
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+  return clinicDateFromInstant(date);
+}
+
+function clinicMinute(date: Date) {
+  const label = clinicTimeFromInstant(date);
+  return Number(label.slice(0, 2)) * 60 + Number(label.slice(3));
 }
 
 function today() {
@@ -396,10 +413,8 @@ export function SharedCalendar({
     useState<CalendarRangeSelection | null>(null);
   const [hours, setHours] = useState({
     practitionerId: "",
-    startHour: 10,
-    endHour: 19,
     daysAhead: 30,
-    openDays: [1, 2, 3, 4, 5, 6],
+    intervals: parseWorkingHours(undefined).intervals as WeeklyIntervals,
   });
   const selectionOwnerRef = useRef<string | null>(null);
   const paletteOwnerRef = useRef<string | null>(null);
@@ -683,11 +698,16 @@ export function SharedCalendar({
           item.date === date && item.practitionerId === resolvedPractitionerId,
       )
       ?.slots.find((slot) => slot.status === "open")?.start;
-    const fallback = new Date(firstOpen ?? `${date}T10:00:00.000Z`);
+    let fallback = new Date(
+      firstOpen ?? calendarDropStart(date, 10 * 60) ?? new Date().toISOString(),
+    );
     if (fallback.getTime() <= Date.now()) {
       const now = new Date();
-      const minutes = Math.ceil(now.getUTCMinutes() / 15) * 15;
-      fallback.setUTCHours(now.getUTCHours(), minutes, 0, 0);
+      const minutes = Math.ceil(clinicMinute(now) / 15) * 15;
+      fallback = new Date(
+        calendarDropStart(date, Math.min(minutes, 23 * 60 + 45)) ??
+          fallback.toISOString(),
+      );
     }
     setManaging({
       start: start ?? fallback.toISOString(),
@@ -889,13 +909,13 @@ export function SharedCalendar({
     weekday: "short",
     day: "numeric",
     month: "short",
-    timeZone: "UTC",
+    timeZone: CLINIC_TIME_ZONE,
   });
   const fmtTime = new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "UTC",
+    timeZone: CLINIC_TIME_ZONE,
   });
 
   return (
@@ -1028,7 +1048,7 @@ export function SharedCalendar({
                   setHours((current) => ({
                     ...current,
                     practitionerId,
-                    ...saved,
+                    intervals: saved.intervals,
                   }));
                   setHoursOpen(true);
                 }}
@@ -1347,9 +1367,17 @@ export function SharedCalendar({
               <Field label={t.employee}>
                 <ThemedSelect
                   value={editing.practitionerId}
-                  onValueChange={(practitionerId) =>
-                    setEditing({ ...editing, practitionerId })
-                  }
+                  onValueChange={(practitionerId) => {
+                    const capability = editing.appointment.capabilities.find(
+                      (item) => item.practitionerId === practitionerId,
+                    );
+                    setEditing({
+                      ...editing,
+                      practitionerId,
+                      roomId: capability?.roomId ?? "",
+                      deviceId: capability?.deviceIds[0] ?? "",
+                    });
+                  }}
                   options={data.practitioners
                     .filter((item) =>
                       editing.appointment.qualifiedPractitionerIds.includes(
@@ -1362,10 +1390,26 @@ export function SharedCalendar({
               <Field label={t.room}>
                 <ThemedSelect
                   value={editing.roomId}
-                  onValueChange={(roomId) => setEditing({ ...editing, roomId })}
+                  onValueChange={(roomId) => {
+                    const capability = editing.appointment.capabilities.find(
+                      (item) =>
+                        item.practitionerId === editing.practitionerId &&
+                        item.roomId === roomId,
+                    );
+                    setEditing({
+                      ...editing,
+                      roomId,
+                      deviceId: capability?.deviceIds[0] ?? "",
+                    });
+                  }}
                   options={data.rooms
                     .filter((item) =>
-                      editing.appointment.allowedRoomIds.includes(item.id),
+                      editing.appointment.capabilities.some(
+                        (capability) =>
+                          capability.practitionerId ===
+                            editing.practitionerId &&
+                          capability.roomId === item.id,
+                      ),
                     )
                     .map((item) => ({ value: item.id, label: item.name }))}
                 />
@@ -1379,7 +1423,13 @@ export function SharedCalendar({
                     }
                     options={data.devices
                       .filter((item) =>
-                        editing.appointment.allowedDeviceIds.includes(item.id),
+                        editing.appointment.capabilities.some(
+                          (capability) =>
+                            capability.practitionerId ===
+                              editing.practitionerId &&
+                            capability.roomId === editing.roomId &&
+                            capability.deviceIds.includes(item.id),
+                        ),
                       )
                       .map((item) => ({ value: item.id, label: item.name }))}
                   />
@@ -1547,9 +1597,17 @@ export function SharedCalendar({
               <Field label={t.employee}>
                 <ThemedSelect
                   value={hours.practitionerId}
-                  onValueChange={(practitionerId) =>
-                    setHours({ ...hours, practitionerId })
-                  }
+                  onValueChange={(practitionerId) => {
+                    const practitioner = data.practitioners.find(
+                      (item) => item.id === practitionerId,
+                    );
+                    setHours({
+                      ...hours,
+                      practitionerId,
+                      intervals: parseWorkingHours(practitioner?.workingHours)
+                        .intervals,
+                    });
+                  }}
                   disabled={!data.canEditAllAvailability}
                   options={data.practitioners
                     .filter(
@@ -1575,58 +1633,13 @@ export function SharedCalendar({
                   className="min-h-[44px] w-full rounded-[4px] border border-line-btn bg-page px-[11px] font-sans text-[14px]"
                 />
               </Field>
-              <Field label={t.startHour}>
-                <ThemedSelect
-                  value={String(hours.startHour)}
-                  onValueChange={(value) =>
-                    setHours({ ...hours, startHour: Number(value) })
-                  }
-                  options={Array.from({ length: 24 }, (_, hour) => ({
-                    value: String(hour),
-                    label: `${pad(hour)}:00`,
-                  }))}
-                />
-              </Field>
-              <Field label={t.endHour}>
-                <ThemedSelect
-                  value={String(hours.endHour)}
-                  onValueChange={(value) =>
-                    setHours({ ...hours, endHour: Number(value) })
-                  }
-                  options={Array.from(
-                    { length: 24 },
-                    (_, index) => index + 1,
-                  ).map((hour) => ({
-                    value: String(hour),
-                    label: `${pad(hour)}:00`,
-                  }))}
-                />
-              </Field>
             </div>
-            <div className="mt-[14px] flex flex-wrap gap-[7px]">
-              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
-                const active = hours.openDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() =>
-                      setHours({
-                        ...hours,
-                        openDays: active
-                          ? hours.openDays.filter((item) => item !== day)
-                          : [...hours.openDays, day],
-                      })
-                    }
-                    className={active ? activeButtonCls : buttonCls}
-                  >
-                    {new Intl.DateTimeFormat(locale, {
-                      weekday: "short",
-                      timeZone: "UTC",
-                    }).format(new Date(Date.UTC(2026, 6, 6 + day)))}
-                  </button>
-                );
-              })}
+            <div className="mt-[14px] max-h-[58vh] overflow-y-auto pr-1">
+              <WeeklyScheduleEditor
+                locale={locale}
+                value={hours.intervals}
+                onChange={(intervals) => setHours({ ...hours, intervals })}
+              />
             </div>
             <div className="mt-[20px] flex justify-end gap-[9px]">
               <button
@@ -1748,16 +1761,17 @@ function TimeGrid({
   const outsideAppointments = data.appointments.filter((appointment) => {
     if (
       !visibleIds.has(appointment.practitionerId) ||
-      !visibleDays.has(appointment.start.slice(0, 10))
+      !visibleDays.has(clinicDateFromInstant(new Date(appointment.start)))
     )
       return false;
     const start = new Date(appointment.start);
     const end = new Date(appointment.end);
-    const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
-    const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+    const startMinute = clinicMinute(start);
+    const endMinute = clinicMinute(end);
+    const appointmentDate = clinicDateFromInstant(start);
     const availability = data.availabilities.find(
       (item) =>
-        item.date === appointment.start.slice(0, 10) &&
+        item.date === appointmentDate &&
         item.practitionerId === appointment.practitionerId,
     );
     return (
@@ -1770,13 +1784,13 @@ function TimeGrid({
   const outsideBlocks = data.blocks.filter((block) => {
     if (
       !block.practitionerIds.some((id) => visibleIds.has(id)) ||
-      !visibleDays.has(block.start.slice(0, 10))
+      !visibleDays.has(clinicDateFromInstant(new Date(block.start)))
     )
       return false;
     const start = new Date(block.start);
     const end = new Date(block.end);
-    const startMinute = start.getUTCHours() * 60 + start.getUTCMinutes();
-    const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+    const startMinute = clinicMinute(start);
+    const endMinute = clinicMinute(end);
     return (
       !rangeBounds ||
       startMinute < rangeBounds.startMinute ||
@@ -1972,15 +1986,15 @@ function CalendarColumn({
   const appointments = data.appointments.filter(
     (item) =>
       item.practitionerId === practitioner.id &&
-      item.start.slice(0, 10) === day,
+      clinicDateFromInstant(new Date(item.start)) === day,
   );
   const blocks = data.blocks.filter(
     (item) =>
       item.practitionerIds.includes(practitioner.id) &&
-      item.start.slice(0, 10) === day,
+      clinicDateFromInstant(new Date(item.start)) === day,
   );
   const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes() - range.startMinute;
+  const nowMinutes = clinicMinute(now) - range.startMinute;
   const isToday = day === today();
   const dayHeight = ((range.endMinute - range.startMinute) / 60) * hourHeight;
   const selectedRange =
@@ -2053,9 +2067,8 @@ function CalendarColumn({
           .filter((appointment) => {
             const start = new Date(appointment.start);
             const end = new Date(appointment.end);
-            const startMinute =
-              start.getUTCHours() * 60 + start.getUTCMinutes();
-            const endMinute = end.getUTCHours() * 60 + end.getUTCMinutes();
+            const startMinute = clinicMinute(start);
+            const endMinute = clinicMinute(end);
             return (
               startMinute >= range.startMinute &&
               endMinute <= range.endMinute &&
@@ -2194,10 +2207,7 @@ function AppointmentCard({
     useDraggable({ id: appointment.id, disabled: !appointment.editable });
   const start = new Date(appointment.start);
   const end = new Date(appointment.end);
-  const top =
-    ((start.getUTCHours() * 60 + start.getUTCMinutes() - rangeStartMinute) /
-      60) *
-    hourHeight;
+  const top = ((clinicMinute(start) - rangeStartMinute) / 60) * hourHeight;
   const height = Math.max(
     32,
     ((end.getTime() - start.getTime()) / 3600000) * hourHeight,
@@ -2299,10 +2309,7 @@ function CalendarBlockCard({
     useDraggable({ id: `block:${block.id}` });
   const start = new Date(block.start);
   const end = new Date(block.end);
-  const top =
-    ((start.getUTCHours() * 60 + start.getUTCMinutes() - rangeStartMinute) /
-      60) *
-    hourHeight;
+  const top = ((clinicMinute(start) - rangeStartMinute) / 60) * hourHeight;
   const height = Math.max(
     28,
     ((end.getTime() - start.getTime()) / 3_600_000) * hourHeight,
@@ -2371,12 +2378,12 @@ function MonthView({
         const date = ymd(day);
         const appointments = data.appointments.filter(
           (item) =>
-            item.start.slice(0, 10) === date &&
+            clinicDateFromInstant(new Date(item.start)) === date &&
             selected.includes(item.practitionerId),
         );
         const blocks = data.blocks.filter(
           (item) =>
-            item.start.slice(0, 10) === date &&
+            clinicDateFromInstant(new Date(item.start)) === date &&
             item.practitionerIds.some((id) => selected.includes(id)),
         );
         const events = [

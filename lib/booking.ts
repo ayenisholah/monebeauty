@@ -1,84 +1,80 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { BUSINESS_HOURS } from "@/lib/booking-config";
 import type { Locale } from "@/i18n/routing";
 import {
   availabilityCovers,
+  generateStaffSlots,
+  normalizeSlots,
   parseWorkingHours,
   type WorkingHoursInput,
 } from "@/lib/staff-schedule";
+import {
+  clinicDateBounds,
+  clinicTimeFromInstant,
+  parseClinicDateTime,
+} from "@/lib/clinic-time";
 
-/**
- * Lean booking slot logic. Times are treated as clinic wall-clock (Helsinki) and stored as
- * the matching UTC instant — a deliberate simplification for the first iteration (no
- * per-practitioner availability; a single shared default practitioner). The bookable window
- * lives in `lib/booking-config.ts` (client-safe) and is re-exported here for convenience.
- */
 export { BUSINESS_HOURS };
 
 const DEFAULT_DURATION_MIN = 60;
+type SchedulingClient = Prisma.TransactionClient | typeof prisma;
 
 export interface SlotDto {
-  /** ISO start instant. */
   start: string;
-  /** ISO end instant. */
   end: string;
-  /** HH:MM clinic-local label. */
   label: string;
-  /** Practitioner that will receive the booking. */
   practitionerId: string;
-  /** Internally allocated room; omitted from the public slots response. */
   roomId: string;
-  /** Internally allocated physical device, when the service requires one. */
   deviceId: string | null;
-}
-
-type AvailabilitySlot = {
-  start: string;
-  end?: string;
-  status?: "open" | "closed" | "booked";
-};
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function isOpenDate(
-  dateStr: string,
-  hours: WorkingHoursInput = parseWorkingHours(undefined),
-): boolean {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return hours.openDays.includes(weekday);
-}
-
-/** Candidate slot start instants for a YYYY-MM-DD and a service duration. */
-export function generateSlots(
-  dateStr: string,
-  durationMin: number,
-  input: Partial<WorkingHoursInput> = {},
-): Date[] {
-  const hours = parseWorkingHours(input);
-  if (!isOpenDate(dateStr, hours)) return [];
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const out: Date[] = [];
-  const start = hours.startHour * 60;
-  const end = hours.endHour * 60;
-  for (let t = start; t + durationMin <= end; t += hours.stepMin) {
-    out.push(new Date(Date.UTC(y, m - 1, d, Math.floor(t / 60), t % 60)));
-  }
-  return out;
 }
 
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
   return aStart < bEnd && aEnd > bStart;
 }
 
-function dateLabel(date: Date): string {
-  return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+function logicalDate(dateStr: string) {
+  const parsed = parseClinicDateTime(dateStr);
+  return parsed
+    ? new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day))
+    : null;
 }
 
-async function serviceRecord(serviceKey: string, locale?: Locale) {
-  const service = await prisma.service.findFirst({
+function addDays(dateStr: string, amount: number) {
+  const date = logicalDate(dateStr);
+  if (!date) return "";
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
+}
+
+/** Candidate starts for a clinic date, represented as real instants. */
+export function generateSlots(
+  dateStr: string,
+  durationMin: number,
+  input: Partial<WorkingHoursInput> = {},
+): Date[] {
+  const schedule = parseWorkingHours(input);
+  const availability = generateStaffSlots(dateStr, schedule);
+  const starts = new Map<string, Date>();
+  for (const slot of availability) {
+    const start = new Date(slot.start);
+    const end = new Date(start.getTime() + durationMin * 60_000);
+    if (availabilityCovers(availability, start, end)) {
+      starts.set(start.toISOString(), start);
+    }
+  }
+  return [...starts.values()].sort(
+    (left, right) => left.getTime() - right.getTime(),
+  );
+}
+
+async function serviceRecord(
+  client: SchedulingClient,
+  serviceKey: string,
+  locale?: Locale,
+) {
+  const db = client as typeof prisma;
+  const service = await db.service.findFirst({
     where: {
       slug: serviceKey,
       bookable: true,
@@ -91,230 +87,246 @@ async function serviceRecord(serviceKey: string, locale?: Locale) {
       id: true,
       slug: true,
       durationMin: true,
-      practitioners: {
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: { id: true, workingHours: true },
-      },
       requiresDevice: true,
-      rooms: {
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: { id: true },
-      },
-      devices: {
-        where: { active: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: { id: true },
+      capabilities: {
+        where: {
+          practitioner: { active: true },
+          room: { active: true },
+        },
+        orderBy: [
+          { practitioner: { displayOrder: "asc" } },
+          { room: { displayOrder: "asc" } },
+        ],
+        select: {
+          practitioner: { select: { id: true, workingHours: true } },
+          room: { select: { id: true } },
+          devices: {
+            where: { device: { active: true } },
+            orderBy: { device: { displayOrder: "asc" } },
+            select: { device: { select: { id: true } } },
+          },
+        },
       },
     },
   });
   return service ? { svc: service, serviceId: service.id } : null;
 }
 
-async function candidateSlotsForPractitioner(
+function candidateAvailability(
   dateStr: string,
   durationMin: number,
-  practitionerId: string,
-  workingHours: WorkingHoursInput,
-): Promise<Array<{ start: Date; end: Date }>> {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  const availability = await prisma.availability.findUnique({
-    where: { practitionerId_date: { practitionerId, date } },
-    select: { slots: true },
-  });
-
-  if (availability) {
-    const raw = Array.isArray(availability.slots)
-      ? (availability.slots as AvailabilitySlot[])
-      : [];
-    return raw
-      .filter((slot) => (slot.status ?? "open") === "open")
-      .map((slot) => {
-        const start = new Date(slot.start);
-        const end = new Date(start.getTime() + durationMin * 60000);
-        return { start, end };
-      })
-      .filter(
-        (slot) =>
-          !Number.isNaN(slot.start.getTime()) &&
-          !Number.isNaN(slot.end.getTime()) &&
-          slot.end.getTime() > slot.start.getTime() &&
-          availabilityCovers(availability.slots, slot.start, slot.end),
-      );
-  }
-
-  return generateSlots(dateStr, durationMin, workingHours).map((start) => ({
-    start,
-    end: new Date(start.getTime() + durationMin * 60000),
-  }));
+  override: unknown | undefined,
+  workingHours: unknown,
+) {
+  const available =
+    override === undefined
+      ? generateStaffSlots(dateStr, parseWorkingHours(workingHours))
+      : normalizeSlots(override);
+  return available
+    .filter((slot) => slot.status === "open")
+    .map((slot) => new Date(slot.start))
+    .filter((start) => {
+      const end = new Date(start.getTime() + durationMin * 60_000);
+      return availabilityCovers(available, start, end);
+    });
 }
 
-async function collectSlotCandidates({
-  dateStr,
-  serviceKey,
-  locale,
-}: {
-  dateStr: string;
-  serviceKey: string;
-  locale?: Locale;
-}): Promise<SlotDto[]> {
-  const record = await serviceRecord(serviceKey, locale);
+async function collectSlotCandidates(
+  {
+    dates,
+    serviceKey,
+    locale,
+  }: { dates: string[]; serviceKey: string; locale?: Locale },
+  client: SchedulingClient = prisma,
+): Promise<SlotDto[]> {
+  if (!dates.length) return [];
+  const db = client as typeof prisma;
+  const record = await serviceRecord(client, serviceKey, locale);
   if (!record) return [];
   const duration = record.svc.durationMin ?? DEFAULT_DURATION_MIN;
-  const practitionerIds = record.svc.practitioners.map((item) => item.id);
-  if (!practitionerIds.length || record.svc.rooms.length === 0) return [];
-  if (record.svc.requiresDevice && record.svc.devices.length === 0) return [];
+  const completeCapabilities = record.svc.capabilities.filter(
+    (item) => !record.svc.requiresDevice || item.devices.length > 0,
+  );
+  const practitionerIds = Array.from(
+    new Set(completeCapabilities.map((item) => item.practitioner.id)),
+  );
+  if (!completeCapabilities.length || !practitionerIds.length) return [];
 
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dayStart = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
-  const dayEnd = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0));
-  const booked = await prisma.appointment.findMany({
-    where: {
-      start: { gte: dayStart, lt: dayEnd },
-      status: { not: "CANCELLED" },
-      OR: [
-        { practitionerId: { in: practitionerIds } },
-        { roomId: { in: record.svc.rooms.map((room) => room.id) } },
-        ...(record.svc.devices.length
-          ? [
-              {
-                deviceId: {
-                  in: record.svc.devices.map((device) => device.id),
-                },
-              },
-            ]
-          : []),
-      ],
-    },
-    select: {
-      practitionerId: true,
-      roomId: true,
-      deviceId: true,
-      start: true,
-      end: true,
-    },
-  });
-  const blocked = await prisma.calendarBlock.findMany({
-    where: {
-      status: "ACTIVE",
-      start: { lt: dayEnd },
-      end: { gt: dayStart },
-      OR: [
-        { participants: { some: { practitionerId: { in: practitionerIds } } } },
-        { roomId: { in: record.svc.rooms.map((room) => room.id) } },
-        ...(record.svc.devices.length
-          ? [
-              {
-                deviceId: { in: record.svc.devices.map((device) => device.id) },
-              },
-            ]
-          : []),
-      ],
-    },
-    select: {
-      roomId: true,
-      deviceId: true,
-      start: true,
-      end: true,
-      participants: { select: { practitionerId: true } },
-    },
-  });
+  const firstBounds = clinicDateBounds(dates[0]);
+  const lastBounds = clinicDateBounds(dates.at(-1)!);
+  const logicalDates = dates
+    .map(logicalDate)
+    .filter((date): date is Date => Boolean(date));
+  if (!firstBounds || !lastBounds || logicalDates.length !== dates.length)
+    return [];
 
+  const roomIds = Array.from(
+    new Set(completeCapabilities.map((item) => item.room.id)),
+  );
+  const deviceIds = Array.from(
+    new Set(
+      completeCapabilities.flatMap((item) =>
+        item.devices.map((link) => link.device.id),
+      ),
+    ),
+  );
+  const resourceOr = [
+    { practitionerId: { in: practitionerIds } },
+    { roomId: { in: roomIds } },
+    ...(deviceIds.length ? [{ deviceId: { in: deviceIds } }] : []),
+  ];
+  const [availabilityRows, booked, blocked] = await Promise.all([
+    db.availability.findMany({
+      where: {
+        practitionerId: { in: practitionerIds },
+        date: { in: logicalDates },
+      },
+      select: { practitionerId: true, date: true, slots: true },
+    }),
+    db.appointment.findMany({
+      where: {
+        status: { not: "CANCELLED" },
+        start: { lt: lastBounds.end },
+        end: { gt: firstBounds.start },
+        OR: resourceOr,
+      },
+      select: {
+        practitionerId: true,
+        roomId: true,
+        deviceId: true,
+        start: true,
+        end: true,
+      },
+    }),
+    db.calendarBlock.findMany({
+      where: {
+        status: "ACTIVE",
+        start: { lt: lastBounds.end },
+        end: { gt: firstBounds.start },
+        OR: [
+          {
+            participants: { some: { practitionerId: { in: practitionerIds } } },
+          },
+          { roomId: { in: roomIds } },
+          ...(deviceIds.length ? [{ deviceId: { in: deviceIds } }] : []),
+        ],
+      },
+      select: {
+        roomId: true,
+        deviceId: true,
+        start: true,
+        end: true,
+        participants: { select: { practitionerId: true } },
+      },
+    }),
+  ]);
+
+  const overrides = new Map(
+    availabilityRows.map((row) => [
+      `${row.practitionerId}:${row.date.toISOString().slice(0, 10)}`,
+      row.slots,
+    ]),
+  );
+  const practitionerOrder = new Map(
+    practitionerIds.map((id, index) => [id, index]),
+  );
+  const roomOrder = new Map(roomIds.map((id, index) => [id, index]));
+  const deviceOrder = new Map(deviceIds.map((id, index) => [id, index]));
   const now = Date.now();
   const out: SlotDto[] = [];
-  for (const practitioner of record.svc.practitioners) {
-    const candidates = await candidateSlotsForPractitioner(
-      dateStr,
-      duration,
-      practitioner.id,
-      parseWorkingHours(practitioner.workingHours),
-    );
-    for (const candidate of candidates) {
-      if (candidate.start.getTime() <= now) continue;
-      const employeeClash = booked.some(
-        (booking) =>
-          booking.practitionerId === practitioner.id &&
-          overlaps(candidate.start, candidate.end, booking.start, booking.end),
+
+  for (const dateStr of dates) {
+    for (const capability of completeCapabilities) {
+      const practitioner = capability.practitioner;
+      const key = `${practitioner.id}:${dateStr}`;
+      const starts = candidateAvailability(
+        dateStr,
+        duration,
+        overrides.has(key) ? overrides.get(key) : undefined,
+        practitioner.workingHours,
       );
-      const employeeBlock = blocked.some(
-        (block) =>
-          block.participants.some(
-            (participant) => participant.practitionerId === practitioner.id,
-          ) && overlaps(candidate.start, candidate.end, block.start, block.end),
-      );
-      if (employeeClash || employeeBlock) continue;
-      const room = record.svc.rooms.find(
-        (item) =>
+      for (const start of starts) {
+        if (start.getTime() <= now) continue;
+        const end = new Date(start.getTime() + duration * 60_000);
+        const employeeBusy =
+          booked.some(
+            (appointment) =>
+              appointment.practitionerId === practitioner.id &&
+              overlaps(start, end, appointment.start, appointment.end),
+          ) ||
+          blocked.some(
+            (block) =>
+              block.participants.some(
+                (participant) => participant.practitionerId === practitioner.id,
+              ) && overlaps(start, end, block.start, block.end),
+          );
+        if (employeeBusy) continue;
+
+        const room = capability.room;
+        const roomFree =
           booked.every(
-            (booking) =>
-              booking.roomId !== item.id ||
-              !overlaps(
-                candidate.start,
-                candidate.end,
-                booking.start,
-                booking.end,
-              ),
+            (appointment) =>
+              appointment.roomId !== room.id ||
+              !overlaps(start, end, appointment.start, appointment.end),
           ) &&
           blocked.every(
             (block) =>
-              block.roomId !== item.id ||
-              !overlaps(candidate.start, candidate.end, block.start, block.end),
-          ),
-      );
-      if (!room) continue;
-      const device = record.svc.requiresDevice
-        ? record.svc.devices.find(
-            (item) =>
-              booked.every(
-                (booking) =>
-                  booking.deviceId !== item.id ||
-                  !overlaps(
-                    candidate.start,
-                    candidate.end,
-                    booking.start,
-                    booking.end,
+              block.roomId !== room.id ||
+              !overlaps(start, end, block.start, block.end),
+          );
+        if (!roomFree) continue;
+        const freeDevices = record.svc.requiresDevice
+          ? capability.devices
+              .map((link) => link.device)
+              .filter(
+                (device) =>
+                  booked.every(
+                    (appointment) =>
+                      appointment.deviceId !== device.id ||
+                      !overlaps(start, end, appointment.start, appointment.end),
+                  ) &&
+                  blocked.every(
+                    (block) =>
+                      block.deviceId !== device.id ||
+                      !overlaps(start, end, block.start, block.end),
                   ),
-              ) &&
-              blocked.every(
-                (block) =>
-                  block.deviceId !== item.id ||
-                  !overlaps(
-                    candidate.start,
-                    candidate.end,
-                    block.start,
-                    block.end,
-                  ),
-              ),
-          )
-        : null;
-      if (record.svc.requiresDevice && !device) continue;
-      out.push({
-        start: candidate.start.toISOString(),
-        end: candidate.end.toISOString(),
-        label: dateLabel(candidate.start),
-        practitionerId: practitioner.id,
-        roomId: room.id,
-        deviceId: device?.id ?? null,
-      });
+              )
+          : [null];
+        for (const device of freeDevices) {
+          out.push({
+            start: start.toISOString(),
+            end: end.toISOString(),
+            label: clinicTimeFromInstant(start),
+            practitionerId: practitioner.id,
+            roomId: room.id,
+            deviceId: device?.id ?? null,
+          });
+        }
+      }
     }
   }
+
   return out.sort(
-    (a, b) =>
-      a.start.localeCompare(b.start) ||
-      practitionerIds.indexOf(a.practitionerId) -
-        practitionerIds.indexOf(b.practitionerId),
+    (left, right) =>
+      left.start.localeCompare(right.start) ||
+      (practitionerOrder.get(left.practitionerId) ?? 0) -
+        (practitionerOrder.get(right.practitionerId) ?? 0) ||
+      (roomOrder.get(left.roomId) ?? 0) - (roomOrder.get(right.roomId) ?? 0) ||
+      (left.deviceId ? (deviceOrder.get(left.deviceId) ?? 0) : -1) -
+        (right.deviceId ? (deviceOrder.get(right.deviceId) ?? 0) : -1),
   );
 }
 
-/** Open public/admin slots, deduplicated to the first available employee. */
 export async function openSlots(args: {
   dateStr: string;
   serviceKey: string;
   locale?: Locale;
 }): Promise<SlotDto[]> {
-  const candidates = await collectSlotCandidates(args);
+  const candidates = await collectSlotCandidates({
+    dates: [args.dateStr],
+    serviceKey: args.serviceKey,
+    locale: args.locale,
+  });
   const seen = new Set<string>();
   return candidates.filter((slot) => {
     if (seen.has(slot.start)) return false;
@@ -323,19 +335,27 @@ export async function openSlots(args: {
   });
 }
 
-/** Ordered internal candidates used by the locked public booking transaction. */
-export async function openPublicSlotCandidates(args: {
-  dateStr: string;
-  serviceKey: string;
-  locale?: Locale;
-  start: string;
-}) {
-  return (await collectSlotCandidates(args)).filter(
-    (slot) => slot.start === args.start,
-  );
+export async function openPublicSlotCandidates(
+  args: {
+    dateStr: string;
+    serviceKey: string;
+    locale?: Locale;
+    start: string;
+  },
+  client: SchedulingClient = prisma,
+) {
+  return (
+    await collectSlotCandidates(
+      {
+        dates: [args.dateStr],
+        serviceKey: args.serviceKey,
+        locale: args.locale,
+      },
+      client,
+    )
+  ).filter((slot) => slot.start === args.start);
 }
 
-/** Dates with at least one currently bookable slot, resolved in one batched query. */
 export async function openPublicDates({
   fromDate,
   toDate,
@@ -347,41 +367,31 @@ export async function openPublicDates({
   serviceKey: string;
   locale?: Locale;
 }): Promise<string[]> {
-  const from = new Date(`${fromDate}T00:00:00.000Z`);
-  const through = new Date(`${toDate}T00:00:00.000Z`);
-  const until = new Date(through.getTime() + 24 * 60 * 60 * 1000);
-  const requested: string[] = [];
-  for (
-    let cursor = new Date(from);
-    cursor < until;
-    cursor = new Date(cursor.getTime() + 86400000)
-  ) {
-    requested.push(cursor.toISOString().slice(0, 10));
-  }
   const dates: string[] = [];
-  for (let index = 0; index < requested.length; index += 7) {
-    const batch = requested.slice(index, index + 7);
-    const results = await Promise.all(
-      batch.map((dateStr) => openSlots({ dateStr, serviceKey, locale })),
-    );
-    results.forEach((slots, offset) => {
-      if (slots.length) dates.push(batch[offset]);
-    });
+  for (let date = fromDate; date && date <= toDate; date = addDays(date, 1)) {
+    dates.push(date);
+    if (dates.length > 63) break;
   }
-  return dates;
+  const candidates = await collectSlotCandidates({ dates, serviceKey, locale });
+  // Slot instants can be the previous UTC date; map through the requested candidate labels.
+  return dates.filter((date) =>
+    candidates.some((slot) => {
+      const bounds = clinicDateBounds(date);
+      return (
+        bounds &&
+        new Date(slot.start) >= bounds.start &&
+        new Date(slot.start) < bounds.end
+      );
+    }),
+  );
 }
 
-/** Public availability uses the ordered qualified employee roster. */
-export async function openPublicSlots({
-  dateStr,
-  serviceKey,
-  locale,
-}: {
+export async function openPublicSlots(args: {
   dateStr: string;
   serviceKey: string;
   locale?: Locale;
-}): Promise<SlotDto[]> {
-  return openSlots({ dateStr, serviceKey, locale });
+}) {
+  return openSlots(args);
 }
 
 export async function getFirstActivePractitionerId(): Promise<string> {
@@ -394,9 +404,8 @@ export async function getFirstActivePractitionerId(): Promise<string> {
   return practitioner.id;
 }
 
-/** Resolve an existing database-owned booking service; runtime never self-seeds content. */
 export async function getServiceId(serviceKey: string): Promise<string> {
-  const existing = await serviceRecord(serviceKey);
+  const existing = await serviceRecord(prisma, serviceKey);
   if (!existing) throw new Error("unknown_service");
   return existing.serviceId;
 }
@@ -405,9 +414,7 @@ export async function appointmentByReference(reference: string) {
   const id = reference.trim();
   if (!id) return null;
   return prisma.appointment.findFirst({
-    where: {
-      OR: [{ id }, { id: { endsWith: id } }],
-    },
+    where: { OR: [{ id }, { id: { endsWith: id } }] },
     include: { client: true, service: true },
   });
 }

@@ -8,6 +8,7 @@ import {
 } from "@/lib/staff-schedule";
 import { staffPractitionerId } from "@/lib/calendar-scheduling";
 import { INTERNAL_CALENDAR_SERVICE_BY_KEY } from "@/lib/internal-calendar-services";
+import { clinicDateBounds } from "@/lib/clinic-time";
 
 export async function GET(req: NextRequest) {
   const user = await requireApiUser(["ADMIN", "STAFF"]);
@@ -17,8 +18,12 @@ export async function GET(req: NextRequest) {
   const locale = ["fi", "en", "ru"].includes(params.get("locale") ?? "")
     ? (params.get("locale") as "fi" | "en" | "ru")
     : "fi";
-  const from = new Date(String(params.get("from") ?? ""));
-  const to = new Date(String(params.get("to") ?? ""));
+  const fromParam = String(params.get("from") ?? "");
+  const toParam = String(params.get("to") ?? "");
+  const fromBounds = clinicDateBounds(fromParam.slice(0, 10));
+  const toBounds = clinicDateBounds(toParam.slice(0, 10));
+  const from = fromBounds?.start ?? new Date(NaN);
+  const to = toBounds?.start ?? new Date(NaN);
   if (
     Number.isNaN(from.getTime()) ||
     Number.isNaN(to.getTime()) ||
@@ -86,7 +91,13 @@ export async function GET(req: NextRequest) {
           select: {
             slug: true,
             primaryPractitionerId: true,
-            practitioners: { select: { id: true } },
+            capabilities: {
+              select: {
+                practitionerId: true,
+                roomId: true,
+                devices: { select: { deviceId: true } },
+              },
+            },
             rooms: { where: { active: true }, select: { id: true } },
             devices: { where: { active: true }, select: { id: true } },
             requiresDevice: true,
@@ -170,14 +181,24 @@ export async function GET(req: NextRequest) {
       deviceId: appointment.deviceId,
       qualifiedPractitionerIds: Array.from(
         new Set(
-          [
-            appointment.service.primaryPractitionerId,
-            ...appointment.service.practitioners.map((item) => item.id),
-          ].filter((id): id is string => Boolean(id)),
+          appointment.service.capabilities.map((item) => item.practitionerId),
         ),
       ),
-      allowedRoomIds: appointment.service.rooms.map((item) => item.id),
-      allowedDeviceIds: appointment.service.devices.map((item) => item.id),
+      allowedRoomIds: Array.from(
+        new Set(appointment.service.capabilities.map((item) => item.roomId)),
+      ),
+      allowedDeviceIds: Array.from(
+        new Set(
+          appointment.service.capabilities.flatMap((item) =>
+            item.devices.map((link) => link.deviceId),
+          ),
+        ),
+      ),
+      capabilities: appointment.service.capabilities.map((item) => ({
+        practitionerId: item.practitionerId,
+        roomId: item.roomId,
+        deviceIds: item.devices.map((link) => link.deviceId),
+      })),
       requiresDevice: appointment.service.requiresDevice,
       editable: ["BOOKED", "CONFIRMED", "RESCHEDULED"].includes(
         appointment.status,

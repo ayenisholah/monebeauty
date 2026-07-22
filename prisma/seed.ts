@@ -2,6 +2,7 @@ import { randomBytes, scrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { PrismaClient, type ServiceCategory } from "@prisma/client";
 import { INTERNAL_CALENDAR_SERVICES } from "../lib/internal-calendar-services";
+import { workdaySlots } from "../lib/staff-schedule";
 
 const prisma = new PrismaClient();
 const scryptAsync = promisify(scrypt);
@@ -38,32 +39,6 @@ const BUSINESS_HOURS = {
   stepMin: 30,
   daysAhead: 30,
 };
-
-function slotsForDate(date: Date) {
-  const slots = [];
-  for (
-    let t = BUSINESS_HOURS.startHour * 60;
-    t + 30 <= BUSINESS_HOURS.endHour * 60;
-    t += BUSINESS_HOURS.stepMin
-  ) {
-    const start = new Date(
-      Date.UTC(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate(),
-        Math.floor(t / 60),
-        t % 60,
-      ),
-    );
-    const end = new Date(start.getTime() + BUSINESS_HOURS.stepMin * 60000);
-    slots.push({
-      start: start.toISOString(),
-      end: end.toISOString(),
-      status: "open",
-    });
-  }
-  return slots;
-}
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -123,6 +98,7 @@ async function main() {
   }
 
   const serviceIds: string[] = [];
+  const serviceDeviceById = new Map<string, string>();
   const treatmentRoom = await prisma.room.upsert({
     where: { name: "Treatment room 1" },
     update: { active: true },
@@ -164,13 +140,32 @@ async function main() {
       },
     });
     if (s.bookable) serviceIds.push(service.id);
+    if (deviceId) serviceDeviceById.set(service.id, deviceId);
   }
 
-  for (const practitioner of practitioners) {
-    await prisma.practitioner.update({
-      where: { id: practitioner.id },
-      data: { services: { set: serviceIds.map((id) => ({ id })) } },
-    });
+  const seedDemoScheduling = process.env.SEED_DEMO_SCHEDULING === "true";
+  if (seedDemoScheduling) {
+    for (const practitioner of practitioners) {
+      for (const serviceId of serviceIds) {
+        const deviceId = serviceDeviceById.get(serviceId);
+        await prisma.practitionerServiceCapability.upsert({
+          where: {
+            practitionerId_serviceId_roomId: {
+              practitionerId: practitioner.id,
+              serviceId,
+              roomId: treatmentRoom.id,
+            },
+          },
+          update: {},
+          create: {
+            practitionerId: practitioner.id,
+            serviceId,
+            roomId: treatmentRoom.id,
+            ...(deviceId ? { devices: { create: { deviceId } } } : {}),
+          },
+        });
+      }
+    }
   }
 
   for (const [index, amount] of [50, 100, 350, 650, 1000].entries()) {
@@ -225,24 +220,31 @@ async function main() {
     }
   }
 
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  for (let i = 0; i <= BUSINESS_HOURS.daysAhead; i++) {
-    const date = new Date(today);
-    date.setUTCDate(today.getUTCDate() + i);
-    if (!BUSINESS_HOURS.openDays.includes(date.getUTCDay())) continue;
-    for (const practitioner of practitioners) {
-      await prisma.availability.upsert({
-        where: {
-          practitionerId_date: { practitionerId: practitioner.id, date },
-        },
-        update: {},
-        create: {
-          practitionerId: practitioner.id,
-          date,
-          slots: slotsForDate(date),
-        },
-      });
+  if (seedDemoScheduling) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    for (let i = 0; i <= BUSINESS_HOURS.daysAhead; i++) {
+      const date = new Date(today);
+      date.setUTCDate(today.getUTCDate() + i);
+      if (!BUSINESS_HOURS.openDays.includes(date.getUTCDay())) continue;
+      const dateStr = date.toISOString().slice(0, 10);
+      for (const practitioner of practitioners) {
+        await prisma.availability.upsert({
+          where: {
+            practitionerId_date: { practitionerId: practitioner.id, date },
+          },
+          update: {},
+          create: {
+            practitionerId: practitioner.id,
+            date,
+            slots: workdaySlots(
+              dateStr,
+              BUSINESS_HOURS.startHour * 60,
+              BUSINESS_HOURS.endHour * 60,
+            ),
+          },
+        });
+      }
     }
   }
 
@@ -275,7 +277,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${practitioners.length} calendar employees + ${SERVICES.length} services + gift cards + ${BUSINESS_HOURS.daysAhead} days of availability.`,
+    `Seeded ${practitioners.length} calendar employees + ${SERVICES.length} services + gift cards${seedDemoScheduling ? ` + ${BUSINESS_HOURS.daysAhead} days of demo availability` : " (scheduling assignments require admin configuration)"}.`,
   );
 }
 

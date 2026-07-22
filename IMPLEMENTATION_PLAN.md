@@ -1,5 +1,36 @@
 # Implementation Plan — Mone Beauty
 
+## Employee self-configuration and unified staff management (owner-directed, 2026-07-22)
+
+- Add versioned staff-owned and admin-targeted configuration APIs backed by one validation and
+  persistence service, including current-password email changes and session revocation.
+- Consolidate employee Account, Profile, Schedule, exceptions, and Booking Capabilities in
+  Admin -> Staff; add the same permitted self-service settings to `/henkilosto`.
+- Introduce and backfill `PractitionerServiceCapability`, preflight future appointments, then
+  retire the implicit practitioner/service relation and allocate only exact capability tuples.
+- Keep global service room/device pools and block templates in Calendar Setup, with employee
+  editing and qualifications removed from that screen.
+- Enforce optimistic versions, future-appointment guards, ownership/RBAC, normalized unique email,
+  complete FI/EN/RU UI, and successful/denied audit metadata.
+- Verify database-backed migration/concurrency, unit tests, lint, production build, and 390px
+  responsive behavior.
+
+## Complete scheduling clashes and staff settings (owner-directed, 2026-07-22)
+
+- Upgrade weekly employee schedules to independent, split-capable 15-minute weekday intervals
+  interpreted in `Europe/Helsinki`, while preserving explicit per-date overrides and legacy data.
+- Centralize public/internal availability in a batched allocation engine that enumerates every
+  qualified employee, allowed room, and required-device combination and uses the same rules for
+  booking, moves, and approved reschedules.
+- Recalculate allocation inside sorted advisory locks, exhaust alternate combinations, and retain
+  PostgreSQL employee/room/device exclusion constraints.
+- Give admins complete employee/resource/service configuration and staff only their own schedule,
+  exception, block, and preference controls; reject configuration changes that invalidate future
+  appointments.
+- Keep one employee, one service, one room, and zero/one device per appointment until the clinic
+  answers the multi-employee/sequential-treatment question; keep engine interfaces extensible.
+- Full specification: [`SCHEDULING_CLASH_IMPLEMENTATION_PLAN.md`](./SCHEDULING_CLASH_IMPLEMENTATION_PLAN.md).
+
 ## Stripe website payments (owner-approved, 2026-07-19) ✅ implemented
 
 - Replace unpaid order requests with Stripe-hosted Checkout for website-originated physical

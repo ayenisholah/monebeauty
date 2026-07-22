@@ -2,6 +2,7 @@ import {
   INTERNAL_CALENDAR_SERVICES,
   INTERNAL_PALETTE_MAX_SELECTED,
 } from "@/lib/internal-calendar-services";
+import { clinicDateTimeToInstant, minuteLabel } from "@/lib/clinic-time";
 
 export type InternalPaletteCatalogItem = {
   key: string;
@@ -113,8 +114,7 @@ export function calendarDropStart(date: string, minute: number): string | null {
     minute % 15 !== 0
   )
     return null;
-  const start = new Date(`${date}T00:00:00.000Z`);
-  if (Number.isNaN(start.getTime())) return null;
-  start.setUTCMinutes(minute);
-  return start.toISOString();
+  return (
+    clinicDateTimeToInstant(date, minuteLabel(minute))?.toISOString() ?? null
+  );
 }

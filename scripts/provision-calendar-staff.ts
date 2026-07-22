@@ -155,18 +155,45 @@ async function main() {
         practitionerIds.push(practitionerId);
       }
 
-      const services = await tx.service.findMany({
-        where: { bookable: true, archivedAt: null },
-        select: { id: true },
-      });
-      for (const service of services) {
-        await tx.service.update({
-          where: { id: service.id },
-          data: {
-            primaryPractitionerId: null,
-            practitioners: { set: practitionerIds.map((id) => ({ id })) },
+      if (process.env.ASSIGN_ALL_STAFF_TO_SERVICES === "true") {
+        const services = await tx.service.findMany({
+          where: { bookable: true, archivedAt: null },
+          select: {
+            id: true,
+            rooms: { where: { active: true }, select: { id: true } },
+            devices: { where: { active: true }, select: { id: true } },
           },
         });
+        for (const service of services) {
+          await tx.service.update({
+            where: { id: service.id },
+            data: { primaryPractitionerId: null },
+          });
+          for (const practitionerId of practitionerIds) {
+            for (const room of service.rooms) {
+              await tx.practitionerServiceCapability.upsert({
+                where: {
+                  practitionerId_serviceId_roomId: {
+                    practitionerId,
+                    serviceId: service.id,
+                    roomId: room.id,
+                  },
+                },
+                update: {},
+                create: {
+                  practitionerId,
+                  serviceId: service.id,
+                  roomId: room.id,
+                  devices: {
+                    create: service.devices.map((device) => ({
+                      deviceId: device.id,
+                    })),
+                  },
+                },
+              });
+            }
+          }
+        }
       }
 
       const synthetic = await tx.practitioner.findFirst({
@@ -226,7 +253,10 @@ async function main() {
         }
         await tx.practitioner.update({
           where: { id: synthetic.id },
-          data: { active: false, services: { set: [] } },
+          data: { active: false },
+        });
+        await tx.practitionerServiceCapability.deleteMany({
+          where: { practitionerId: synthetic.id },
         });
       }
 

@@ -78,7 +78,7 @@ model Service {
   pricing               PricingItem[]
   contents              TreatmentContent[]
   procedureMedia        ProcedureMedia[]
-  practitioners         Practitioner[]     @relation("PractitionerToService")
+  capabilities          PractitionerServiceCapability[]
   primaryPractitioner   Practitioner?      @relation("PrimaryPractitioner", fields: [primaryPractitionerId], references: [id], onDelete: SetNull)
   rooms                 Room[]             @relation("RoomToService")
   devices               Device[]           @relation("DeviceToService")
@@ -419,12 +419,13 @@ model Practitioner {
   active          Boolean        @default(true)
   displayOrder    Int            @default(0)
   calendarColor   String         @default("#B89B72")
+  configVersion   Int            @default(1)
   workingHours    Json?
   daysOff         DateTime[]
   appointments    Appointment[]
   availabilities  Availability[]
   staff           StaffUser?
-  services        Service[]      @relation("PractitionerToService")
+  capabilities    PractitionerServiceCapability[]
   primaryServices Service[]      @relation("PrimaryPractitioner")
   calendarBlocks  CalendarBlockParticipant[]
 }
@@ -436,6 +437,7 @@ model Room {
   displayOrder Int           @default(0)
   appointments Appointment[]
   services     Service[]     @relation("RoomToService")
+  capabilities PractitionerServiceCapability[]
   calendarBlocks CalendarBlock[]
 }
 
@@ -446,7 +448,35 @@ model Device {
   displayOrder Int           @default(0)
   appointments Appointment[]
   services     Service[]     @relation("DeviceToService")
+  capabilityLinks PractitionerServiceCapabilityDevice[]
   calendarBlocks CalendarBlock[]
+}
+
+model PractitionerServiceCapability {
+  id             String       @id @default(cuid())
+  practitionerId String
+  serviceId      String
+  roomId         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  practitioner   Practitioner @relation(fields: [practitionerId], references: [id], onDelete: Cascade)
+  service        Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  room           Room         @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  devices        PractitionerServiceCapabilityDevice[]
+
+  @@unique([practitionerId, serviceId, roomId])
+  @@index([serviceId, practitionerId])
+  @@index([roomId])
+}
+
+model PractitionerServiceCapabilityDevice {
+  capabilityId String
+  deviceId     String
+  capability   PractitionerServiceCapability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  device       Device                        @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+
+  @@id([capabilityId, deviceId])
+  @@index([deviceId])
 }
 
 model CalendarBlockTemplate {

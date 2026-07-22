@@ -13,6 +13,11 @@ import { TimePicker } from "@/components/ui/TimePicker";
 import { availabilityCovers, type StaffSlot } from "@/lib/staff-schedule";
 import { BUSINESS_HOURS } from "@/lib/booking-config";
 import { clinicTodayYmd } from "@/lib/clinic-date";
+import {
+  clinicDateFromInstant,
+  clinicDateTimeToInstant,
+  clinicTimeFromInstant,
+} from "@/lib/clinic-time";
 
 type Locale = "en" | "fi" | "ru";
 type Named = { id: string; name: string; workingHours?: unknown };
@@ -25,6 +30,11 @@ type Service = {
   qualifiedPractitionerIds: string[];
   roomIds: string[];
   deviceIds: string[];
+  capabilities: Array<{
+    practitionerId: string;
+    roomId: string;
+    deviceIds: string[];
+  }>;
   procedures: Array<{ index: number; title: string; price: string }>;
 };
 type Options = {
@@ -160,12 +170,11 @@ const copy = {
 } as const;
 
 function ymd(value: string) {
-  return value.slice(0, 10);
+  return clinicDateFromInstant(new Date(value));
 }
 
 function hm(value: string) {
-  const date = new Date(value);
-  return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+  return clinicTimeFromInstant(new Date(value));
 }
 
 function addDays(value: string, days: number) {
@@ -293,11 +302,20 @@ export function AppointmentForm({
     ) ?? [];
   const rooms =
     options?.rooms.filter((item) =>
-      selectedService?.roomIds.includes(item.id),
+      selectedService?.capabilities.some(
+        (capability) =>
+          capability.practitionerId === practitionerId &&
+          capability.roomId === item.id,
+      ),
     ) ?? [];
   const devices =
     options?.devices.filter((item) =>
-      selectedService?.deviceIds.includes(item.id),
+      selectedService?.capabilities.some(
+        (capability) =>
+          capability.practitionerId === practitionerId &&
+          capability.roomId === roomId &&
+          capability.deviceIds.includes(item.id),
+      ),
     ) ?? [];
   const selectedDuration = selectedService?.durationMin ?? 0;
   const appointmentDuration =
@@ -328,10 +346,14 @@ export function AppointmentForm({
     setTime("");
     if (next && !next.qualifiedPractitionerIds.includes(practitionerId))
       setPractitionerId(next.qualifiedPractitionerIds[0] ?? "");
-    if (next && !next.roomIds.includes(roomId))
-      setRoomId(next.roomIds[0] ?? "");
-    if (next && !next.deviceIds.includes(deviceId))
-      setDeviceId(next.deviceIds[0] ?? "");
+    const practitioner = next?.qualifiedPractitionerIds.includes(practitionerId)
+      ? practitionerId
+      : (next?.qualifiedPractitionerIds[0] ?? "");
+    const capability = next?.capabilities.find(
+      (item) => item.practitionerId === practitioner,
+    );
+    setRoomId(capability?.roomId ?? "");
+    setDeviceId(capability?.deviceIds[0] ?? "");
   }
 
   function clearSelectedClient() {
@@ -356,7 +378,12 @@ export function AppointmentForm({
     }
     setSaving(true);
     setMessage(null);
-    const start = `${date}T${time}:00.000Z`;
+    const start = clinicDateTimeToInstant(date, time)?.toISOString();
+    if (!start) {
+      setSaving(false);
+      setMessage(t.required);
+      return;
+    }
     const response = await fetch(
       detail
         ? `/api/calendar/appointments/${detail.id}`
@@ -527,6 +554,11 @@ export function AppointmentForm({
               value={practitionerId}
               onValueChange={(value) => {
                 setPractitionerId(value);
+                const capability = selectedService?.capabilities.find(
+                  (item) => item.practitionerId === value,
+                );
+                setRoomId(capability?.roomId ?? "");
+                setDeviceId(capability?.deviceIds[0] ?? "");
                 setTime("");
               }}
               options={employees.map((item) => ({
@@ -538,7 +570,15 @@ export function AppointmentForm({
           <Field label={t.room}>
             <ThemedSelect
               value={roomId}
-              onValueChange={setRoomId}
+              onValueChange={(value) => {
+                setRoomId(value);
+                const capability = selectedService?.capabilities.find(
+                  (item) =>
+                    item.practitionerId === practitionerId &&
+                    item.roomId === value,
+                );
+                setDeviceId(capability?.deviceIds[0] ?? "");
+              }}
               options={rooms.map((item) => ({
                 value: item.id,
                 label: item.name,

@@ -23,6 +23,8 @@
     "db:sync-content": "tsx scripts/sync-cms-from-generated.ts",
     "db:sync-content:force": "tsx scripts/sync-cms-from-generated.ts --force",
     "db:sync-procedure-media": "tsx scripts/sync-procedure-media.ts",
+    "scheduling:migrate-v2": "tsx scripts/migrate-scheduling-v2.ts",
+    "availability:cleanup-defaults": "tsx --env-file=.env scripts/cleanup-default-availability.ts",
     "db:sync-procedure-media:force": "tsx scripts/sync-procedure-media.ts --force",
     "db:rollback-procedure-media": "tsx scripts/rollback-procedure-media.ts",
     "notifications:reminders": "tsx scripts/send-reminders.ts",

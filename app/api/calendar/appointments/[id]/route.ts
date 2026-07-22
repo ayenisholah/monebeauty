@@ -8,7 +8,11 @@ import {
   staffPractitionerId,
   type CalendarConflict,
 } from "@/lib/calendar-scheduling";
-import { availabilityCovers, generateStaffSlots } from "@/lib/staff-schedule";
+import {
+  availabilityCovers,
+  generateStaffSlots,
+  parseWorkingHours,
+} from "@/lib/staff-schedule";
 import {
   notifyAppointmentChange,
   notifyAppointmentConfirmation,
@@ -17,6 +21,10 @@ import { resolveProcedure } from "@/lib/procedures";
 import { routing, type Locale } from "@/i18n/routing";
 import { lockAndFindReservationConflict } from "@/lib/calendar-blocks";
 import { normalizeInternationalPhone } from "@/lib/phone";
+import {
+  clinicDateFromInstant,
+  clinicTimeFromInstant,
+} from "@/lib/clinic-time";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,7 +38,17 @@ const include = {
   service: {
     include: {
       contents: { select: { locale: true, status: true, whatItIs: true } },
-      practitioners: { where: { active: true }, select: { id: true } },
+      capabilities: {
+        where: { practitioner: { active: true }, room: { active: true } },
+        select: {
+          practitionerId: true,
+          roomId: true,
+          devices: {
+            where: { device: { active: true } },
+            select: { deviceId: true },
+          },
+        },
+      },
       rooms: { where: { active: true }, select: { id: true } },
       devices: { where: { active: true }, select: { id: true } },
     },
@@ -101,7 +119,17 @@ export async function PATCH(
             contents: {
               select: { locale: true, status: true, whatItIs: true },
             },
-            practitioners: { where: { active: true }, select: { id: true } },
+            capabilities: {
+              where: { practitioner: { active: true }, room: { active: true } },
+              select: {
+                practitionerId: true,
+                roomId: true,
+                devices: {
+                  where: { device: { active: true } },
+                  select: { deviceId: true },
+                },
+              },
+            },
             rooms: { where: { active: true }, select: { id: true } },
             devices: { where: { active: true }, select: { id: true } },
           },
@@ -117,7 +145,7 @@ export async function PATCH(
   );
   if (Number.isNaN(start.getTime())) return conflict("invalid_time");
   if (start.getTime() <= Date.now()) return conflict("start_in_past");
-  if (start.getUTCMinutes() % 15 !== 0 || start.getUTCSeconds() !== 0)
+  if (Number(clinicTimeFromInstant(start).slice(3)) % 15 !== 0)
     return conflict("invalid_time");
   const duration = service.durationMin * 60_000;
   const end = new Date(start.getTime() + duration);
@@ -126,32 +154,39 @@ export async function PATCH(
   );
   if (user.role === "STAFF" && practitionerId !== ownPractitionerId)
     return conflict("forbidden_employee", 403);
-  const qualified = new Set(
-    [
-      service.primaryPractitionerId,
-      ...service.practitioners.map((item) => item.id),
-    ].filter((value): value is string => Boolean(value)),
-  );
-  if (!qualified.has(practitionerId)) return conflict("invalid_employee");
-
-  const date = new Date(`${start.toISOString().slice(0, 10)}T00:00:00.000Z`);
-  const availability = await prisma.availability.findUnique({
-    where: { practitionerId_date: { practitionerId, date } },
-    select: { slots: true },
-  });
+  const dateStr = clinicDateFromInstant(start);
+  const date = new Date(`${dateStr}T00:00:00.000Z`);
+  const [availability, selectedPractitioner] = await Promise.all([
+    prisma.availability.findUnique({
+      where: { practitionerId_date: { practitionerId, date } },
+      select: { slots: true },
+    }),
+    prisma.practitioner.findUnique({
+      where: { id: practitionerId },
+      select: { workingHours: true },
+    }),
+  ]);
   const coverage =
-    availability?.slots ?? generateStaffSlots(start.toISOString().slice(0, 10));
+    availability?.slots ??
+    generateStaffSlots(
+      dateStr,
+      parseWorkingHours(selectedPractitioner?.workingHours),
+    );
   if (!availabilityCovers(coverage, start, end))
     return conflict("outside_availability");
 
   const roomId = String(payload.roomId ?? appointment.roomId ?? "") || null;
-  if (!roomId || !service.rooms.some((item) => item.id === roomId))
-    return conflict("invalid_room");
   const deviceId =
     String(payload.deviceId ?? appointment.deviceId ?? "") || null;
   if (service.requiresDevice && !deviceId) return conflict("device_required");
-  if (deviceId && !service.devices.some((item) => item.id === deviceId))
-    return conflict("invalid_device");
+  const capability = service.capabilities.find(
+    (item) =>
+      item.practitionerId === practitionerId &&
+      item.roomId === roomId &&
+      (deviceId === null ||
+        item.devices.some((link) => link.deviceId === deviceId)),
+  );
+  if (!capability) return conflict("invalid_capability");
 
   const clientId =
     intent === "details"

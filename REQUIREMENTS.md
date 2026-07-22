@@ -1,5 +1,48 @@
 # Requirements — Mone Beauty
 
+## Employee self-configuration and unified Admin -> Staff (owner-directed, 2026-07-22)
+
+`/henkilosto` exposes a versioned settings area for the authenticated staff user's own name,
+normalized unique login email, password, professional title, calendar color, split-shift weekly
+schedule, date exceptions, qualified services, and service-specific room/device permissions.
+Supplied employee identifiers are rejected. Email changes require the current password, revoke
+all sessions, and require a new login. Staff cannot change account status, practitioner active
+state, display/allocation order, other employees, global services, or room/device inventory.
+
+Admin -> Staff is the sole complete employee editor and groups Account, Profile, Schedule, and
+Booking Capabilities. It retains password reset, session revocation, activation, audit, and
+credential deletion. Calendar Setup manages only clinic-wide service resource pools, rooms,
+devices, and block templates and links to employee capability editing.
+
+`PractitionerServiceCapability` is the only qualification source. Each record binds one employee,
+one service, and one permitted room and lists the permitted physical devices. Qualification exists
+only while at least one complete capability exists. Capability resources must be active and belong
+to the service's admin-approved pool. Public and internal scheduling enumerate these exact
+combinations and never construct Cartesian combinations outside them.
+
+Every configuration response and mutation carries an optimistic version. A stale mutation returns
+409 without changing data. Removing a qualification, capability, room/device permission, weekly
+interval, or date exception that an active future appointment depends on returns 409 with the
+affected appointment count and identifiers. Successful and denied mutations are audited with
+actor, target employee, section, and affected resource identifiers.
+
+## Complete resource-safe scheduling (owner-directed, 2026-07-22)
+
+Public availability is the union of complete, conflict-free allocations across ordered qualified
+employees, allowed rooms, and required physical devices. Public APIs never accept or expose the
+chosen internal resources. Booking, internal creation/movement, and approved rescheduling must
+recalculate candidates inside transaction-scoped locks and try every valid alternative before
+returning a clash.
+
+`Practitioner.workingHours` stores a versioned `Europe/Helsinki` weekly schedule with independent
+15-minute intervals per weekday and split-shift support. Explicit per-date `Availability` is the
+complete override. Admins manage every employee and clinic scheduling resource; staff may mutate
+only their linked employee's hours, exceptions, internal blocks, and preferences. Configuration
+changes that invalidate active future appointments are rejected. Version one persists one
+employee, one service/procedure, one room, and zero/one device per appointment; allocation and
+conflict interfaces remain extensible pending the clinic's multi-employee/sequential-treatment
+answer.
+
 ## Owner-approved Stripe website payments (2026-07-19)
 
 Website-originated purchases use Stripe-hosted Checkout with signature-verified,

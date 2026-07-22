@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { auditForUser, requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { openSlots } from "@/lib/booking";
+import { clinicDateFromInstant } from "@/lib/clinic-time";
 
 export async function POST(req: NextRequest) {
   const user = await requireApiUser(["CLIENT"]);
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (appointment.start <= new Date() || appointment.status === "CANCELLED")
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   const available = await openSlots({
-    dateStr: start.slice(0, 10),
+    dateStr: clinicDateFromInstant(new Date(start)),
     serviceKey: appointment.service.slug,
   });
   if (!available.some((slot) => slot.start === start))

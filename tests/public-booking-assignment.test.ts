@@ -66,16 +66,15 @@ test("public booking APIs ignore forged practitioner values", () => {
 });
 
 test("the ordered qualified roster and exclusive resources control availability", () => {
-  assert.match(bookingLib, /practitioners: \{/);
+  assert.match(bookingLib, /capabilities: \{/);
   assert.match(bookingLib, /displayOrder: "asc"/);
-  assert.match(
-    bookingLib,
-    /for \(const practitioner of record\.svc\.practitioners\)/,
-  );
+  assert.match(bookingLib, /for \(const capability of completeCapabilities\)/);
   assert.match(bookingLib, /if \(seen\.has\(slot\.start\)\) return false/);
-  assert.match(bookingLib, /record\.svc\.rooms\.length === 0/);
+  assert.match(bookingLib, /!completeCapabilities\.length/);
   assert.match(bookingLib, /record\.svc\.requiresDevice/);
-  assert.match(bookingLib, /booking\.deviceId !== item\.id/);
+  assert.match(bookingLib, /const room = capability\.room/);
+  assert.match(bookingLib, /for \(const device of freeDevices\)/);
+  assert.match(bookingLib, /appointment\.deviceId !== device\.id/);
   assert.match(rescheduleRoute, /openSlots/);
   assert.match(rescheduleRoute, /appointmentChangeRequest\.create/);
   assert.match(changeRequests, /practitionerId: matching\.practitionerId/);
@@ -87,8 +86,14 @@ test("the ordered qualified roster and exclusive resources control availability"
 
 test("public date pickers receive batched resource-safe working dates", () => {
   assert.match(bookingLib, /openPublicDates/);
-  assert.match(bookingLib, /index < requested\.length; index \+= 7/);
-  assert.match(bookingLib, /batch\.map\(\(dateStr\) => openSlots/);
+  assert.match(
+    bookingLib,
+    /collectSlotCandidates\(\{ dates, serviceKey, locale \}\)/,
+  );
+  assert.match(bookingLib, /Promise\.all\(\[/);
+  assert.match(bookingLib, /db\.availability\.findMany/);
+  assert.match(bookingLib, /db\.appointment\.findMany/);
+  assert.match(bookingLib, /db\.calendarBlock\.findMany/);
   assert.match(availabilityRoute, /62 \* 86400000/);
   assert.match(wizard, /api\/booking\/availability/);
   assert.match(wizard, /availableDates=\{availableDates\}/);

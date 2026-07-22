@@ -99,6 +99,7 @@ export function BookingWizard({
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Helsinki",
   });
 
   const loadSlots = useCallback(
